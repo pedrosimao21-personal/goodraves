@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserData } from '../context/UserDataContext'
+import { searchArtist, HAS_SPOTIFY } from '../api/spotify'
 
 function CalendarIcon() {
   return (
@@ -45,13 +47,30 @@ export default function FestivalCard({ event }) {
   // Check if event is in the future
   const isFuture = event.date && new Date(event.date + 'T00:00:00') > new Date()
 
+  // Spotify image fallback for events without images
+  const [fallbackImage, setFallbackImage] = useState(null)
+  
+  useEffect(() => {
+    if (event.image || !HAS_SPOTIFY || artistCount === 0) return
+    let cancelled = false
+    const mainArtist = event.attractions[0].name
+    searchArtist(mainArtist)
+      .then(sp => {
+        if (!cancelled && sp?.image) setFallbackImage(sp.image)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [event.image, artistCount, event.attractions])
+
+  const displayImage = event.image || fallbackImage
+
   const handleAction = (e) => {
     e.stopPropagation()
     const payload = {
       name: event.name,
       date: event.date,
       venue: event.venue,
-      image: event.image,
+      image: displayImage,
       genre: event.genre,
       source: event.source,
     }
@@ -63,7 +82,7 @@ export default function FestivalCard({ event }) {
   }
 
   const handleClick = () => {
-    navigate(`/festival/${event.id}`, { state: { event } })
+    navigate(`/festival/${event.id}`, { state: { event: { ...event, image: displayImage } } })
   }
 
   const isActive = isFuture ? upcoming : attended
@@ -73,8 +92,8 @@ export default function FestivalCard({ event }) {
 
   return (
     <div className="festival-card fade-in" onClick={handleClick}>
-      {event.image ? (
-        <img className="festival-card-img" src={event.image} alt={event.name} loading="lazy" />
+      {displayImage ? (
+        <img className="festival-card-img" src={displayImage} alt={event.name} loading="lazy" />
       ) : (
         <div className="festival-card-img-placeholder">
           {isEdmtrain ? '⚡' : '🎪'}

@@ -37,8 +37,8 @@ export async function getArtistInfo(name) {
     ?? null
 
   const bio = artist.bio?.content ?? artist.bio?.summary ?? ''
-  // Strip Last.fm "Read more" link
-  const cleanBio = bio.replace(/<a href="[^"]*">Read more on Last.fm<\/a>/gi, '').trim()
+  let cleanBio = bio.replace(/<a href="[^"]*">Read more on Last\.fm<\/a>/gi, '').trim()
+  cleanBio = cleanBio.replace(/User-contributed text is available under the Creative Commons By-SA License; additional terms may apply\./gi, '').trim()
 
   return {
     name: artist.name,

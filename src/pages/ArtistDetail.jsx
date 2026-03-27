@@ -46,11 +46,11 @@ function formatFollowers(n) {
 }
 
 /** Component that lazy-loads a similar artist photo via Spotify */
-function SimilarArtistCard({ artistName, defaultImg, onClick }) {
-  const [img, setImg] = useState(defaultImg)
+function SimilarArtistCard({ artistName, onClick }) {
+  const [img, setImg] = useState(null)
 
   useEffect(() => {
-    if (img || !HAS_SPOTIFY) return
+    if (!HAS_SPOTIFY) return
     let cancelled = false
     spotifySearch(artistName)
       .then(sp => {
@@ -58,13 +58,13 @@ function SimilarArtistCard({ artistName, defaultImg, onClick }) {
       })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [artistName, img])
+  }, [artistName])
 
   return (
     <button
       className="related-artist-card"
       onClick={onClick}
-      id={`related-${artistName.replace(/\\s+/g, '-').toLowerCase()}`}
+      id={`related-${artistName.replace(/\s+/g, '-').toLowerCase()}`}
     >
       {img ? (
         <img className="related-artist-img" src={img} alt={artistName} loading="lazy" />
@@ -281,20 +281,22 @@ export default function ArtistDetail() {
               Latest Releases
               <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
             </h2>
-            <div className="album-grid">
+            <div className="album-list">
               {spotifyAlbums.map(album => (
-                <a key={album.id} href={album.url} target="_blank" rel="noreferrer" className="album-card">
-                  <div className="album-img-wrap">
+                <a key={album.id} href={album.url} target="_blank" rel="noreferrer" className="album-list-item">
+                  <div className="album-list-img-wrap">
                     {album.image ? (
                       <img src={album.image} alt={album.name} loading="lazy" />
                     ) : (
-                      <div className="album-placeholder">💿</div>
+                      <div className="album-list-placeholder">💿</div>
                     )}
-                    <div className="album-type-badge">{album.type}</div>
                   </div>
-                  <div className="album-info">
-                    <div className="album-name" title={album.name}>{album.name}</div>
-                    <div className="album-date">{album.releaseDate ? new Date(album.releaseDate).getFullYear() : ''}</div>
+                  <div className="album-info" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                    <div className="album-name" style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={album.name}>{album.name}</div>
+                    <div className="album-meta" style={{ display: 'flex', gap: 8, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      <span className="album-type-badge" style={{ textTransform: 'capitalize' }}>{album.type}</span>
+                      <span className="album-date">{album.releaseDate ? new Date(album.releaseDate).getFullYear() : ''}</span>
+                    </div>
                   </div>
                 </a>
               ))}

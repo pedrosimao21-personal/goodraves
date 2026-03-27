@@ -1,5 +1,5 @@
-export async function getCityImage(cityName) {
-  if (!cityName) return null
+export async function getWikiImage(searchQuery) {
+  if (!searchQuery) return null
   try {
     // Wikipedia API to get page thumbnail
     const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(cityName)}&prop=pageimages&format=json&pithumbsize=600&origin=*`)

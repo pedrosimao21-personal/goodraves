@@ -173,13 +173,15 @@ export default function Dashboard() {
             <div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your personal festival history & schedule</p>
             </div>
-            <button
-              className={`btn ${showImport ? 'btn-secondary' : 'btn-primary'}`}
-              onClick={() => setShowImport(!showImport)}
-              id="toggle-import-btn"
-            >
-              {showImport ? 'Close Import' : '📦 Import RA Data'}
-            </button>
+            {import.meta.env.DEV && (
+              <button
+                className={`btn ${showImport ? 'btn-secondary' : 'btn-primary'}`}
+                onClick={() => setShowImport(!showImport)}
+                id="toggle-import-btn"
+              >
+                {showImport ? 'Close Import' : '📦 Import RA Data'}
+              </button>
+            )}
           </div>
         </div>
 

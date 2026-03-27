@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserData } from '../context/UserDataContext'
 import { searchArtist, HAS_SPOTIFY } from '../api/spotify'
-import { getCityImage } from '../api/wikipedia'
+import { getWikiImage } from '../api/wikipedia'
 
 function CalendarIcon() {
   return (
@@ -55,12 +55,18 @@ export default function FestivalCard({ event }) {
     if (event.image) return
     let cancelled = false
     
-    const fetchCityFallback = () => {
-      if (event.venue?.city) {
-        getCityImage(event.venue.city)
-          .then(img => { if (!cancelled && img) setFallbackImage(img) })
-          .catch(() => {})
+    const fetchWikiFallback = async () => {
+      if (cancelled) return
+      let img = null
+      // Try venue name first
+      if (event.venue?.name) {
+        try { img = await getWikiImage(event.venue.name) } catch (e) {}
       }
+      // If no venue image found, try city name
+      if (!img && event.venue?.city) {
+        try { img = await getWikiImage(event.venue.city) } catch (e) {}
+      }
+      if (!cancelled && img) setFallbackImage(img)
     }
 
     if (HAS_SPOTIFY && artistCount > 0) {
@@ -69,12 +75,12 @@ export default function FestivalCard({ event }) {
         .then(sp => {
           if (!cancelled) {
             if (sp?.image) setFallbackImage(sp.image)
-            else fetchCityFallback()
+            else fetchWikiFallback()
           }
         })
-        .catch(() => { if (!cancelled) fetchCityFallback() })
+        .catch(() => { if (!cancelled) fetchWikiFallback() })
     } else {
-      fetchCityFallback()
+      fetchWikiFallback()
     }
 
     return () => { cancelled = true }

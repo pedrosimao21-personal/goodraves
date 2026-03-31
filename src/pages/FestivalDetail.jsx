@@ -46,7 +46,7 @@ export default function FestivalDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, raEvents } = useUserData()
+  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, raEvents, festivalMeta, artistMeta } = useUserData()
 
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -54,6 +54,7 @@ export default function FestivalDetail() {
 
   const isEdmtrain = id.startsWith('edm_')
   const isRA = id.startsWith('ra-')
+  const isCustom = id.startsWith('custom-')
 
   useEffect(() => {
     let cancelled = false
@@ -68,6 +69,23 @@ export default function FestivalDetail() {
         setLoading(false)
       } else {
         setError(new Error('Event data not available. Please navigate from the search page.'))
+        setLoading(false)
+      }
+    } else if (isCustom) {
+      // Custom events: get from festivalMeta
+      const meta = festivalMeta[id]
+      if (meta) {
+        const attractions = (meta.lineup || []).map(name => ({
+          id: 'artist-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          name: name,
+        }))
+        setEvent({
+          ...meta,
+          attractions,
+        })
+        setLoading(false)
+      } else {
+        setError(new Error('Custom event not found.'))
         setLoading(false)
       }
     } else if (isRA) {

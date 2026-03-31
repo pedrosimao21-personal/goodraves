@@ -48,11 +48,11 @@ export default function Timeline() {
 
   // Get available years
   const years = useMemo(() => {
-    const yrs = [...new Set(festivals.map(f => f.year).filter(Boolean))].sort((a, b) => b - a)
+    const yrs = [...new Set(festivals.map(f => f.year).filter(Boolean))].sort((a, b) => a - b)
     return yrs.length > 0 ? yrs : [new Date().getFullYear()]
   }, [festivals])
 
-  const [selectedYear, setSelectedYear] = useState(years[0] ?? new Date().getFullYear())
+  const [selectedYear, setSelectedYear] = useState(years[years.length - 1] ?? new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState('All')
 
   // Filter by year + month

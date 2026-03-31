@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useUserData } from '../context/UserDataContext'
 import { getEventById } from '../api/ticketmaster'
 import RAImport from '../components/RAImport'
+import AddCustomFestival from '../components/AddCustomFestival'
 
 
 const HAS_KEY = import.meta.env.VITE_TICKETMASTER_KEY &&
@@ -21,7 +22,7 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (eventId.startsWith('ra-')) {
+    if (eventId.startsWith('ra-') || eventId.startsWith('custom-')) {
       setLoading(false)
       return
     }
@@ -33,8 +34,8 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
   }, [eventId])
 
   const { getFestivalMeta } = useUserData()
-  const raMeta = eventId.startsWith('ra-') ? getFestivalMeta(eventId) : null
-  const displayEvent = raMeta || event
+  const localMeta = (eventId.startsWith('ra-') || eventId.startsWith('custom-')) ? getFestivalMeta(eventId) : null
+  const displayEvent = localMeta || event
 
   const seenCount = getSeenCount(eventId)
   const seenIds = seenArtists[eventId] ?? []
@@ -74,7 +75,7 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
           style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
         />
       )}
-      {!displayEvent?.image && <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>{eventId.startsWith('ra-') ? '🎧' : '🎪'}</div>}
+      {!displayEvent?.image && <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>{eventId.startsWith('ra-') ? '🎧' : eventId.startsWith('custom-') ? '🎪' : '🎵'}</div>}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -131,6 +132,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [showImport, setShowImport] = useState(false)
   const [activeTab, setActiveTab] = useState('attended')
+  const [showAddCustom, setShowAddCustom] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleImportFile = (e) => {
@@ -218,22 +220,38 @@ export default function Dashboard() {
         <div className="divider" />
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('attended')}
             style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
-            Past Festivals ({attendedFestivals.length})
+            Past ({attendedFestivals.length})
           </button>
           <button
             className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('upcoming')}
             style={activeTab === 'upcoming' ? { background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' } : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
-            Upcoming Events ({upcomingFestivals.length})
+            Upcoming ({upcomingFestivals.length})
           </button>
+          <div style={{ marginLeft: 'auto' }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowAddCustom(!showAddCustom)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              {showAddCustom ? '✕ Close' : '＋ Add Rave'}
+            </button>
+          </div>
         </div>
+
+        {/* Add custom festival form */}
+        {showAddCustom && (
+          <div style={{ marginBottom: 24 }}>
+            <AddCustomFestival onClose={() => setShowAddCustom(false)} />
+          </div>
+        )}
 
         {displayList.length === 0 ? (
           <div className="empty-state">

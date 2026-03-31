@@ -125,6 +125,25 @@ function reducer(state, action) {
         raEvents: { ...RA_STATIC_EVENTS, ...(action.payload.raEvents ?? {}) } 
       }
     }
+    case 'ADD_CUSTOM_FESTIVAL': {
+      const { id, meta, lineup } = action.payload
+      // Store lineup in meta so FestivalDetail can reconstruct attractions
+      const enrichedMeta = { ...meta, lineup: lineup.map(a => a.name) }
+      const festivalMeta = { ...state.festivalMeta, [id]: enrichedMeta }
+      const attended = state.attendedFestivals.includes(id)
+        ? state.attendedFestivals
+        : [...state.attendedFestivals, id]
+      // Pre-populate artist meta from lineup
+      const newArtistMeta = { ...state.artistMeta }
+      if (lineup && lineup.length > 0) {
+        lineup.forEach(a => {
+          if (!newArtistMeta[a.id]) {
+            newArtistMeta[a.id] = { name: a.name, image: null }
+          }
+        })
+      }
+      return { ...state, attendedFestivals: attended, festivalMeta, artistMeta: newArtistMeta }
+    }
     default:
       return state
   }
@@ -305,6 +324,11 @@ export function UserDataProvider({ children }) {
     dispatch({ type: 'CLEAR_IMPORTED_RA' })
   const importData = (data) =>
     dispatch({ type: 'IMPORT_DATA', payload: data })
+  const addCustomFestival = (meta, lineup = []) => {
+    const id = 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)
+    dispatch({ type: 'ADD_CUSTOM_FESTIVAL', payload: { id, meta, lineup } })
+    return id
+  }
 
   const isAttended = (eventId) => state.attendedFestivals.includes(eventId)
   const isUpcoming = (eventId) => state.upcomingFestivals.includes(eventId)
@@ -367,6 +391,7 @@ export function UserDataProvider({ children }) {
     getArtistSeenCounts,
     exportData,
     importData,
+    addCustomFestival,
     batchImportRA,
     clearImportedRA,
     syncSettings,

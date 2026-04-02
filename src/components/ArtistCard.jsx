@@ -15,15 +15,17 @@ export default function ArtistCard({ artist, eventId }) {
   // Lazy-fetch Spotify image for artists without images (e.g. EDMTrain)
   const [spotifyImage, setSpotifyImage] = useState(null)
   const [spotifyUrl, setSpotifyUrl] = useState(null)
+  const [spotifyGenres, setSpotifyGenres] = useState([])
 
   useEffect(() => {
     if (artist.image || !HAS_SPOTIFY) return
     let cancelled = false
     searchArtist(artist.name)
       .then(sp => {
-        if (!cancelled && sp?.image) {
-          setSpotifyImage(sp.image)
-          setSpotifyUrl(sp.url)
+        if (!cancelled) {
+          if (sp?.image) setSpotifyImage(sp.image)
+          if (sp?.url) setSpotifyUrl(sp.url)
+          if (sp?.genres) setSpotifyGenres(sp.genres)
         }
       })
       .catch(() => {})
@@ -35,7 +37,11 @@ export default function ArtistCard({ artist, eventId }) {
 
   const handleToggle = (e) => {
     e.stopPropagation()
-    toggleSawArtist(eventId, artist.id, { name: artist.name, image: displayImage })
+    toggleSawArtist(eventId, artist.id, { 
+      name: artist.name, 
+      image: displayImage,
+      genres: artist.genres || spotifyGenres 
+    })
   }
 
   const handleClick = () => {

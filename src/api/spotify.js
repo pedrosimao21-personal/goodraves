@@ -155,9 +155,25 @@ function normalizeArtist(a) {
     id: a.id,
     name: a.name,
     image,
-    genres: a.genres ?? [],
+    genres: normalizeGenres(a.genres ?? []),
     popularity: a.popularity ?? 0,
     url: a.external_urls?.spotify ?? null,
     followers: a.followers?.total ?? 0,
   }
+}
+
+function normalizeGenres(genres) {
+  if (!genres) return []
+  const BLACKLIST = new Set(['swedish', 'dancehall', 'rave'])
+  const MAPPINGS = {
+    'electronica': 'electronic',
+    'acid techno': 'acid',
+    'minimal techno': 'minimal',
+  }
+
+  return genres
+    .map(g => g.toLowerCase().trim())
+    .filter(g => !BLACKLIST.has(g))
+    .map(g => MAPPINGS[g] || g)
+    .filter((v, i, a) => a.indexOf(v) === i) // Unique
 }

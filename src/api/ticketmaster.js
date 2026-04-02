@@ -43,8 +43,12 @@ export async function searchFestivals({ keyword = '', page = 0, size = 20, count
   }
 }
 
+const eventCache = {}
+
 /** Get a single event by ID */
 export async function getEventById(id) {
+  if (eventCache[id]) return eventCache[id]
+  
   if (!API_KEY || API_KEY === 'your_ticketmaster_api_key_here') {
     throw new Error('NO_API_KEY')
   }
@@ -52,7 +56,9 @@ export async function getEventById(id) {
   const res = await fetch(`${BASE_URL}/events/${id}.json?apikey=${API_KEY}`)
   if (!res.ok) throw new Error(`Event not found (${res.status})`)
   const data = await res.json()
-  return normalizeEvent(data)
+  const normalized = normalizeEvent(data)
+  eventCache[id] = normalized
+  return normalized
 }
 
 /** Search for a specific artist/attraction */

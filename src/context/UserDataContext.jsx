@@ -42,13 +42,40 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const saved = raw ? JSON.parse(raw) : {}
-    return {
+    return cleanOrphanData({
       ...defaultState,
       ...saved,
       raEvents: { ...RA_STATIC_EVENTS, ...(saved.raEvents ?? {}) },
-    }
+    })
   } catch {
     return { ...defaultState, raEvents: { ...RA_STATIC_EVENTS } }
+  }
+}
+
+/** Robustly remove all metadata and artist records not belonging to an active event */
+function cleanOrphanData(state) {
+  const activeIds = new Set([...state.attendedFestivals, ...state.upcomingFestivals])
+  const festivalMeta = {}
+  const seenArtists = {}
+  const performanceRatings = {}
+
+  // Keep only meta for active festivals
+  for (const id of activeIds) {
+    if (state.festivalMeta[id]) festivalMeta[id] = state.festivalMeta[id]
+    if (state.seenArtists[id]) seenArtists[id] = state.seenArtists[id]
+  }
+
+  // Keep only relevant performance ratings
+  for (const [key, rating] of Object.entries(state.performanceRatings)) {
+    const [eventId] = key.split('::')
+    if (activeIds.has(eventId)) performanceRatings[key] = rating
+  }
+
+  return { 
+    ...state, 
+    festivalMeta, 
+    seenArtists, 
+    performanceRatings 
   }
 }
 
@@ -59,16 +86,17 @@ function reducer(state, action) {
       const attended = state.attendedFestivals.includes(id)
         ? state.attendedFestivals.filter(x => x !== id)
         : [...state.attendedFestivals, id]
-      // Also ensure it's removed from upcoming when moved to attended
       const upcoming = state.upcomingFestivals.filter(x => x !== id)
       const festivalMeta = { ...state.festivalMeta }
       if (!state.attendedFestivals.includes(id) && meta) {
         festivalMeta[id] = meta
       }
-      if (state.attendedFestivals.includes(id)) {
-        delete festivalMeta[id]
-      }
-      return { ...state, attendedFestivals: attended, upcomingFestivals: upcoming, festivalMeta }
+      return cleanOrphanData({ 
+        ...state, 
+        attendedFestivals: attended, 
+        upcomingFestivals: upcoming, 
+        festivalMeta,
+      })
     }
     case 'TOGGLE_UPCOMING': {
       const { id, meta } = action.payload
@@ -81,10 +109,12 @@ function reducer(state, action) {
       if (!state.upcomingFestivals.includes(id) && meta) {
         festivalMeta[id] = meta
       }
-      if (state.upcomingFestivals.includes(id)) {
-        delete festivalMeta[id]
-      }
-      return { ...state, upcomingFestivals: upcoming, attendedFestivals: attended, festivalMeta }
+      return cleanOrphanData({ 
+        ...state, 
+        upcomingFestivals: upcoming, 
+        attendedFestivals: attended, 
+        festivalMeta,
+      })
     }
     case 'TOGGLE_SAW_ARTIST': {
       const { eventId, artistId, artistMeta } = action.payload
@@ -118,12 +148,16 @@ function reducer(state, action) {
     case 'CLEAR_IMPORTED_RA': {
       return { ...state, raEvents: {} }
     }
+    case 'BATCH_ENRICH_ARTISTS': {
+      const { metadata } = action.payload
+      return { ...state, artistMeta: { ...state.artistMeta, ...metadata } }
+    }
     case 'IMPORT_DATA': {
-      return { 
+      return cleanOrphanData({ 
         ...defaultState, 
         ...action.payload, 
         raEvents: { ...RA_STATIC_EVENTS, ...(action.payload.raEvents ?? {}) } 
-      }
+      })
     }
     case 'ADD_CUSTOM_FESTIVAL': {
       const { id, meta, lineup } = action.payload
@@ -143,6 +177,16 @@ function reducer(state, action) {
         })
       }
       return { ...state, attendedFestivals: attended, festivalMeta, artistMeta: newArtistMeta }
+    }
+    case 'CLEAR_FESTIVALS': {
+      const { type } = action.payload; // 'attended' | 'upcoming'
+      let nextState = { ...state }
+      if (type === 'attended') {
+        nextState.attendedFestivals = []
+      } else {
+        nextState.upcomingFestivals = []
+      }
+      return cleanOrphanData(nextState)
     }
     default:
       return state
@@ -322,6 +366,8 @@ export function UserDataProvider({ children }) {
     dispatch({ type: 'BATCH_IMPORT_RA', payload: { events } })
   const clearImportedRA = () =>
     dispatch({ type: 'CLEAR_IMPORTED_RA' })
+  const batchEnrichArtists = (metadata) =>
+    dispatch({ type: 'BATCH_ENRICH_ARTISTS', payload: { metadata } })
   const importData = (data) =>
     dispatch({ type: 'IMPORT_DATA', payload: data })
   const addCustomFestival = (meta, lineup = []) => {
@@ -329,12 +375,18 @@ export function UserDataProvider({ children }) {
     dispatch({ type: 'ADD_CUSTOM_FESTIVAL', payload: { id, meta, lineup } })
     return id
   }
+  const clearFestivals = (type) =>
+    dispatch({ type: 'CLEAR_FESTIVALS', payload: { type } })
 
   const isAttended = (eventId) => state.attendedFestivals.includes(eventId)
   const isUpcoming = (eventId) => state.upcomingFestivals.includes(eventId)
   const didSeeArtist = (eventId, artistId) =>
     (state.seenArtists[eventId] ?? []).includes(artistId)
-  const getSeenCount = (eventId) => (state.seenArtists[eventId] ?? []).length
+  const getSeenCount = (eventId) => {
+    const isActive = state.attendedFestivals.includes(eventId) || state.upcomingFestivals.includes(eventId)
+    if (!isActive) return 0
+    return (state.seenArtists[eventId] ?? []).length
+  }
   const getRating = (artistId) => state.artistRatings[artistId] ?? 0
   const getPerformanceRating = (eventId, artistId) =>
     state.performanceRatings[`${eventId}::${artistId}`] ?? 0
@@ -347,9 +399,13 @@ export function UserDataProvider({ children }) {
   }
   const getArtistMeta = (artistId) => state.artistMeta[artistId] ?? null
 
-  const getArtistSeenCounts = () => {
+  const getArtistSeenCounts = useCallback(() => {
     const counts = {}
     for (const [eventId, artistIds] of Object.entries(state.seenArtists)) {
+      // ONLY include artist data if the associated festival is still in the list
+      const isActive = state.attendedFestivals.includes(eventId) || state.upcomingFestivals.includes(eventId)
+      if (!isActive) continue
+
       for (const artistId of artistIds) {
         if (!counts[artistId]) {
           counts[artistId] = { count: 0, events: [] }
@@ -359,7 +415,7 @@ export function UserDataProvider({ children }) {
       }
     }
     return counts
-  }
+  }, [state.seenArtists, state.attendedFestivals, state.upcomingFestivals])
 
   const exportData = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
@@ -392,6 +448,8 @@ export function UserDataProvider({ children }) {
     exportData,
     importData,
     addCustomFestival,
+    clearFestivals,
+    batchEnrichArtists,
     batchImportRA,
     clearImportedRA,
     syncSettings,
@@ -401,7 +459,7 @@ export function UserDataProvider({ children }) {
     pullSync,
     pushSync,
     disconnectSync,
-  }), [state, syncSettings, syncStatus]);
+  }), [state, syncSettings, syncStatus, getArtistSeenCounts]);
 
   return (
     <UserDataContext.Provider value={contextValue}>

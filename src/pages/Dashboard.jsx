@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserData } from '../context/UserDataContext'
 import { getEventById } from '../api/ticketmaster'
 import RAImport from '../components/RAImport'
-import AddCustomFestival from '../components/AddCustomFestival'
+import AddCustomEvent from '../components/AddCustomFestival'
 
 
 const HAS_KEY = import.meta.env.VITE_TICKETMASTER_KEY &&
@@ -15,9 +15,9 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
+const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab }) => {
   const navigate = useNavigate()
-  const { getSeenCount, performanceRatings, seenArtists } = useUserData()
+  const { getSeenCount, performanceRatings, seenArtists, getFestivalMeta } = useUserData()
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +33,6 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
       .finally(() => setLoading(false))
   }, [eventId])
 
-  const { getFestivalMeta } = useUserData()
   const localMeta = (eventId.startsWith('ra-') || eventId.startsWith('custom-')) ? getFestivalMeta(eventId) : null
   const displayEvent = localMeta || event
 
@@ -45,6 +44,11 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
   const avgRating = ratings.length > 0
     ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
     : null
+
+  const handleRemove = useCallback((e) => {
+    e.stopPropagation()
+    onRemove(eventId)
+  }, [eventId, onRemove])
 
   if (loading) {
     return <div className="skeleton" style={{ height: 80, borderRadius: 12 }} />
@@ -107,7 +111,7 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
       <button
         className="btn-ghost"
         style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}
-        onClick={e => { e.stopPropagation(); onRemove(eventId) }}
+        onClick={handleRemove}
         id={`remove-${eventId}`}
         title="Remove from list"
       >
@@ -115,7 +119,7 @@ function FestivalRow({ eventId, onRemove, isUpcomingTab }) {
       </button>
     </div>
   )
-}
+})
 
 export default function Dashboard() {
   const {
@@ -126,8 +130,8 @@ export default function Dashboard() {
     artistNotes,
     toggleAttended,
     toggleUpcoming,
-    exportData,
     importData,
+    clearFestivals,
   } = useUserData()
   const navigate = useNavigate()
   const [showImport, setShowImport] = useState(false)
@@ -175,15 +179,7 @@ export default function Dashboard() {
             <div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your personal festival history & schedule</p>
             </div>
-            {import.meta.env.DEV && (
-              <button
-                className={`btn ${showImport ? 'btn-secondary' : 'btn-primary'}`}
-                onClick={() => setShowImport(!showImport)}
-                id="toggle-import-btn"
-              >
-                {showImport ? 'Close Import' : '📦 Import RA Data'}
-              </button>
-            )}
+            {/* RA Import removed as per user request */}
           </div>
         </div>
 
@@ -241,7 +237,7 @@ export default function Dashboard() {
               onClick={() => setShowAddCustom(!showAddCustom)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              {showAddCustom ? '✕ Close' : '＋ Add Rave'}
+              {showAddCustom ? '✕ Close' : '＋ Add Event'}
             </button>
           </div>
         </div>
@@ -249,7 +245,7 @@ export default function Dashboard() {
         {/* Add custom festival form */}
         {showAddCustom && (
           <div style={{ marginBottom: 24 }}>
-            <AddCustomFestival onClose={() => setShowAddCustom(false)} />
+            <AddCustomEvent onClose={() => setShowAddCustom(false)} />
           </div>
         )}
 
@@ -266,33 +262,17 @@ export default function Dashboard() {
           <>
             <div className="section-header">
               <h2 className="section-title">{activeTab === 'attended' ? 'Attended Festivals' : 'Upcoming Festivals'}</h2>
-              {activeTab === 'attended' && (
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <input
-                    type="file"
-                    accept=".json"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={handleImportFile}
-                  />
-                  <button
-                    id="import-backup-btn"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Import your data from a JSON backup"
-                  >
-                    ↑ Import
-                  </button>
-                  <button
-                    id="export-btn"
-                    className="btn btn-secondary btn-sm"
-                    onClick={exportData}
-                    title="Export your data as JSON"
-                  >
-                    ↓ Export
-                  </button>
-                </div>
-              )}
+              <button 
+                className="btn btn-ghost btn-sm" 
+                onClick={() => {
+                  if (confirm(`Are you sure you want to clear your ${activeTab} list? This will also remove any artist ratings assocated with these festivals.`)) {
+                    clearFestivals(activeTab)
+                  }
+                }}
+                style={{ color: '#ff4444' }}
+              >
+                🗑️ Clear List
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

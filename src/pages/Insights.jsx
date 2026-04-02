@@ -35,18 +35,51 @@ export default function Insights() {
   // Data 2: Top Genres
   const topGenresData = useMemo(() => {
     const counts = {}
-    let total = 0
-    attendedEvents.forEach(e => {
-      const g = e.genre || 'Electronic'
-      counts[g] = (counts[g] || 0) + 1
-      total++
+    const artistSeenCounts = getArtistSeenCounts()
+    
+    Object.entries(artistSeenCounts).forEach(([artistId, { count }]) => {
+      const meta = artistMeta[artistId]
+      const genres = meta?.genres ?? []
+      if (genres.length > 0) {
+        genres.slice(0, 3).forEach(g => {
+          counts[g] = (counts[g] || 0) + count
+        })
+      } else {
+        counts['Uncategorized'] = (counts['Uncategorized'] || 0) + count
+      }
     })
     
-    // Convert to percentage/counts array
+    return Object.entries(counts)
+      .map(([name, count]) => {
+        // Apply immediate normalization for the chart
+        const BLACKLIST = new Set(['swedish', 'dancehall', 'rave'])
+        const MAPPINGS = { 'electronica': 'electronic', 'acid techno': 'acid', 'minimal techno': 'minimal' }
+        const lowerName = name.toLowerCase().trim()
+        if (BLACKLIST.has(lowerName)) return null
+        return { name: MAPPINGS[lowerName] || name, count }
+      })
+      .filter(Boolean)
+      .reduce((acc, curr) => {
+        const existing = acc.find(x => x.name.toLowerCase() === curr.name.toLowerCase())
+        if (existing) existing.count += curr.count
+        else acc.push(curr)
+        return acc
+      }, [])
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+  }, [getArtistSeenCounts, artistMeta])
+  
+  const cityData = useMemo(() => {
+    const counts = {}
+    attendedEvents.forEach(e => {
+      const city = e.venue?.city || 'Unknown'
+      if (city === 'Unknown') return
+      counts[city] = (counts[city] || 0) + 1
+    })
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
+      .slice(0, 5)
   }, [attendedEvents])
   
   const topArtistName = useMemo(() => {
@@ -75,7 +108,7 @@ export default function Insights() {
     }
   }
   
-  const COLORS = ['#8b5cf6', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#6366f1']
+  const COLORS = ['#8b5cf6', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#fb7185', '#2dd4bf', '#a78bfa']
 
   return (
     <div className="page fade-in">
@@ -151,15 +184,55 @@ export default function Insights() {
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', borderRadius: 8, padding: '8px 12px' }}
                       itemStyle={{ color: '#fff', fontSize: '0.9rem' }}
-                      formatter={(value, name) => [`${value} Show${value > 1 ? 's' : ''}`, name]}
+                      formatter={(value, name) => [`${value} Performance${value > 1 ? 's' : ''}`, name]}
                     />
-                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '0.8rem', color: '#ccc' }}/>
+                    <Legend verticalAlign="bottom" height={48} iconType="circle" wrapperStyle={{ fontSize: '0.75rem', color: '#ccc', textTransform: 'capitalize' }}/>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
               <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--text-muted)' }}>No genre data available yet.</p>
+              </div>
+            )}
+          </div>
+
+          {/* RANKING LIST: TOP CITIES */}
+          <div className="dashboard-card">
+            <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Top Cities</h2>
+            {cityData.length > 0 ? (
+              <div style={{ padding: '8px 0', minHeight: 300 }}>
+                {cityData.map((city, index) => (
+                  <div key={city.name} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '12px 16px',
+                    marginBottom: 8,
+                    background: 'var(--bg-secondary)',
+                    borderRadius: 12,
+                    border: '1px solid var(--border)',
+                  }}>
+                    <div style={{
+                      width: 28, height: 28, 
+                      borderRadius: '50%', 
+                      background: index === 0 ? 'var(--accent)' : 'var(--bg-glass)',
+                      color: index === 0 ? '#fff' : 'var(--text-primary)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 700, fontSize: '0.85rem'
+                    }}>
+                      {index + 1}
+                    </div>
+                    <div style={{ flex: 1, fontWeight: 600 }}>{city.name}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {city.count} {city.count === 1 ? 'show' : 'shows'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: 'var(--text-muted)' }}>No city data found.</p>
               </div>
             )}
           </div>

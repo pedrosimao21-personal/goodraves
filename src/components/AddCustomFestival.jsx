@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useUserData } from '../context/UserDataContext'
 
-export default function AddCustomFestival({ onClose }) {
+export default function AddCustomEvent({ onClose }) {
   const { addCustomFestival } = useUserData()
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
@@ -53,7 +53,7 @@ export default function AddCustomFestival({ onClose }) {
         textAlign: 'center',
       }}>
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎉</div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 4 }}>Festival Added!</h3>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 4 }}>Event Added!</h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>It's now in your attended list.</p>
       </div>
     )
@@ -71,7 +71,7 @@ export default function AddCustomFestival({ onClose }) {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.2rem', margin: 0 }}>
-          ✨ Add Custom Festival
+          ✨ Add Custom Event
         </h3>
         <button
           type="button"
@@ -90,7 +90,7 @@ export default function AddCustomFestival({ onClose }) {
       </div>
 
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-        Add festivals or raves that aren't in the database. They'll appear in your attended list, timeline, and insights.
+        Add events or raves that aren't in the database. They'll appear in your attended list, timeline, and insights.
       </p>
 
       {/* Name */}
@@ -100,7 +100,7 @@ export default function AddCustomFestival({ onClose }) {
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="e.g. Awakenings Spring Festival"
+          placeholder="e.g. Awakenings Spring Event"
           required
           style={inputStyle}
         />
@@ -166,7 +166,7 @@ export default function AddCustomFestival({ onClose }) {
       </div>
 
       <button type="submit" className="btn btn-primary" style={{ marginTop: 4 }}>
-        Add Festival
+        Add Event
       </button>
     </form>
   )

@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserData } from '../context/UserDataContext'
 import { searchArtist, HAS_SPOTIFY } from '../api/spotify'
+import { getArtistInfo } from '../api/lastfm'
 function SpotifyIcon({ size = 14 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="#1DB954">
@@ -11,31 +12,66 @@ function SpotifyIcon({ size = 14 }) {
 }
 
 /** Hook to batch-fetch Spotify data for a list of artist names */
-function useSpotifyEnrichment(artistNames) {
+function useSpotifyEnrichment(artistNames, onEnrich) {
   const [data, setData] = useState({})
 
   useEffect(() => {
-    if (!HAS_SPOTIFY || artistNames.length === 0) return
+    if (artistNames.length === 0) return
     let cancelled = false
 
-    // Fetch in batches of 3 to avoid rate limiting
     const fetchBatch = async () => {
       const results = {}
-      for (let i = 0; i < artistNames.length && !cancelled; i += 3) {
-        const batch = artistNames.slice(i, i + 3)
-        const promises = batch.map(name =>
-          searchArtist(name).catch(() => null)
-        )
-        const batchResults = await Promise.all(promises)
-        batch.forEach((name, j) => {
-          if (batchResults[j]) results[name] = batchResults[j]
+      
+      for (let i = 0; i < artistNames.length && !cancelled; i += 10) {
+        const batch = artistNames.slice(i, i + 10)
+        const promises = batch.map(async (name) => {
+          let genres = []
+          let image = null
+          
+          // Try Spotify
+          if (HAS_SPOTIFY) {
+            try {
+              const sp = await searchArtist(name)
+              if (sp) {
+                genres = sp.genres || []
+                image = sp.image
+              }
+            } catch (e) {
+              console.warn(`Spotify search failed for ${name}`, e)
+            }
+          }
+
+          // Fallback to Last.fm if no genres found
+          if (genres.length === 0) {
+            try {
+              const info = await getArtistInfo(name)
+              if (info) {
+                genres = info.tags || []
+                if (!image) image = info.image
+              }
+            } catch (e) {}
+          }
+          
+          return { name, genres, image }
         })
-        // Small delay between batches
-        if (i + 3 < artistNames.length) {
-          await new Promise(r => setTimeout(r, 200))
-        }
+        
+        const batchResults = await Promise.all(promises)
+        batchResults.forEach((res) => {
+          if (res) results[res.name] = res
+        })
+        
+        // Remove delay for faster loads
       }
-      if (!cancelled) setData(results)
+
+      if (!cancelled) {
+        // Create a case-insensitive map for easier lookup
+        const normalizedResults = {}
+        Object.keys(results).forEach(name => {
+          normalizedResults[name.toLowerCase()] = results[name]
+        })
+        setData(normalizedResults)
+        if (onEnrich) onEnrich(normalizedResults)
+      }
     }
 
     fetchBatch()
@@ -47,7 +83,7 @@ function useSpotifyEnrichment(artistNames) {
 
 export default function TopDJs() {
   const navigate = useNavigate()
-  const { getArtistSeenCounts, artistMeta, artistRatings, getFestivalMeta } = useUserData()
+  const { getArtistSeenCounts, artistMeta, artistRatings, getFestivalMeta, batchEnrichArtists } = useUserData()
 
   // Build ranked list of artists by # of times seen
   const ranking = useMemo(() => {
@@ -82,8 +118,41 @@ export default function TopDJs() {
   }, [getArtistSeenCounts, artistMeta, artistRatings, getFestivalMeta])
 
   // Fetch Spotify data for ranked artists (up to 15)
-  const artistNames = useMemo(() => ranking.slice(0, 15).map(a => a.name), [ranking])
-  const spotifyData = useSpotifyEnrichment(artistNames)
+  // Fetch Spotify data only for artists with missing data (up to 15)
+  const artistNames = useMemo(() => {
+    return ranking
+      .slice(0, 15)
+      .filter(a => {
+        const meta = artistMeta[a.id]
+        return !meta?.genres || meta.genres.length === 0 || !meta?.image
+      })
+      .map(a => a.name)
+  }, [ranking, artistMeta])
+  
+  const spotifyData = useSpotifyEnrichment(artistNames, (results) => {
+    // Save enriched data back to global artistMeta
+    const metaUpdates = {}
+    ranking.slice(0, 15).forEach(artist => {
+      const enriched = results[artist.name.toLowerCase()]
+      if (enriched) {
+        // Only update if genres are actually found or image is better
+        const hasNewGenres = enriched.genres && enriched.genres.length > 0
+        const hasExistingGenres = (artistMeta[artist.id]?.genres ?? []).length > 0
+        
+        if (hasNewGenres || !hasExistingGenres) {
+          metaUpdates[artist.id] = {
+            name: enriched.name || artist.name,
+            image: enriched.image || artist.image,
+            genres: hasNewGenres ? enriched.genres : (artistMeta[artist.id]?.genres || []),
+            spotifyUrl: enriched.url || null,
+          }
+        }
+      }
+    })
+    if (Object.keys(metaUpdates).length > 0) {
+      batchEnrichArtists(metaUpdates)
+    }
+  })
 
   const totalSeen = ranking.reduce((sum, a) => sum + a.count, 0)
 
@@ -135,9 +204,8 @@ export default function TopDJs() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {ranking.map((artist, index) => {
-              const sp = spotifyData[artist.name]
+              const sp = spotifyData[artist.name.toLowerCase()]
               const displayImage = artist.image || sp?.image || null
-
               return (
                 <div
                   key={artist.id}
@@ -196,11 +264,11 @@ export default function TopDJs() {
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', marginBottom: 2 }}>
                       {artist.festivals.map(f => f.name).join(' • ')}
                     </div>
-                    {/* Spotify genres */}
-                    {sp?.genres?.length > 0 && (
+                    {/* Genres */}
+                    {((sp?.genres?.length > 0) || (artistMeta[artist.id]?.genres?.length > 0)) && (
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 4 }}>
-                        {sp.genres.slice(0, 3).map(g => (
-                          <span key={g} style={{ fontSize: '0.68rem', padding: '1px 8px', borderRadius: 999, background: 'rgba(29, 185, 84, 0.12)', color: '#1DB954', border: '1px solid rgba(29, 185, 84, 0.25)', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+                        {(sp?.genres || artistMeta[artist.id]?.genres || []).slice(0, 3).map(g => (
+                          <span key={g} style={{ fontSize: '0.68rem', padding: '1px 8px', borderRadius: 999, background: 'rgba(29, 185, 84, 0.12)', color: 'var(--accent)', border: '1px solid rgba(139, 92, 246, 0.25)', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
                             {g}
                           </span>
                         ))}

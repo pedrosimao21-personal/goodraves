@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet'
+import React, { useEffect, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
 
 // Built-in dictionary of major cities
@@ -95,56 +94,71 @@ const CITY_COORDS: Record<string, [number, number]> = {
 }
 
 export default function RaveMap({ events }: { events: any[] }) {
-  // Generate a unique key per mount so MapContainer always gets a fresh DOM node,
-  // preventing the "Map container is already initialized" Leaflet error on remount.
-  const [mapKey] = useState(() => Math.random())
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<any>(null)
 
-  // Compute total events per city
-  const cityCounts: Record<string, number> = {}
-  events.forEach(e => {
-    const city = e.venue?.city
-    if (city && CITY_COORDS[city]) {
-      cityCounts[city] = (cityCounts[city] || 0) + 1
-    } else if (e.venue?.name?.includes('Ibiza') || e.venue?.city === 'Ibiza') {
-      cityCounts['Ibiza'] = (cityCounts['Ibiza'] || 0) + 1
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Compute city counts
+    const cityCounts: Record<string, number> = {}
+    events.forEach(e => {
+      const city = e.venue?.city
+      if (city && CITY_COORDS[city]) {
+        cityCounts[city] = (cityCounts[city] || 0) + 1
+      } else if (e.venue?.name?.includes('Ibiza') || e.venue?.city === 'Ibiza') {
+        cityCounts['Ibiza'] = (cityCounts['Ibiza'] || 0) + 1
+      }
+    })
+
+    // Imperatively init Leaflet so we fully control cleanup and avoid
+    // "Map container is already initialized" from React Strict Mode double-invoke.
+    import('leaflet').then(({ default: L }) => {
+      // Destroy any existing map on this container before creating a new one
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+
+      const map = L.map(container, {
+        center: [48.8566, 2.3522],
+        zoom: 4,
+        scrollWheelZoom: false,
+        zoomControl: true,
+      })
+      mapRef.current = map
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CARTO',
+      }).addTo(map)
+
+      Object.entries(cityCounts).forEach(([city, count]) => {
+        const coords = CITY_COORDS[city]
+        if (!coords) return
+        L.circleMarker(coords, {
+          radius: Math.min(10 + count * 3, 30),
+          fillColor: '#8b5cf6',
+          color: '#c4b5fd',
+          weight: 2,
+          fillOpacity: 0.6,
+        })
+          .addTo(map)
+          .bindPopup(`<strong>${city}</strong><br/>${count} event${count > 1 ? 's' : ''} here`)
+      })
+    })
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
     }
-  })
-
-  // Prepare markers
-  const markers = Object.entries(cityCounts).map(([city, count]) => ({
-    city,
-    count,
-    coords: CITY_COORDS[city]
-  }))
-
-  const center: [number, number] = [48.8566, 2.3522] // Default center Europe (Paris)
+  }, [events])
 
   return (
     <div style={{ height: '400px', width: '100%', borderRadius: '16px', overflow: 'hidden' }}>
-      <MapContainer key={mapKey} center={center} zoom={4} style={{ height: '100%', width: '100%', zIndex: 1 }} scrollWheelZoom={false}>
-        <TileLayer
-          attribution='&copy; CARTO'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-        {markers.map(m => (
-          <CircleMarker 
-            key={m.city} 
-            center={m.coords} 
-            radius={Math.min(10 + m.count * 3, 30)}
-            pathOptions={{ 
-              fillColor: '#8b5cf6', 
-              color: '#c4b5fd', 
-              weight: 2, 
-              fillOpacity: 0.6 
-            }}
-          >
-            <Popup>
-              <strong>{m.city}</strong><br/>
-              {m.count} event{m.count > 1 ? 's' : ''} here
-            </Popup>
-          </CircleMarker>
-        ))}
-      </MapContainer>
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
     </div>
   )
 }

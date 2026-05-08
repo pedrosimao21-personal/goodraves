@@ -23,7 +23,7 @@ function EditFestivalModal({ eventId, onClose }: { eventId: string; onClose: () 
   const [name, setName] = useState(meta?.name ?? '')
   const [date, setDate] = useState(meta?.date ?? '')
   const [venue, setVenue] = useState(venueObj?.name ?? (typeof meta?.venue === 'string' ? meta.venue : ''))
-  const [city, setCity] = useState(venueObj?.city ?? '')
+  const [city, setCity] = useState(venueObj?.city ?? (typeof meta?.location === 'string' ? meta.location : '') ?? '')
   const [image, setImage] = useState(meta?.image ?? meta?.imageUrl ?? '')
   const [lineup, setLineup] = useState((meta?.lineup ?? []).join(', '))
   const [saved, setSaved] = useState(false)
@@ -184,8 +184,8 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit, tmEv
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
     >
-      {displayEvent?.image ? (
-        <Image src={displayEvent.image} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+      {(displayEvent?.image || displayEvent?.imageUrl) ? (
+        <Image src={(displayEvent.image || displayEvent.imageUrl)!} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
       ) : (
         <div style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
           {eventId.startsWith('ra-') ? '🎧' : eventId.startsWith('custom-') ? '🎪' : '🎵'}

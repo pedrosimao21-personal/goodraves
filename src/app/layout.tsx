@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
 import { getInitialUserData } from '@/db/actions/get-initial-data'
+import { auth } from '../../auth'
 import { Suspense } from 'react'
 
 const inter = Inter({
@@ -49,11 +50,12 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const initialData = await getInitialUserData()
+  const session = await auth()
 
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body>
-        <Providers>
+        <Providers session={session}>
           <UserDataProvider initialData={initialData}>
             <Navbar />
             <ErrorBoundary>

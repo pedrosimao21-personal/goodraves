@@ -1,6 +1,6 @@
 'use client'
 
-import React, { forwardRef } from 'react'
+import React, { forwardRef, useState } from 'react'
 
 const RaverPassport = forwardRef<HTMLDivElement, {
   events: any[]
@@ -9,6 +9,11 @@ const RaverPassport = forwardRef<HTMLDivElement, {
   totalArtists: number
 }>(({ events, topArtistName, topGenre, totalArtists }, ref) => {
   
+  // Generate barcode widths once on mount to avoid SSR/client mismatch from Math.random()
+  const [barcodeWidths] = useState(() =>
+    [...Array(15)].map(() => (Math.random() > 0.5 ? 2 : 4))
+  )
+
   // Calculate top cities
   const cityCounts: Record<string, number> = {}
   events.forEach(e => {
@@ -104,8 +109,8 @@ const RaverPassport = forwardRef<HTMLDivElement, {
         </div>
         {/* Fake barcode */}
         <div style={{ display: 'flex', gap: 2, height: 24, opacity: 0.5 }}>
-          {[...Array(15)].map((_, i) => (
-            <div key={i} style={{ width: Math.random() > 0.5 ? 2 : 4, height: '100%', background: '#fff' }}></div>
+          {barcodeWidths.map((w, i) => (
+            <div key={i} style={{ width: w, height: '100%', background: '#fff' }}></div>
           ))}
         </div>
       </div>

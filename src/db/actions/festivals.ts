@@ -288,27 +288,30 @@ export async function upsertFestival(data: {
       },
     });
 
-  // Upsert lineup
-  if (data.lineup && data.lineup.length > 0) {
-    // Ensure all artist names exist in the artists table (FK requirement)
-    await db
-      .insert(artists)
-      .values(data.lineup.map((name) => ({ name })))
-      .onConflictDoNothing();
-
+  // Upsert lineup — only when lineup is explicitly provided (even if empty, to allow clearing)
+  if (data.lineup !== undefined) {
     // Delete existing lineup first
     await db
       .delete(festivalArtists)
       .where(eq(festivalArtists.festivalId, data.id));
-    await db
-      .insert(festivalArtists)
-      .values(
-        data.lineup.map((artistName) => ({
-          festivalId: data.id,
-          artistName,
-        }))
-      )
-      .onConflictDoNothing();
+
+    if (data.lineup.length > 0) {
+      // Ensure all artist names exist in the artists table (FK requirement)
+      await db
+        .insert(artists)
+        .values(data.lineup.map((name) => ({ name })))
+        .onConflictDoNothing();
+
+      await db
+        .insert(festivalArtists)
+        .values(
+          data.lineup.map((artistName) => ({
+            festivalId: data.id,
+            artistName,
+          }))
+        )
+        .onConflictDoNothing();
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { handlers } from "../../../../auth";
+import { handlers } from "../../../../../auth";
 import { NextRequest, NextResponse } from "next/server";
 import { isRateLimited } from "@/db/rate-limit";
 

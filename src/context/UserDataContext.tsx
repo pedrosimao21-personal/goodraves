@@ -233,7 +233,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
           source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
-          lineup: meta.lineup ?? [],
+          lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }
       await addAttendance(eventId, 'attended')
@@ -269,7 +269,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
           source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
-          lineup: meta.lineup ?? [],
+          lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }
       await addAttendance(eventId, 'upcoming')
@@ -403,7 +403,21 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       const base = prev.festivalMeta[id] ?? {}
       return { ...prev, festivalMeta: { ...prev.festivalMeta, [id]: { ...base, ...meta } } }
     })
-  }, [])
+    if (userId) {
+      const venueObj = typeof meta.venue === 'object' ? meta.venue : null
+      const venueName = venueObj?.name ?? (typeof meta.venue === 'string' ? meta.venue : null)
+      const city = venueObj?.city ?? (typeof meta.location === 'string' ? meta.location : null)
+      upsertFestival({
+        id,
+        name: meta.name,
+        date: meta.date ?? '',
+        venue: venueName,
+        location: city,
+        imageUrl: meta.imageUrl ?? meta.image ?? null,
+        lineup: meta.lineup ?? [],
+      }).catch(console.error)
+    }
+  }, [userId])
 
   // ── Read helpers ──
 

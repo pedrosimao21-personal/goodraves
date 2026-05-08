@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -94,7 +94,11 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Reykjavik': [64.1466, -21.9426],
 }
 
-export default React.memo(function RaveMap({ events }: { events: any[] }) {
+export default function RaveMap({ events }: { events: any[] }) {
+  // Generate a unique key per mount so MapContainer always gets a fresh DOM node,
+  // preventing the "Map container is already initialized" Leaflet error on remount.
+  const [mapKey] = useState(() => Math.random())
+
   // Compute total events per city
   const cityCounts: Record<string, number> = {}
   events.forEach(e => {
@@ -117,7 +121,7 @@ export default React.memo(function RaveMap({ events }: { events: any[] }) {
 
   return (
     <div style={{ height: '400px', width: '100%', borderRadius: '16px', overflow: 'hidden' }}>
-      <MapContainer center={center} zoom={4} style={{ height: '100%', width: '100%', zIndex: 1 }} scrollWheelZoom={false}>
+      <MapContainer key={mapKey} center={center} zoom={4} style={{ height: '100%', width: '100%', zIndex: 1 }} scrollWheelZoom={false}>
         <TileLayer
           attribution='&copy; CARTO'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -143,4 +147,4 @@ export default React.memo(function RaveMap({ events }: { events: any[] }) {
       </MapContainer>
     </div>
   )
-})
+}

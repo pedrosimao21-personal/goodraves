@@ -34,7 +34,7 @@ const hasFlag = (flag) => args.includes(flag)
 
 const eventsPath  = getArg('--events')
 const lineupsPath = getArg('--lineups')
-const outPath     = getArg('--out') || join(__dirname, '..', 'src', 'data', 'ra-events.js')
+const outPath     = getArg('--out') || join(__dirname, 'data-ra-events.js')
 const dryRun      = hasFlag('--dry-run')
 const append      = hasFlag('--append')
 

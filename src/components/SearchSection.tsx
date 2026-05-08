@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB } from '@/db/actions/festivals'
+import { searchFestivalsDB, fetchRAEvent } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -11,6 +11,12 @@ function SearchIcon() {
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
   )
+}
+
+/** Extract an RA event ID from a ra.co URL, or return null */
+function extractRAEventId(input: string): string | null {
+  const match = input.match(/ra\.co\/events\/(\d+)/)
+  return match ? match[1] : null
 }
 
 export default function SearchSection() {
@@ -30,6 +36,20 @@ export default function SearchSection() {
     setLoading(true)
     setError(null)
     try {
+      // Check if the input is an RA event URL
+      const raEventId = extractRAEventId(q)
+      if (raEventId) {
+        const festivalId = await fetchRAEvent(raEventId)
+        if (festivalId) {
+          router.push(`/festival/${festivalId}`)
+          return
+        } else {
+          setError(new Error('Could not fetch event from Resident Advisor. The event may not exist or RA may be unavailable.'))
+          setSearched(true)
+          return
+        }
+      }
+
       const results: any[] = []
 
       try {
@@ -63,7 +83,7 @@ export default function SearchSection() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [router])
 
   // Trigger search on mount (or when URL ?q= changes) without pushing a new history entry
   useEffect(() => {
@@ -95,14 +115,14 @@ export default function SearchSection() {
               id="festival-search-input"
               className="search-input"
               type="text"
-              placeholder="Search festivals, DJs, venues, cities…"
+              placeholder="Search festivals, DJs, venues, cities or paste an RA event URL…"
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               autoComplete="off"
             />
           </div>
           <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
+            {loading ? (extractRAEventId(inputValue) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>
       </div>

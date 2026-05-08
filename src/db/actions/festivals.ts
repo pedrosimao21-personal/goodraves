@@ -412,6 +412,120 @@ export async function batchImportFestivals(
   }
 }
 
+// ── Fetch a single RA event by ID from ra.co and save to DB ───
+export async function fetchRAEvent(eventId: string): Promise<string | null> {
+  // Validate input
+  const id = String(eventId).replace(/\D/g, "");
+  if (!id) return null;
+
+  const festivalId = `ra-${id}`;
+
+  // Check if already in DB
+  const [existing] = await db
+    .select({ id: festivals.id })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+  if (existing) return festivalId;
+
+  // Fetch from RA GraphQL API
+  const query = `
+    query GET_EVENT($id: ID!) {
+      event(id: $id) {
+        id
+        title
+        startTime
+        endTime
+        venue {
+          name
+          area {
+            name
+            country {
+              name
+            }
+          }
+        }
+        images {
+          filename
+        }
+        artists {
+          name
+        }
+      }
+    }
+  `;
+
+  let data: any;
+  try {
+    const res = await fetch("https://ra.co/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": `https://ra.co/events/${id}`,
+      },
+      body: JSON.stringify({ query, variables: { id } }),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    data = json?.data?.event;
+  } catch {
+    return null;
+  }
+
+  if (!data) return null;
+
+  // Normalise date
+  const date = data.startTime
+    ? new Date(data.startTime).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const endDate = data.endTime
+    ? new Date(data.endTime).toISOString().slice(0, 10)
+    : null;
+
+  const venueName = data.venue?.name ?? null;
+  const areaName = data.venue?.area?.name ?? null;
+  const countryName = data.venue?.area?.country?.name ?? null;
+  const location = [areaName, countryName].filter(Boolean).join(", ") || null;
+
+  const imageUrl = data.images?.[0]?.filename ?? null;
+
+  const lineup = (data.artists ?? [])
+    .map((a: any) => a?.name)
+    .filter(Boolean) as string[];
+
+  // Save to DB
+  await db
+    .insert(festivals)
+    .values({
+      id: festivalId,
+      name: data.title ?? `RA Event ${id}`,
+      date,
+      endDate,
+      venue: venueName,
+      location,
+      source: "ra",
+      sourceId: id,
+      imageUrl,
+    })
+    .onConflictDoNothing();
+
+  // Save lineup
+  if (lineup.length > 0) {
+    await db
+      .insert(artists)
+      .values(lineup.map((name) => ({ name })))
+      .onConflictDoNothing();
+
+    await db
+      .insert(festivalArtists)
+      .values(lineup.map((artistName) => ({ festivalId, artistName })))
+      .onConflictDoNothing();
+  }
+
+  return festivalId;
+}
+
 // ── Global artist rating (not per-festival) ────────────
 export async function setGlobalArtistRating(
   artistName: string,

@@ -5,7 +5,6 @@
 const ALLOWED_PATTERNS: Array<{ wildcard: boolean; host: string }> = [
   { wildcard: true,  host: 'scdn.co' },
   { wildcard: false, host: 'i.scdn.co' },
-  { wildcard: false, host: 's1.ticketm.net' },
   { wildcard: false, host: 'images.universe.com' },
   { wildcard: true,  host: 'ra.co' },
   { wildcard: false, host: 'ra.co' },

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, and, sql, ilike } from "drizzle-orm";
+import { eq, and, sql, ilike, inArray } from "drizzle-orm";
 import {
   festivals,
   festivalArtists,
@@ -238,11 +238,22 @@ export async function getFullUserData() {
       .where(sql`${festivalArtists.festivalId} IN ${festivalIds}`);
   }
 
+  // Fetch genres for all artists the user has seen
+  const seenArtistNames = [...new Set(artistRatingsData.map((ar) => ar.artistName))];
+  let artistGenres: { name: string; genres: string | null }[] = [];
+  if (seenArtistNames.length > 0) {
+    artistGenres = await db
+      .select({ name: artists.name, genres: artists.genres })
+      .from(artists)
+      .where(inArray(artists.name, seenArtistNames));
+  }
+
   return {
     festivals: userFestivalsData,
     artistRatings: artistRatingsData,
     globalArtistData,
     lineups,
+    artistGenres,
   };
 }
 

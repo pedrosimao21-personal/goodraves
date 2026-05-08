@@ -154,12 +154,20 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     if (g.notes) artistNotes[g.artistName] = g.notes
   }
 
+  const artistMeta: Record<string, any> = {}
+  for (const a of (data.artistGenres ?? [])) {
+    artistMeta[a.name] = {
+      name: a.name,
+      genres: a.genres ? JSON.parse(a.genres) : [],
+    }
+  }
+
   return {
     attendedFestivals: attended,
     upcomingFestivals: upcoming,
     festivalMeta,
     seenArtists,
-    artistMeta: {},
+    artistMeta,
     artistRatings,
     performanceRatings,
     festivalRatings,
@@ -232,7 +240,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           venue: typeof meta.venue === 'object' ? meta.venue?.name : meta.venue,
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
-          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
+          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
           lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }
@@ -268,7 +276,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           venue: typeof meta.venue === 'object' ? meta.venue?.name : meta.venue,
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
-          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
+          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
           lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }

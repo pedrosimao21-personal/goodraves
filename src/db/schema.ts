@@ -28,7 +28,7 @@ export const festivals = pgTable("festivals", {
   venue: text("venue"),
   latitude: real("latitude"),
   longitude: real("longitude"),
-  source: text("source"), // "ra", "ticketmaster", etc.
+  source: text("source"), // "ra", "custom", "external", etc.
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
 }, (t) => [

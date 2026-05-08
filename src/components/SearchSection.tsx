@@ -3,8 +3,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchTicketmaster } from '@/db/actions/ticketmaster'
-import { searchEdmtrain } from '@/db/actions/edmtrain'
 import { searchFestivalsDB } from '@/db/actions/festivals'
 
 function SearchIcon() {
@@ -26,35 +24,13 @@ export default function SearchSection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [pageInfo, setPageInfo] = useState<any>(null)
-  const [tmPage, setTmPage] = useState(0)
-  const [tmHasMore, setTmHasMore] = useState(false)
 
-  const doSearch = useCallback(async (q: string, p = 0) => {
+  const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) return
     setLoading(true)
     setError(null)
     try {
       const results: any[] = []
-
-      try {
-        const edmResult = await searchEdmtrain({ keyword: q })
-        results.push(...edmResult.events)
-      } catch (err: any) {
-        console.warn('EDMTrain search failed:', err.message)
-      }
-
-      try {
-        const tmResult = await searchTicketmaster({ keyword: q, page: p, size: 20 })
-        results.push(...tmResult.events)
-        if (p === 0) {
-          setTmHasMore(tmResult.page && tmResult.page.totalPages > 1)
-        } else {
-          setTmHasMore(tmResult.page && p + 1 < tmResult.page.totalPages)
-        }
-        setPageInfo(tmResult.page)
-      } catch (err: any) {
-        console.warn('Ticketmaster search failed:', err.message)
-      }
 
       try {
         const dbResults = await searchFestivalsDB(q)
@@ -79,11 +55,8 @@ export default function SearchSection() {
         return a.date.localeCompare(b.date)
       })
 
-      if (p === 0) {
-        setPageInfo((prev: any) => ({ ...prev, totalElements: sorted.length }))
-      }
-
-      setEvents(p === 0 ? sorted : (prev: any[]) => [...prev, ...sorted])
+      setPageInfo({ totalElements: sorted.length })
+      setEvents(sorted)
       setSearched(true)
     } catch (err) {
       setError(err as Error)
@@ -95,7 +68,7 @@ export default function SearchSection() {
   // Trigger search on mount (or when URL ?q= changes) without pushing a new history entry
   useEffect(() => {
     if (initialQuery) {
-      doSearch(initialQuery, 0)
+      doSearch(initialQuery)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery])
@@ -104,20 +77,12 @@ export default function SearchSection() {
     e.preventDefault()
     const q = inputValue.trim()
     if (!q) return
-    setTmPage(0)
-    setTmHasMore(false)
     setEvents([])
     setSearched(false)
     // Update URL param — this causes the component to re-read initialQuery via the effect
     const params = new URLSearchParams()
     params.set('q', q)
     router.push(`/?${params.toString()}`)
-  }
-
-  const loadMore = () => {
-    const nextPage = tmPage + 1
-    setTmPage(nextPage)
-    doSearch(inputValue.trim(), nextPage)
   }
 
   return (
@@ -190,19 +155,6 @@ export default function SearchSection() {
               <FestivalCard key={event.id} event={event} />
             ))}
           </div>
-
-          {tmHasMore && (
-            <div style={{ textAlign: 'center', marginTop: '32px' }}>
-              <button
-                id="load-more-btn"
-                className="btn btn-secondary"
-                onClick={loadMore}
-                disabled={loading}
-              >
-                {loading ? 'Loading…' : 'Load more'}
-              </button>
-            </div>
-          )}
         </>
       )}
     </>

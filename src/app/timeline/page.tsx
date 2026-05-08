@@ -158,16 +158,16 @@ export default function Timeline() {
               >
                 <Link href={`/festival/${f.id}`} aria-label={f.meta?.name ?? f.id} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
                 <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  {f.meta?.image && (
+                  {(f.meta?.image || f.meta?.imageUrl) && (
                     <Image
-                      src={f.meta.image}
+                      src={(f.meta.image || f.meta.imageUrl)!}
                       alt=""
                       width={56}
                       height={56}
                       style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
                     />
                   )}
-                  {!f.meta?.image && (
+                  {!(f.meta?.image || f.meta?.imageUrl) && (
                     <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🎪</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>

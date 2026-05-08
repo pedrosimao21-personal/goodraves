@@ -66,21 +66,42 @@ export default function FestivalDetail() {
     setError(null)
 
     if (isCustom) {
-      const meta = festivalMeta[id]
-      if (meta) {
-        const attractions = (meta.lineup || []).map(name => ({
-          id: 'artist-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          name: name,
-        }))
-        setEvent({
-          ...meta,
-          attractions,
-        })
+      // Load from DB to get proper artist UUIDs
+      getFestival(id).then(dbFestival => {
+        if (cancelled) return
+        if (dbFestival) {
+          setEvent({
+            id: dbFestival.id,
+            name: dbFestival.name,
+            date: dbFestival.date,
+            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
+            location: dbFestival.location,
+            imageUrl: dbFestival.imageUrl,
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
+            })) : []
+          })
+        } else {
+          // Fallback to local meta if not yet in DB
+          const meta = festivalMeta[id]
+          if (meta) {
+            const attractions = (meta.lineup || []).map(name => ({
+              id: name,
+              name: name,
+            }))
+            setEvent({ ...meta, attractions })
+          } else {
+            setError(new Error('Custom event not found.'))
+          }
+        }
         setLoading(false)
-      } else {
-        setError(new Error('Custom event not found.'))
-        setLoading(false)
-      }
+      }).catch(err => {
+        if (!cancelled) {
+          setError(err)
+          setLoading(false)
+        }
+      })
     } else if (isRA) {
       getFestival(id).then(dbFestival => {
         if (cancelled) return
@@ -92,9 +113,9 @@ export default function FestivalDetail() {
             venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
             location: dbFestival.location,
             imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(name => ({
-              id: name.toLowerCase().replace(/\s+/g, '-'),
-              name: name
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
             })) : []
           })
           setLoading(false)
@@ -120,9 +141,9 @@ export default function FestivalDetail() {
             venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
             location: dbFestival.location,
             imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(name => ({
-              id: name.toLowerCase().replace(/\s+/g, '-'),
-              name: name
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
             })) : []
           })
         } else {
@@ -147,10 +168,10 @@ export default function FestivalDetail() {
     ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
       .then((data) => {
         if (cancelled) return
-        // Normalize to the shape ArtistCard expects ({ image, genres })
+        // Normalize to the shape ArtistCard expects ({ image })
         const normalized: Record<string, any> = {}
         for (const [name, entry] of Object.entries(data)) {
-          if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl, genres: entry.genres }
+          if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
         }
         setSpotifyData(normalized)
       })

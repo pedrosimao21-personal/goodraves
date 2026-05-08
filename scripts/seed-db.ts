@@ -7,7 +7,8 @@
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { festivals, festivalArtists } from "../src/db/schema";
+import { inArray } from "drizzle-orm";
+import { festivals, festivalArtists, artists } from "../src/db/schema";
 
 // Dynamic import of the JS data file
 async function main() {
@@ -57,16 +58,40 @@ async function main() {
       )
       .onConflictDoNothing();
 
-    // Insert lineup entries
-    const lineupRows = chunk.flatMap((e) =>
-      (e.lineup ?? []).map((artist: string) => ({
-        festivalId: e.id,
-        artistName: artist,
-      }))
-    );
+    // Collect all unique artist names from this chunk
+    const allArtistNames = [...new Set(chunk.flatMap((e) => e.lineup ?? []))];
 
-    if (lineupRows.length > 0) {
-      await db.insert(festivalArtists).values(lineupRows).onConflictDoNothing();
+    if (allArtistNames.length > 0) {
+      // Ensure all artists exist
+      await db
+        .insert(artists)
+        .values(allArtistNames.map((name) => ({ name })))
+        .onConflictDoNothing();
+
+      // Fetch name→id mapping
+      const artistRows = await db
+        .select({ id: artists.id, name: artists.name })
+        .from(artists)
+        .where(inArray(artists.name, allArtistNames));
+
+      const nameToId: Record<string, string> = {};
+      for (const r of artistRows) {
+        nameToId[r.name] = r.id;
+      }
+
+      // Insert lineup entries
+      const lineupRows = chunk.flatMap((e) =>
+        (e.lineup ?? [])
+          .filter((artist: string) => nameToId[artist])
+          .map((artist: string) => ({
+            festivalId: e.id,
+            artistId: nameToId[artist],
+          }))
+      );
+
+      if (lineupRows.length > 0) {
+        await db.insert(festivalArtists).values(lineupRows).onConflictDoNothing();
+      }
     }
 
     console.log(`  inserted ${Math.min(i + CHUNK, events.length)} / ${events.length}`);

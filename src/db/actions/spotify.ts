@@ -73,22 +73,6 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
   return res.json();
 }
 
-function normalizeGenres(genres: string[]) {
-  if (!genres) return [];
-  const BLACKLIST = new Set(["swedish", "dancehall", "rave"]);
-  const MAPPINGS: Record<string, string> = {
-    electronica: "electronic",
-    "acid techno": "acid",
-    "minimal techno": "minimal",
-  };
-
-  return genres
-    .map((g) => g.toLowerCase().trim())
-    .filter((g) => !BLACKLIST.has(g))
-    .map((g) => MAPPINGS[g] || g)
-    .filter((v, i, a) => a.indexOf(v) === i);
-}
-
 function normalizeArtist(a: any) {
   const images = a.images ?? [];
   const image =
@@ -100,9 +84,7 @@ function normalizeArtist(a: any) {
     id: a.id,
     name: a.name,
     image,
-    genres: normalizeGenres(a.genres ?? []),
     popularity: a.popularity ?? 0,
-    url: a.external_urls?.spotify ?? null,
     followers: a.followers?.total ?? 0,
   };
 }

@@ -50,25 +50,27 @@ export async function getInitialUserData() {
     ]);
 
   const festivalIds = userFestivalsData.map((f) => f.festivalId);
-  let lineups: { festivalId: string; artistName: string }[] = [];
+  let lineups: { festivalId: string; artistId: string; artistName: string }[] = [];
   if (festivalIds.length > 0) {
     lineups = await db
       .select({
         festivalId: festivalArtists.festivalId,
-        artistName: festivalArtists.artistName,
+        artistId: festivalArtists.artistId,
+        artistName: artists.name,
       })
       .from(festivalArtists)
+      .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
       .where(sql`${festivalArtists.festivalId} IN ${festivalIds}`);
   }
 
-  // Fetch genres for all artists the user has seen
-  const seenArtistNames = [...new Set(artistRatingsData.map((ar) => ar.artistName))];
-  let artistGenres: { name: string; genres: string | null }[] = [];
-  if (seenArtistNames.length > 0) {
+  // Fetch tags for all artists the user has seen
+  const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
+  let artistGenres: { id: string; name: string; genres: string | null }[] = [];
+  if (seenArtistIds.length > 0) {
     artistGenres = await db
-      .select({ name: artists.name, genres: artists.genres })
+      .select({ id: artists.id, name: artists.name, genres: artists.lastfmTags })
       .from(artists)
-      .where(inArray(artists.name, seenArtistNames));
+      .where(inArray(artists.id, seenArtistIds));
   }
 
   return {

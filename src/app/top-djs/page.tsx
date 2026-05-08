@@ -32,27 +32,24 @@ function useSpotifyEnrichment(artistNames: string[], onEnrich?: (results: Record
           let genres = []
           let image = null
           
-          // Try Spotify
+          // Try Spotify for image
           try {
             const sp = await spotifySearchArtist(name)
             if (sp) {
-              genres = sp.genres || []
               image = sp.image
             }
           } catch (e) {
             console.warn(`Spotify search failed for ${name}`, e)
           }
 
-          // Fallback to Last.fm if no genres found
-          if (genres.length === 0) {
-            try {
-              const info = await lastfmGetArtistInfo(name)
-              if (info) {
-                genres = info.tags || []
-                if (!image) image = info.image
-              }
-            } catch (e) {}
-          }
+          // Get genres from Last.fm
+          try {
+            const info = await lastfmGetArtistInfo(name)
+            if (info) {
+              genres = info.tags || []
+              if (!image) image = info.image
+            }
+          } catch (e) {}
           
           return { name, genres, image }
         })
@@ -158,7 +155,6 @@ export default function TopDJs() {
     ranking.slice(0, 15).forEach(artist => {
       const enriched = results[artist.name.toLowerCase()]
       if (enriched) {
-        // Only update if genres are actually found or image is better
         const hasNewGenres = enriched.genres && enriched.genres.length > 0
         const hasExistingGenres = (artistMeta[artist.id]?.genres ?? []).length > 0
         
@@ -167,7 +163,6 @@ export default function TopDJs() {
             name: enriched.name || artist.name,
             image: enriched.image || artist.image,
             genres: hasNewGenres ? enriched.genres : (artistMeta[artist.id]?.genres || []),
-            spotifyUrl: enriched.url || null,
           }
         }
       }

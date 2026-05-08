@@ -33,13 +33,10 @@ export type ArtistData = {
   // Spotify
   spotifyId: string | null;
   imageUrl: string | null;
-  genres: string[];
-  spotifyUrl: string | null;
   spotifyFollowers: number | null;
   spotifyAlbums: SpotifyAlbum[];
   // Last.fm
   lastfmId: string | null;
-  lastfmUrl: string | null;
   lastfmBio: string | null;
   lastfmTags: string[];
   lastfmListeners: number | null;
@@ -65,12 +62,9 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     name: row.name,
     spotifyId: row.spotifyId ?? null,
     imageUrl: row.imageUrl ?? null,
-    genres: parseJson<string[]>(row.genres, []),
-    spotifyUrl: row.spotifyUrl ?? null,
     spotifyFollowers: row.spotifyFollowers ?? null,
     spotifyAlbums: parseJson<SpotifyAlbum[]>(row.spotifyAlbums, []),
     lastfmId: row.lastfmId ?? null,
-    lastfmUrl: row.lastfmUrl ?? null,
     lastfmBio: row.lastfmBio ?? null,
     lastfmTags: parseJson<string[]>(row.lastfmTags, []),
     lastfmListeners: row.lastfmListeners ?? null,
@@ -105,7 +99,6 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
 
   if (lastfmUpdate) {
     updateFields.lastfmId = lastfmUpdate.mbid ?? null;
-    updateFields.lastfmUrl = lastfmUpdate.url ?? null;
     updateFields.lastfmBio = lastfmUpdate.bio ?? null;
     updateFields.lastfmTags = JSON.stringify(lastfmUpdate.tags ?? []);
     updateFields.lastfmListeners = lastfmUpdate.listeners ? parseInt(lastfmUpdate.listeners, 10) || null : null;
@@ -118,8 +111,6 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   if (spotifyUpdate) {
     updateFields.spotifyId = spotifyUpdate.id ?? null;
     updateFields.imageUrl = spotifyUpdate.image ?? null;
-    updateFields.genres = JSON.stringify(spotifyUpdate.genres ?? []);
-    updateFields.spotifyUrl = spotifyUpdate.url ?? null;
     updateFields.spotifyFollowers = spotifyUpdate.followers ?? null;
     updateFields.spotifyAlbums = JSON.stringify(spotifyUpdate.albums ?? []);
     updateFields.spotifyFetchedAt = now;
@@ -176,8 +167,6 @@ async function refreshLastfm(name: string) {
               name: similarName,
               spotifyId: sp?.id ?? null,
               imageUrl: sp?.image ?? null,
-              genres: sp?.genres ? JSON.stringify(sp.genres) : null,
-              spotifyUrl: sp?.url ?? null,
               spotifyFollowers: sp?.followers ?? null,
               spotifyFetchedAt: now,
             })
@@ -186,8 +175,6 @@ async function refreshLastfm(name: string) {
               set: {
                 spotifyId: sp?.id ?? null,
                 imageUrl: sp?.image ?? null,
-                genres: sp?.genres ? JSON.stringify(sp.genres) : null,
-                spotifyUrl: sp?.url ?? null,
                 spotifyFollowers: sp?.followers ?? null,
                 spotifyFetchedAt: now,
               },
@@ -263,7 +250,7 @@ async function fetchByName(name: string): Promise<FetchOutcome> {
 
 export async function getArtistsWithImages(
   names: string[]
-): Promise<Record<string, { id: string; imageUrl: string | null; genres: string[]; spotifyId: string | null } | null>> {
+): Promise<Record<string, { id: string; imageUrl: string | null; spotifyId: string | null } | null>> {
   if (!names.length) return {};
 
   const rows = await db.select().from(artists).where(inArray(artists.name, names));
@@ -314,7 +301,6 @@ export async function getArtistsWithImages(
             name,
             spotifyId: data?.id ?? null,
             imageUrl: data?.image ?? null,
-            genres: data?.genres ? JSON.stringify(data.genres) : null,
             spotifyFetchedAt: now,
           })
           .onConflictDoUpdate({
@@ -322,7 +308,6 @@ export async function getArtistsWithImages(
             set: {
               spotifyId: data?.id ?? null,
               imageUrl: data?.image ?? null,
-              genres: data?.genres ? JSON.stringify(data.genres) : null,
               spotifyFetchedAt: now,
             },
           })
@@ -341,7 +326,6 @@ export async function getArtistsWithImages(
         name,
         spotifyId: data?.id ?? null,
         imageUrl: data?.image ?? null,
-        genres: data?.genres ? JSON.stringify(data.genres) : null,
         spotifyFetchedAt: now,
       } as any);
     }
@@ -361,7 +345,6 @@ export async function getArtistsWithImages(
         {
           id: row.id,
           imageUrl: row.imageUrl ?? null,
-          genres: row.genres ? (JSON.parse(row.genres) as string[]) : [],
           spotifyId: row.spotifyId ?? null,
         },
       ];

@@ -1,0 +1,1 @@
+ALTER TABLE "festival_artists" ADD CONSTRAINT "festival_artists_artist_name_artists_name_fk" FOREIGN KEY ("artist_name") REFERENCES "public"."artists"("name") ON DELETE restrict ON UPDATE no action;

@@ -9,6 +9,8 @@ import {
   userFestivals,
   userArtistRatings,
   userArtistGlobal,
+  genres,
+  artistGenres as artistGenresTable,
 } from "@/db/schema";
 import { auth } from "../../../auth";
 
@@ -269,12 +271,31 @@ export async function getFullUserData() {
 
   // Fetch tags for all artists the user has seen
   const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
-  let artistGenres: { id: string; name: string; genres: string | null }[] = [];
+  let artistGenreData: { id: string; name: string; genres: string[] }[] = [];
   if (seenArtistIds.length > 0) {
-    artistGenres = await db
-      .select({ id: artists.id, name: artists.name, genres: artists.lastfmTags })
+    const rows = await db
+      .select({ id: artists.id, name: artists.name })
       .from(artists)
       .where(inArray(artists.id, seenArtistIds));
+
+    const genreRows = await db
+      .select({ artistId: artistGenresTable.artistId, genreName: genres.name })
+      .from(artistGenresTable)
+      .innerJoin(genres, eq(artistGenresTable.genreId, genres.id))
+      .where(inArray(artistGenresTable.artistId, seenArtistIds));
+
+    const genresByArtist = new Map<string, string[]>();
+    for (const row of genreRows) {
+      const list = genresByArtist.get(row.artistId) ?? [];
+      list.push(row.genreName);
+      genresByArtist.set(row.artistId, list);
+    }
+
+    artistGenreData = rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      genres: genresByArtist.get(r.id) ?? [],
+    }));
   }
 
   return {
@@ -282,7 +303,7 @@ export async function getFullUserData() {
     artistRatings: artistRatingsData,
     globalArtistData,
     lineups,
-    artistGenres,
+    artistGenres: artistGenreData,
   };
 }
 

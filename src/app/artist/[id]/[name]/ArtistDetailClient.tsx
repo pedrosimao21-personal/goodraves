@@ -156,7 +156,7 @@ export default function ArtistDetail() {
 
   const mergedTags = (() => {
     const tags = new Set<string>()
-    ;(artist?.lastfmTags ?? []).forEach(t => tags.add(t))
+    ;(artist?.genres ?? []).forEach(t => tags.add(t))
     return [...tags].slice(0, 8)
   })()
 

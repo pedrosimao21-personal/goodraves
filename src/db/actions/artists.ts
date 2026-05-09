@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { eq, inArray } from "drizzle-orm";
-import { artists } from "@/db/schema";
+import { artists, genres, artistGenres } from "@/db/schema";
 import {
   spotifySearchArtist,
   spotifyGetArtist,
@@ -38,7 +38,7 @@ export type ArtistData = {
   // Last.fm
   lastfmId: string | null;
   lastfmBio: string | null;
-  lastfmTags: string[];
+  genres: string[];
   lastfmListeners: number | null;
   lastfmPlaycount: number | null;
   lastfmSimilar: LastfmSimilar[];
@@ -66,7 +66,7 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     spotifyAlbums: parseJson<SpotifyAlbum[]>(row.spotifyAlbums, []),
     lastfmId: row.lastfmId ?? null,
     lastfmBio: row.lastfmBio ?? null,
-    lastfmTags: parseJson<string[]>(row.lastfmTags, []),
+    genres: [], // populated separately from artist_genres table
     lastfmListeners: row.lastfmListeners ?? null,
     lastfmPlaycount: row.lastfmPlaycount ?? null,
     lastfmSimilar: parseJson<LastfmSimilar[]>(row.lastfmSimilar, []),
@@ -85,7 +85,11 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   // old getArtistsWithImages flow which didn't save albums).
   const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null;
 
-  if (!needsLastfm && !needsSpotify) return enrichWithSimilarImages(rowToArtistData(row));
+  if (!needsLastfm && !needsSpotify) {
+    const data = await enrichWithSimilarImages(rowToArtistData(row));
+    data.genres = await fetchArtistGenres(row.id);
+    return data;
+  }
 
   const now = new Date();
 
@@ -100,7 +104,7 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   if (lastfmUpdate) {
     updateFields.lastfmId = lastfmUpdate.mbid ?? null;
     updateFields.lastfmBio = lastfmUpdate.bio ?? null;
-    updateFields.lastfmTags = JSON.stringify(lastfmUpdate.tags ?? []);
+    // Genres are now stored in the genres/artist_genres tables — see upsertArtistGenres below
     updateFields.lastfmListeners = lastfmUpdate.listeners ? parseInt(lastfmUpdate.listeners, 10) || null : null;
     updateFields.lastfmPlaycount = lastfmUpdate.playcount ? parseInt(lastfmUpdate.playcount, 10) || null : null;
     updateFields.lastfmSimilar = JSON.stringify(lastfmUpdate.similar ?? []);
@@ -122,9 +126,18 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     });
   }
 
+  // Upsert genres from lastfm tags into the new tables
+  if (lastfmUpdate?.tags?.length) {
+    await upsertArtistGenres(id, lastfmUpdate.tags).catch((err) => {
+      console.error(`[artists] Failed to upsert genres for "${row.name}":`, err);
+    });
+  }
+
   // Return merged result immediately without another DB round-trip
   const merged = { ...row, ...updateFields } as typeof artists.$inferSelect;
-  return enrichWithSimilarImages(rowToArtistData(merged));
+  const data = await enrichWithSimilarImages(rowToArtistData(merged));
+  data.genres = lastfmUpdate?.tags ?? await fetchArtistGenres(id);
+  return data;
 }
 
 async function enrichWithSimilarImages(data: ArtistData): Promise<ArtistData> {
@@ -142,6 +155,36 @@ async function enrichWithSimilarImages(data: ArtistData): Promise<ArtistData> {
     ...data,
     lastfmSimilar: data.lastfmSimilar.map(a => ({ ...a, image: imageByName.get(a.name) ?? null as string | null })),
   };
+}
+
+async function fetchArtistGenres(artistId: string): Promise<string[]> {
+  const rows = await db
+    .select({ name: genres.name })
+    .from(artistGenres)
+    .innerJoin(genres, eq(artistGenres.genreId, genres.id))
+    .where(eq(artistGenres.artistId, artistId));
+  return rows.map(r => r.name);
+}
+
+async function upsertArtistGenres(artistId: string, genreNames: string[]): Promise<void> {
+  if (!genreNames.length) return;
+
+  // Upsert each genre and collect IDs
+  const genreIds: string[] = [];
+  for (const name of genreNames) {
+    const [row] = await db
+      .insert(genres)
+      .values({ name })
+      .onConflictDoUpdate({ target: genres.name, set: { name } })
+      .returning({ id: genres.id });
+    genreIds.push(row.id);
+  }
+
+  // Replace artist's genre associations
+  await db.delete(artistGenres).where(eq(artistGenres.artistId, artistId));
+  await db.insert(artistGenres).values(
+    genreIds.map(genreId => ({ artistId, genreId }))
+  );
 }
 
 async function refreshLastfm(name: string) {

@@ -164,7 +164,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
   for (const a of (data.artistGenres ?? [])) {
     artistMeta[a.id] = {
       name: a.name,
-      genres: a.genres ? JSON.parse(a.genres) : [],
+      genres: a.genres ?? [],
     }
   }
 

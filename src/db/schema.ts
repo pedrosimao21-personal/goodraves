@@ -51,7 +51,6 @@ export const artists = pgTable("artists", {
   // Last.fm cache
   lastfmId: text("lastfm_id"),             // mbid
   lastfmBio: text("lastfm_bio"),
-  lastfmTags: text("lastfm_tags"),         // JSON string[]
   lastfmListeners: integer("lastfm_listeners"),
   lastfmPlaycount: integer("lastfm_playcount"),
   lastfmSimilar: text("lastfm_similar"),   // JSON { name, url, image }[]
@@ -125,6 +124,29 @@ export const userArtistRatings = pgTable(
     notes: text("notes"),
   },
   (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistId] })]
+);
+
+// ── Genres ─────────────────────────────────────────────
+export const genres = pgTable("genres", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+// ── Artist Genres (many-to-many join table) ────────────
+export const artistGenres = pgTable(
+  "artist_genres",
+  {
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.artistId, t.genreId] }),
+    index("artist_genres_genre_id_idx").on(t.genreId),
+  ]
 );
 
 // ── User Artist Global (overall artist ratings & notes) ─

@@ -156,8 +156,7 @@ export default function ArtistDetail() {
 
   const mergedTags = (() => {
     const tags = new Set<string>()
-    ;(artist?.genres ?? []).forEach(g => tags.add(g))
-    ;(artist?.lastfmTags ?? []).forEach(t => tags.add(t))
+    ;(artist?.genres ?? []).forEach(t => tags.add(t))
     return [...tags].slice(0, 8)
   })()
 
@@ -212,9 +211,9 @@ export default function ArtistDetail() {
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
-              {artist?.spotifyUrl && (
+              {artist?.spotifyId && (
                 <a
-                  href={artist.spotifyUrl}
+                  href={`https://open.spotify.com/artist/${artist.spotifyId}`}
                   target="_blank"
                   rel="noreferrer"
                   className="btn spotify-link btn-sm"
@@ -223,9 +222,9 @@ export default function ArtistDetail() {
                   <SpotifyIcon size={16} /> Open in Spotify
                 </a>
               )}
-              {artist?.lastfmUrl && (
+              {artist?.lastfmId && (
                 <a
-                  href={artist.lastfmUrl}
+                  href={`https://www.last.fm/music/${encodeURIComponent(artist.name)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="btn btn-secondary btn-sm"

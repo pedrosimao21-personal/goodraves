@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
-import { getTicketmasterEvents } from '@/db/actions/ticketmaster'
 import RAImport from '@/components/RAImport'
 import AddCustomEvent from '@/components/AddCustomFestival'
 import { isAllowedImageHost } from '@/lib/imageHosts'
@@ -146,14 +145,14 @@ function EditFestivalModal({ eventId, onClose }: { eventId: string; onClose: () 
   )
 }
 
-const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit, tmEvent }: { eventId: string; onRemove: (id: string) => void; isUpcomingTab: boolean; onEdit: (id: string) => void; tmEvent?: any }) => {
+const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: { eventId: string; onRemove: (id: string) => void; isUpcomingTab: boolean; onEdit: (id: string) => void }) => {
   const router = useRouter()
   const { getSeenCount, getFestivalMeta } = useUserData()
 
   const isLocal = eventId.startsWith('ra-') || eventId.startsWith('custom-')
 
   const localMeta = isLocal ? getFestivalMeta(eventId) : null
-  const displayEvent = localMeta || tmEvent
+  const displayEvent = localMeta
   const seenCount = getSeenCount(eventId)
 
   const handleRemove = useCallback((e: React.MouseEvent) => {
@@ -254,19 +253,6 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [tmEvents, setTmEvents] = useState<Record<string, any>>({})
-
-  // Batch fetch Ticketmaster event data for non-local festivals
-  useEffect(() => {
-    const allIds = [...attendedFestivals, ...upcomingFestivals]
-    const tmIds = allIds.filter(id => !id.startsWith('ra-') && !id.startsWith('custom-'))
-    if (tmIds.length === 0) return
-    const needed = tmIds.filter(id => !(id in tmEvents))
-    if (needed.length === 0) return
-    getTicketmasterEvents(needed).then(results => {
-      setTmEvents(prev => ({ ...prev, ...results }))
-    }).catch(() => {})
-  }, [attendedFestivals, upcomingFestivals])
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files[0]
@@ -440,7 +426,6 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
                   onRemove={removeHandler}
                   isUpcomingTab={activeTab === 'upcoming'}
                   onEdit={setEditingId}
-                  tmEvent={tmEvents[id]}
                 />
               ))}
             </div>

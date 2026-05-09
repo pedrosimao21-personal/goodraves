@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useUserData } from '@/context/UserDataContext'
 
 const MONTHS = [
@@ -150,22 +151,23 @@ export default function Timeline() {
                   overflow: 'hidden',
                   transition: 'border-color 250ms ease',
                   cursor: 'pointer',
+                  position: 'relative',
                 }}
-                onClick={() => router.push(`/festival/${f.id}`)}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
               >
+                <Link href={`/festival/${f.id}`} aria-label={f.meta?.name ?? f.id} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
                 <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  {f.meta?.image && (
+                  {(f.meta?.image || f.meta?.imageUrl) && (
                     <Image
-                      src={f.meta.image}
+                      src={(f.meta.image || f.meta.imageUrl)!}
                       alt=""
                       width={56}
                       height={56}
                       style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
                     />
                   )}
-                  {!f.meta?.image && (
+                  {!(f.meta?.image || f.meta?.imageUrl) && (
                     <div style={{ width: 56, height: 56, borderRadius: 10, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🎪</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -193,15 +195,17 @@ export default function Timeline() {
                     </div>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       {f.seen.map(a => (
-                        <div
+                        <Link
                           key={a.id}
-                          onClick={e => { e.stopPropagation(); router.push(`/artist/${a.id}/${encodeURIComponent(a.name)}`) }}
+                          href={`/artist/${a.id}/${encodeURIComponent(a.name)}`}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 8,
                             padding: '6px 12px', borderRadius: 999,
                             background: 'var(--bg-glass)', border: '1px solid var(--border)',
                             fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-primary)',
                             cursor: 'pointer', transition: 'border-color 200ms ease',
+                            textDecoration: 'none',
+                            position: 'relative', zIndex: 1,
                           }}
                           onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
                           onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
@@ -215,7 +219,7 @@ export default function Timeline() {
                           {a.rating > 0 && (
                             <span style={{ color: '#fbbf24', fontSize: '0.75rem' }}>{a.rating}★</span>
                           )}
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   </div>

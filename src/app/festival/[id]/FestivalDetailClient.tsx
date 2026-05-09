@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { getTicketmasterEvent } from '@/db/actions/ticketmaster'
 import { useUserData } from '@/context/UserDataContext'
 import { getFestival } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artists'
@@ -58,7 +57,6 @@ export default function FestivalDetail() {
   const [error, setError] = useState(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
 
-  const isEdmtrain = id.startsWith('edm_')
   const isRA = id.startsWith('ra-')
   const isCustom = id.startsWith('custom-')
 
@@ -67,36 +65,43 @@ export default function FestivalDetail() {
     setLoading(true)
     setError(null)
 
-    if (isEdmtrain) {
-      // EDMTrain events: use data passed via sessionStorage
-      let passedEvent = null
-      try {
-        const stored = sessionStorage.getItem('edmtrain_event_' + id)
-        if (stored) passedEvent = JSON.parse(stored)
-      } catch {}
-      if (passedEvent) {
-        setEvent(passedEvent)
+    if (isCustom) {
+      // Load from DB to get proper artist UUIDs
+      getFestival(id).then(dbFestival => {
+        if (cancelled) return
+        if (dbFestival) {
+          setEvent({
+            id: dbFestival.id,
+            name: dbFestival.name,
+            date: dbFestival.date,
+            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
+            location: dbFestival.location,
+            imageUrl: dbFestival.imageUrl,
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
+            })) : []
+          })
+        } else {
+          // Fallback to local meta if not yet in DB
+          const meta = festivalMeta[id]
+          if (meta) {
+            const attractions = (meta.lineup || []).map(name => ({
+              id: name,
+              name: name,
+            }))
+            setEvent({ ...meta, attractions })
+          } else {
+            setError(new Error('Custom event not found.'))
+          }
+        }
         setLoading(false)
-      } else {
-        setError(new Error('Event data not available. Please navigate from the search page.'))
-        setLoading(false)
-      }
-    } else if (isCustom) {
-      const meta = festivalMeta[id]
-      if (meta) {
-        const attractions = (meta.lineup || []).map(name => ({
-          id: 'artist-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          name: name,
-        }))
-        setEvent({
-          ...meta,
-          attractions,
-        })
-        setLoading(false)
-      } else {
-        setError(new Error('Custom event not found.'))
-        setLoading(false)
-      }
+      }).catch(err => {
+        if (!cancelled) {
+          setError(err)
+          setLoading(false)
+        }
+      })
     } else if (isRA) {
       getFestival(id).then(dbFestival => {
         if (cancelled) return
@@ -108,9 +113,9 @@ export default function FestivalDetail() {
             venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
             location: dbFestival.location,
             imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(name => ({
-              id: name.toLowerCase().replace(/\s+/g, '-'),
-              name: name
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
             })) : []
           })
           setLoading(false)
@@ -125,14 +130,34 @@ export default function FestivalDetail() {
         }
       })
     } else {
-      getTicketmasterEvent(id)
-        .then(data => { if (!cancelled) setEvent(data) })
-        .catch(err => { if (!cancelled) setError(err) })
-        .finally(() => { if (!cancelled) setLoading(false) })
+      // Try to load from DB as a generic event
+      getFestival(id).then(dbFestival => {
+        if (cancelled) return
+        if (dbFestival) {
+          setEvent({
+            id: dbFestival.id,
+            name: dbFestival.name,
+            date: dbFestival.date,
+            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
+            location: dbFestival.location,
+            imageUrl: dbFestival.imageUrl,
+            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
+              id: a.id,
+              name: a.name
+            })) : []
+          })
+        } else {
+          setError(new Error('Event not found.'))
+        }
+      }).catch(err => {
+        if (!cancelled) setError(err)
+      }).finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     }
 
     return () => { cancelled = true }
-  }, [id, isEdmtrain])
+  }, [id])
 
   // Batch-fetch artist images: check DB first, fetch from Spotify only when missing or stale
   useEffect(() => {
@@ -143,10 +168,10 @@ export default function FestivalDetail() {
     ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
       .then((data) => {
         if (cancelled) return
-        // Normalize to the shape ArtistCard expects ({ image, genres })
+        // Normalize to the shape ArtistCard expects ({ image })
         const normalized: Record<string, any> = {}
         for (const [name, entry] of Object.entries(data)) {
-          if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl, genres: entry.genres }
+          if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
         }
         setSpotifyData(normalized)
       })
@@ -194,8 +219,8 @@ export default function FestivalDetail() {
 
   if (error || !event) return null
 
-  const externalUrl = event.edmtrainLink || event.url
-  const externalLabel = isEdmtrain ? 'View on EDMTrain ↗' : 'View on Ticketmaster ↗'
+  const externalUrl = event.url
+  const externalLabel = 'View Event ↗'
   
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture 

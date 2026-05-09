@@ -45,7 +45,6 @@ export default function FestivalCard({ event }: { event: any }) {
   const upcoming = isUpcoming(event.id)
   const seenCount = getSeenCount(event.id)
 
-  const isEdmtrain = event.source === 'edmtrain'
   const artistCount = event.attractions?.length ?? 0
   
   // Check if event is in the future
@@ -109,15 +108,6 @@ export default function FestivalCard({ event }: { event: any }) {
   }
 
   const handleClick = () => {
-    // Store EDMTrain event data in sessionStorage for the detail page
-    if (isEdmtrain) {
-      try {
-        sessionStorage.setItem(
-          `edmtrain_event_${event.id}`,
-          JSON.stringify({ ...event, image: displayImage })
-        )
-      } catch (e) {}
-    }
     router.push(`/festival/${event.id}`)
   }
 
@@ -132,7 +122,7 @@ export default function FestivalCard({ event }: { event: any }) {
         <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} style={{ objectFit: 'cover' }} />
       ) : (
         <div className="festival-card-img-placeholder">
-          {isEdmtrain ? '⚡' : '🎪'}
+          🎪
         </div>
       )}
 

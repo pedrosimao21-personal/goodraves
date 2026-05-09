@@ -124,6 +124,12 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     lineupByFestival[row.festivalId].push(row.artistName)
   }
 
+  // Build artistId→name map from lineups for later use
+  const artistIdToName: Record<string, string> = {}
+  for (const row of data.lineups) {
+    artistIdToName[row.artistId] = row.artistName
+  }
+
   for (const f of data.festivals) {
     if (f.status === 'attended') attended.push(f.festivalId)
     else upcoming.push(f.festivalId)
@@ -143,15 +149,23 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
 
   for (const ar of data.artistRatings) {
     if (!seenArtists[ar.festivalId]) seenArtists[ar.festivalId] = []
-    seenArtists[ar.festivalId].push(ar.artistName)
+    seenArtists[ar.festivalId].push(ar.artistId)
     if (ar.rating) {
-      performanceRatings[`${ar.festivalId}::${ar.artistName}`] = ar.rating
+      performanceRatings[`${ar.festivalId}::${ar.artistId}`] = ar.rating
     }
   }
 
   for (const g of data.globalArtistData) {
-    if (g.rating) artistRatings[g.artistName] = g.rating
-    if (g.notes) artistNotes[g.artistName] = g.notes
+    if (g.rating) artistRatings[g.artistId] = g.rating
+    if (g.notes) artistNotes[g.artistId] = g.notes
+  }
+
+  const artistMeta: Record<string, any> = {}
+  for (const a of (data.artistGenres ?? [])) {
+    artistMeta[a.id] = {
+      name: a.name,
+      genres: a.genres ?? [],
+    }
   }
 
   return {
@@ -159,7 +173,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     upcomingFestivals: upcoming,
     festivalMeta,
     seenArtists,
-    artistMeta: {},
+    artistMeta,
     artistRatings,
     performanceRatings,
     festivalRatings,
@@ -232,7 +246,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           venue: typeof meta.venue === 'object' ? meta.venue?.name : meta.venue,
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
-          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
+          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
           lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }
@@ -268,7 +282,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           venue: typeof meta.venue === 'object' ? meta.venue?.name : meta.venue,
           location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
           imageUrl: meta.imageUrl ?? meta.image ?? null,
-          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : eventId.startsWith('edm_') ? 'edmtrain' : 'external'),
+          source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
           lineup: meta.lineup?.length ? meta.lineup : undefined,
         })
       }

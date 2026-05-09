@@ -19,7 +19,6 @@ const ArtistCard = memo(function ArtistCard({
   const saw = didSeeArtist(eventId, artist.id)
 
   const displayImage = artist.image || spotifyData?.image || null
-  const spotifyGenres = spotifyData?.genres || []
 
   // Use the real DB id from spotifyData if available, otherwise fall back to artist.id
   const dbId = spotifyData?.id || artist.id
@@ -30,9 +29,8 @@ const ArtistCard = memo(function ArtistCard({
     toggleSawArtist(eventId, artist.id, { 
       name: artist.name, 
       image: displayImage,
-      genres: artist.genres || spotifyGenres 
     })
-  }, [eventId, artist.id, artist.name, displayImage, artist.genres, spotifyGenres, toggleSawArtist])
+  }, [eventId, artist.id, artist.name, displayImage, toggleSawArtist])
 
   return (
     <div className="artist-card fade-in" id={`artist-${artist.id}`} style={{ position: 'relative' }}>

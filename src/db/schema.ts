@@ -28,7 +28,7 @@ export const festivals = pgTable("festivals", {
   venue: text("venue"),
   latitude: real("latitude"),
   longitude: real("longitude"),
-  source: text("source"), // "ra", "ticketmaster", etc.
+  source: text("source"), // "ra", "custom", "external", etc.
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
 }, (t) => [
@@ -45,16 +45,12 @@ export const artists = pgTable("artists", {
   // Spotify cache
   spotifyId: text("spotify_id"),
   imageUrl: text("image_url"),
-  genres: text("genres"),           // JSON string[]
-  spotifyUrl: text("spotify_url"),
   spotifyFollowers: integer("spotify_followers"),
   spotifyAlbums: text("spotify_albums"),    // JSON SpotifyAlbum[]
   spotifyFetchedAt: timestamp("spotify_fetched_at", { withTimezone: true }),
   // Last.fm cache
   lastfmId: text("lastfm_id"),             // mbid
-  lastfmUrl: text("lastfm_url"),
   lastfmBio: text("lastfm_bio"),
-  lastfmTags: text("lastfm_tags"),         // JSON string[]
   lastfmListeners: integer("lastfm_listeners"),
   lastfmPlaycount: integer("lastfm_playcount"),
   lastfmSimilar: text("lastfm_similar"),   // JSON { name, url, image }[]
@@ -63,21 +59,19 @@ export const artists = pgTable("artists", {
 });
 
 // ── Festival Artists (lineup join table) ───────────────
-// artist_name references artists.name so every lineup entry has a
-// corresponding artist record (created when the lineup is saved).
 export const festivalArtists = pgTable(
   "festival_artists",
   {
     festivalId: text("festival_id")
       .notNull()
       .references(() => festivals.id, { onDelete: "cascade" }),
-    artistName: text("artist_name")
+    artistId: uuid("artist_id")
       .notNull()
-      .references(() => artists.name, { onDelete: "restrict" }),
+      .references(() => artists.id, { onDelete: "restrict" }),
   },
   (t) => [
-    primaryKey({ columns: [t.festivalId, t.artistName] }),
-    index("festival_artists_artist_name_idx").on(t.artistName),
+    primaryKey({ columns: [t.festivalId, t.artistId] }),
+    index("festival_artists_artist_id_idx").on(t.artistId),
   ]
 );
 
@@ -123,11 +117,36 @@ export const userArtistRatings = pgTable(
     festivalId: text("festival_id")
       .notNull()
       .references(() => festivals.id, { onDelete: "cascade" }),
-    artistName: text("artist_name").notNull(),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
     rating: integer("rating"),
     notes: text("notes"),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistName] })]
+  (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistId] })]
+);
+
+// ── Genres ─────────────────────────────────────────────
+export const genres = pgTable("genres", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+// ── Artist Genres (many-to-many join table) ────────────
+export const artistGenres = pgTable(
+  "artist_genres",
+  {
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.artistId, t.genreId] }),
+    index("artist_genres_genre_id_idx").on(t.genreId),
+  ]
 );
 
 // ── User Artist Global (overall artist ratings & notes) ─
@@ -137,9 +156,11 @@ export const userArtistGlobal = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    artistName: text("artist_name").notNull(),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
     rating: integer("rating"),
     notes: text("notes"),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.artistName] })]
+  (t) => [primaryKey({ columns: [t.userId, t.artistId] })]
 );

@@ -112,7 +112,7 @@ export default function Insights() {
   const cityData = useMemo(() => {
     const counts = {}
     attendedEvents.forEach(e => {
-      const city = e.venue?.city || 'Unknown'
+      const city = e.location || 'Unknown'
       if (city === 'Unknown') return
       counts[city] = (counts[city] || 0) + 1
     })

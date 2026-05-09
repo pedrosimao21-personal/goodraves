@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, and, sql, ilike } from "drizzle-orm";
+import { eq, and, sql, ilike, inArray } from "drizzle-orm";
 import {
   festivals,
   festivalArtists,
@@ -9,6 +9,8 @@ import {
   userFestivals,
   userArtistRatings,
   userArtistGlobal,
+  genres,
+  artistGenres as artistGenresTable,
 } from "@/db/schema";
 import { auth } from "../../../auth";
 
@@ -31,13 +33,38 @@ function validateRating(rating: number): number {
   return r;
 }
 
+/**
+ * Ensure artist names exist in the artists table, then return a name→id map.
+ */
+async function ensureArtistsAndGetIds(names: string[]): Promise<Record<string, string>> {
+  if (names.length === 0) return {};
+
+  // Upsert all names
+  await db
+    .insert(artists)
+    .values(names.map((name) => ({ name })))
+    .onConflictDoNothing();
+
+  // Fetch id→name mapping
+  const rows = await db
+    .select({ id: artists.id, name: artists.name })
+    .from(artists)
+    .where(inArray(artists.name, names));
+
+  const map: Record<string, string> = {};
+  for (const r of rows) {
+    map[r.name] = r.id;
+  }
+  return map;
+}
+
 // ── Search festivals ───────────────────────────────────
 export async function searchFestivalsDB(query: string) {
   if (!query || query.length > 200) return [];
   // Escape SQL LIKE wildcards (% and _) in user input
   const escaped = query.replace(/[%_\\]/g, "\\$&");
   const q = `%${escaped}%`;
-  // Search in festivals table and festival_artists
+  // Search in festivals table and festival_artists (join through artists for name search)
   const results = await db
     .selectDistinctOn([festivals.id], {
       id: festivals.id,
@@ -54,8 +81,9 @@ export async function searchFestivalsDB(query: string) {
     })
     .from(festivals)
     .leftJoin(festivalArtists, eq(festivals.id, festivalArtists.festivalId))
+    .leftJoin(artists, eq(festivalArtists.artistId, artists.id))
     .where(
-      sql`${festivals.name} ILIKE ${q} OR ${festivals.venue} ILIKE ${q} OR ${festivals.location} ILIKE ${q} OR ${festivalArtists.artistName} ILIKE ${q}`
+      sql`${festivals.name} ILIKE ${q} OR ${festivals.venue} ILIKE ${q} OR ${festivals.location} ILIKE ${q} OR ${artists.name} ILIKE ${q}`
     )
     .orderBy(festivals.id, festivals.date)
     .limit(100);
@@ -74,13 +102,14 @@ export async function getFestival(id: string) {
   if (!festival) return null;
 
   const lineup = await db
-    .select({ artistName: festivalArtists.artistName })
+    .select({ artistId: festivalArtists.artistId, artistName: artists.name })
     .from(festivalArtists)
+    .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
     .where(eq(festivalArtists.festivalId, id));
 
   return {
     ...festival,
-    lineup: lineup.map((r) => r.artistName),
+    lineup: lineup.map((r) => ({ id: r.artistId, name: r.artistName })),
   };
 }
 
@@ -139,7 +168,7 @@ export async function rateFestival(
 // ── Toggle saw artist (mark/unmark as seen) ────────────
 export async function toggleSawArtist(
   festivalId: string,
-  artistName: string
+  artistId: string
 ) {
   const userId = await requireAuth();
   // Check if already exists
@@ -150,7 +179,7 @@ export async function toggleSawArtist(
       and(
         eq(userArtistRatings.userId, userId),
         eq(userArtistRatings.festivalId, festivalId),
-        eq(userArtistRatings.artistName, artistName)
+        eq(userArtistRatings.artistId, artistId)
       )
     )
     .limit(1);
@@ -162,14 +191,14 @@ export async function toggleSawArtist(
         and(
           eq(userArtistRatings.userId, userId),
           eq(userArtistRatings.festivalId, festivalId),
-          eq(userArtistRatings.artistName, artistName)
+          eq(userArtistRatings.artistId, artistId)
         )
       );
     return false; // removed
   } else {
     await db
       .insert(userArtistRatings)
-      .values({ userId, festivalId, artistName });
+      .values({ userId, festivalId, artistId });
     return true; // added
   }
 }
@@ -177,19 +206,19 @@ export async function toggleSawArtist(
 // ── Rate an artist at a festival ───────────────────────
 export async function rateArtist(
   festivalId: string,
-  artistName: string,
+  artistId: string,
   rating: number
 ) {
   const userId = await requireAuth();
   const validRating = validateRating(rating);
   await db
     .insert(userArtistRatings)
-    .values({ userId, festivalId, artistName, rating: validRating })
+    .values({ userId, festivalId, artistId, rating: validRating })
     .onConflictDoUpdate({
       target: [
         userArtistRatings.userId,
         userArtistRatings.festivalId,
-        userArtistRatings.artistName,
+        userArtistRatings.artistId,
       ],
       set: { rating: validRating },
     });
@@ -227,15 +256,46 @@ export async function getFullUserData() {
 
   // Also fetch lineups for user's festivals
   const festivalIds = userFestivalsData.map((f) => f.festivalId);
-  let lineups: { festivalId: string; artistName: string }[] = [];
+  let lineups: { festivalId: string; artistId: string; artistName: string }[] = [];
   if (festivalIds.length > 0) {
     lineups = await db
       .select({
         festivalId: festivalArtists.festivalId,
-        artistName: festivalArtists.artistName,
+        artistId: festivalArtists.artistId,
+        artistName: artists.name,
       })
       .from(festivalArtists)
+      .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
       .where(sql`${festivalArtists.festivalId} IN ${festivalIds}`);
+  }
+
+  // Fetch tags for all artists the user has seen
+  const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
+  let artistGenreData: { id: string; name: string; genres: string[] }[] = [];
+  if (seenArtistIds.length > 0) {
+    const rows = await db
+      .select({ id: artists.id, name: artists.name })
+      .from(artists)
+      .where(inArray(artists.id, seenArtistIds));
+
+    const genreRows = await db
+      .select({ artistId: artistGenresTable.artistId, genreName: genres.name })
+      .from(artistGenresTable)
+      .innerJoin(genres, eq(artistGenresTable.genreId, genres.id))
+      .where(inArray(artistGenresTable.artistId, seenArtistIds));
+
+    const genresByArtist = new Map<string, string[]>();
+    for (const row of genreRows) {
+      const list = genresByArtist.get(row.artistId) ?? [];
+      list.push(row.genreName);
+      genresByArtist.set(row.artistId, list);
+    }
+
+    artistGenreData = rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      genres: genresByArtist.get(r.id) ?? [],
+    }));
   }
 
   return {
@@ -243,6 +303,7 @@ export async function getFullUserData() {
     artistRatings: artistRatingsData,
     globalArtistData,
     lineups,
+    artistGenres: artistGenreData,
   };
 }
 
@@ -296,19 +357,18 @@ export async function upsertFestival(data: {
       .where(eq(festivalArtists.festivalId, data.id));
 
     if (data.lineup.length > 0) {
-      // Ensure all artist names exist in the artists table (FK requirement)
-      await db
-        .insert(artists)
-        .values(data.lineup.map((name) => ({ name })))
-        .onConflictDoNothing();
+      // Ensure all artist names exist in the artists table and get their IDs
+      const nameToId = await ensureArtistsAndGetIds(data.lineup);
 
       await db
         .insert(festivalArtists)
         .values(
-          data.lineup.map((artistName) => ({
-            festivalId: data.id,
-            artistName,
-          }))
+          data.lineup
+            .filter((name) => nameToId[name])
+            .map((name) => ({
+              festivalId: data.id,
+              artistId: nameToId[name],
+            }))
         )
         .onConflictDoNothing();
     }
@@ -378,48 +438,164 @@ export async function batchImportFestivals(
       )
       .onConflictDoNothing();
 
-    const lineupRows = chunk.flatMap((e) =>
-      (e.lineup ?? []).map((artistName) => ({
-        festivalId: e.id,
-        artistName,
-      }))
-    );
+    // Collect all unique artist names from this chunk
+    const allArtistNames = [...new Set(chunk.flatMap((e) => e.lineup ?? []))];
+    if (allArtistNames.length > 0) {
+      const nameToId = await ensureArtistsAndGetIds(allArtistNames);
 
-    if (lineupRows.length > 0) {
-      // Ensure all artist names exist in the artists table (FK requirement)
-      const artistNames = [...new Set(lineupRows.map((r) => r.artistName))];
-      await db
-        .insert(artists)
-        .values(artistNames.map((name) => ({ name })))
-        .onConflictDoNothing();
+      const lineupRows = chunk.flatMap((e) =>
+        (e.lineup ?? [])
+          .filter((name) => nameToId[name])
+          .map((name) => ({
+            festivalId: e.id,
+            artistId: nameToId[name],
+          }))
+      );
 
-      await db
-        .insert(festivalArtists)
-        .values(lineupRows)
-        .onConflictDoNothing();
+      if (lineupRows.length > 0) {
+        await db
+          .insert(festivalArtists)
+          .values(lineupRows)
+          .onConflictDoNothing();
+      }
     }
   }
 }
 
+// ── Fetch a single RA event by ID from ra.co and save to DB ───
+export async function fetchRAEvent(eventId: string): Promise<string | null> {
+  // Validate input
+  const id = String(eventId).replace(/\D/g, "");
+  if (!id) return null;
+
+  const festivalId = `ra-${id}`;
+
+  // Check if already in DB
+  const [existing] = await db
+    .select({ id: festivals.id })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+  if (existing) return festivalId;
+
+  // Fetch from RA GraphQL API
+  const query = `
+    query GET_EVENT($id: ID!) {
+      event(id: $id) {
+        id
+        title
+        startTime
+        endTime
+        venue {
+          name
+          area {
+            name
+            country {
+              name
+            }
+          }
+        }
+        images {
+          filename
+        }
+        artists {
+          name
+        }
+      }
+    }
+  `;
+
+  let data: any;
+  try {
+    const res = await fetch("https://ra.co/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": `https://ra.co/events/${id}`,
+      },
+      body: JSON.stringify({ query, variables: { id } }),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    data = json?.data?.event;
+  } catch {
+    return null;
+  }
+
+  if (!data) return null;
+
+  // Normalise date
+  const date = data.startTime
+    ? new Date(data.startTime).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+  const endDate = data.endTime
+    ? new Date(data.endTime).toISOString().slice(0, 10)
+    : null;
+
+  const venueName = data.venue?.name ?? null;
+  const areaName = data.venue?.area?.name ?? null;
+  const countryName = data.venue?.area?.country?.name ?? null;
+  const location = [areaName, countryName].filter(Boolean).join(", ") || null;
+
+  const imageUrl = data.images?.[0]?.filename ?? null;
+
+  const lineup = (data.artists ?? [])
+    .map((a: any) => a?.name)
+    .filter(Boolean) as string[];
+
+  // Save to DB
+  await db
+    .insert(festivals)
+    .values({
+      id: festivalId,
+      name: data.title ?? `RA Event ${id}`,
+      date,
+      endDate,
+      venue: venueName,
+      location,
+      source: "ra",
+      sourceId: id,
+      imageUrl,
+    })
+    .onConflictDoNothing();
+
+  // Save lineup
+  if (lineup.length > 0) {
+    const nameToId = await ensureArtistsAndGetIds(lineup);
+
+    await db
+      .insert(festivalArtists)
+      .values(
+        lineup
+          .filter((name) => nameToId[name])
+          .map((name) => ({ festivalId, artistId: nameToId[name] }))
+      )
+      .onConflictDoNothing();
+  }
+
+  return festivalId;
+}
+
 // ── Global artist rating (not per-festival) ────────────
 export async function setGlobalArtistRating(
-  artistName: string,
+  artistId: string,
   rating: number
 ) {
   const userId = await requireAuth();
   const validRating = validateRating(rating);
   await db
     .insert(userArtistGlobal)
-    .values({ userId, artistName, rating: validRating })
+    .values({ userId, artistId, rating: validRating })
     .onConflictDoUpdate({
-      target: [userArtistGlobal.userId, userArtistGlobal.artistName],
+      target: [userArtistGlobal.userId, userArtistGlobal.artistId],
       set: { rating: validRating },
     });
 }
 
 // ── Global artist notes ────────────────────────────────
 export async function setGlobalArtistNotes(
-  artistName: string,
+  artistId: string,
   notes: string
 ) {
   const userId = await requireAuth();
@@ -428,9 +604,9 @@ export async function setGlobalArtistNotes(
   }
   await db
     .insert(userArtistGlobal)
-    .values({ userId, artistName, notes })
+    .values({ userId, artistId, notes })
     .onConflictDoUpdate({
-      target: [userArtistGlobal.userId, userArtistGlobal.artistName],
+      target: [userArtistGlobal.userId, userArtistGlobal.artistId],
       set: { notes },
     });
 }

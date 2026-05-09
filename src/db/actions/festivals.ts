@@ -7,7 +7,7 @@ import {
   festivalArtists,
   artists,
   userFestivals,
-  userArtistRatings,
+  userFestivalArtistRatings,
   userArtistGlobal,
   genres,
   artistGenres as artistGenresTable,
@@ -132,11 +132,11 @@ export async function removeAttendance(festivalId: string) {
   const userId = await requireAuth();
   // Remove artist ratings for this festival too
   await db
-    .delete(userArtistRatings)
+    .delete(userFestivalArtistRatings)
     .where(
       and(
-        eq(userArtistRatings.userId, userId),
-        eq(userArtistRatings.festivalId, festivalId)
+        eq(userFestivalArtistRatings.userId, userId),
+        eq(userFestivalArtistRatings.festivalId, festivalId)
       )
     );
   await db
@@ -174,30 +174,30 @@ export async function toggleSawArtist(
   // Check if already exists
   const [existing] = await db
     .select()
-    .from(userArtistRatings)
+    .from(userFestivalArtistRatings)
     .where(
       and(
-        eq(userArtistRatings.userId, userId),
-        eq(userArtistRatings.festivalId, festivalId),
-        eq(userArtistRatings.artistId, artistId)
+        eq(userFestivalArtistRatings.userId, userId),
+        eq(userFestivalArtistRatings.festivalId, festivalId),
+        eq(userFestivalArtistRatings.artistId, artistId)
       )
     )
     .limit(1);
 
   if (existing) {
     await db
-      .delete(userArtistRatings)
+      .delete(userFestivalArtistRatings)
       .where(
         and(
-          eq(userArtistRatings.userId, userId),
-          eq(userArtistRatings.festivalId, festivalId),
-          eq(userArtistRatings.artistId, artistId)
+          eq(userFestivalArtistRatings.userId, userId),
+          eq(userFestivalArtistRatings.festivalId, festivalId),
+          eq(userFestivalArtistRatings.artistId, artistId)
         )
       );
     return false; // removed
   } else {
     await db
-      .insert(userArtistRatings)
+      .insert(userFestivalArtistRatings)
       .values({ userId, festivalId, artistId });
     return true; // added
   }
@@ -212,13 +212,13 @@ export async function rateArtist(
   const userId = await requireAuth();
   const validRating = validateRating(rating);
   await db
-    .insert(userArtistRatings)
+    .insert(userFestivalArtistRatings)
     .values({ userId, festivalId, artistId, rating: validRating })
     .onConflictDoUpdate({
       target: [
-        userArtistRatings.userId,
-        userArtistRatings.festivalId,
-        userArtistRatings.artistId,
+        userFestivalArtistRatings.userId,
+        userFestivalArtistRatings.festivalId,
+        userFestivalArtistRatings.artistId,
       ],
       set: { rating: validRating },
     });
@@ -246,8 +246,8 @@ export async function getFullUserData() {
       .where(eq(userFestivals.userId, userId)),
     db
       .select()
-      .from(userArtistRatings)
-      .where(eq(userArtistRatings.userId, userId)),
+      .from(userFestivalArtistRatings)
+      .where(eq(userFestivalArtistRatings.userId, userId)),
     db
       .select()
       .from(userArtistGlobal)
@@ -391,11 +391,11 @@ export async function clearUserFestivals(
   const ids = toDelete.map((r) => r.festivalId);
   if (ids.length > 0) {
     await db
-      .delete(userArtistRatings)
+      .delete(userFestivalArtistRatings)
       .where(
         and(
-          eq(userArtistRatings.userId, userId),
-          sql`${userArtistRatings.festivalId} IN ${ids}`
+          eq(userFestivalArtistRatings.userId, userId),
+          sql`${userFestivalArtistRatings.festivalId} IN ${ids}`
         )
       );
   }

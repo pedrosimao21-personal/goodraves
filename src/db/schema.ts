@@ -107,9 +107,9 @@ export const rateLimitAttempts = pgTable(
   ]
 );
 
-// ── User Artist Ratings (per-festival performance) ─────
-export const userArtistRatings = pgTable(
-  "user_artist_ratings",
+// ── User Festival Artist Ratings (per-festival performance) ─
+export const userFestivalArtistRatings = pgTable(
+  "user_festival_artist_ratings",
   {
     userId: uuid("user_id")
       .notNull()

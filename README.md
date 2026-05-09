@@ -25,10 +25,12 @@ Copy `.env.example` to `.env.local` and fill in the values:
 
 ```bash
 npm install
-npm run dev       # Start dev server
-npm run build     # Production build
-npm run start     # Start production server
-npm run lint      # Run ESLint
+npm run dev          # Start dev server
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run db:generate  # Generate a migration from schema changes
+npm run db:migrate   # Apply pending migrations
 ```
 
 ### Seeding the Database
@@ -45,14 +47,14 @@ DATABASE_URL="postgres://..." npx tsx scripts/seed-db.ts
 
 ## Migrations
 
-Migrations are managed with [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview). The schema source of truth is `src/db/schema.ts`, and migration SQL files live in `./drizzle/`.
+Migrations are managed with [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview). The schema source of truth is `src/db/schema.ts`, and migration SQL files live in `./drizzle/`. Applied migrations are tracked in the `__drizzle_migrations` table in the database.
 
 ### Creating a Migration
 
 Edit `src/db/schema.ts` with your schema changes, then generate a migration:
 
 ```bash
-npx drizzle-kit generate
+npm run db:generate
 ```
 
 This diffs your schema against the last snapshot and produces a new SQL file in `./drizzle/`.
@@ -62,9 +64,9 @@ For complex data migrations that can't be auto-generated (e.g. renaming columns 
 ### Running Migrations
 
 ```bash
-npx drizzle-kit migrate   # Apply pending migration files
-npx drizzle-kit push      # Push schema directly to DB (dev shortcut, no migration files)
-npx drizzle-kit studio    # Open visual DB browser
+npm run db:migrate    # Apply pending migration files
+npx drizzle-kit push  # Push schema directly to DB (dev shortcut, no migration files)
+npx drizzle-kit studio # Open visual DB browser
 ```
 
 ## Database Schema & Data Sources
@@ -145,7 +147,7 @@ npx drizzle-kit studio    # Open visual DB browser
 | `notes` | text | User input |
 | `created_at` | timestamptz | System-generated |
 
-### `user_artist_ratings`
+### `user_festival_artist_ratings`
 
 | Column | Type | Data Source |
 |---|---|---|

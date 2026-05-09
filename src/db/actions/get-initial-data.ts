@@ -7,7 +7,7 @@ import {
   festivalArtists,
   artists,
   userFestivals,
-  userArtistRatings,
+  userFestivalArtistRatings,
   userArtistGlobal,
   genres,
   artistGenres as artistGenresTable,
@@ -43,8 +43,8 @@ export async function getInitialUserData() {
         .where(eq(userFestivals.userId, userId)),
       db
         .select()
-        .from(userArtistRatings)
-        .where(eq(userArtistRatings.userId, userId)),
+        .from(userFestivalArtistRatings)
+        .where(eq(userFestivalArtistRatings.userId, userId)),
       db
         .select()
         .from(userArtistGlobal)

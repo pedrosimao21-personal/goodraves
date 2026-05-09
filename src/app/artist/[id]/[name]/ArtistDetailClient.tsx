@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getArtistData, getOrCreateArtistByName, type ArtistData } from '@/db/actions/artists'
+import { useUserData } from '@/context/UserDataContext'
+import StarRating from '@/components/StarRating'
 
 function BackIcon() {
   return (
@@ -95,6 +97,7 @@ export default function ArtistDetail() {
   const artistId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const encodedName = Array.isArray(params.name) ? params.name[0] : (params.name ?? '')
   const artistName = decodeURIComponent(encodedName)
+  const { getRating, getNotes, setNotes } = useUserData()
 
   const [artist, setArtist] = useState<ArtistData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -193,6 +196,38 @@ export default function ArtistDetail() {
                 {mergedTags.map((tag: string) => (
                   <span key={tag} className="tag">{tag}</span>
                 ))}
+              </div>
+            )}
+
+            {!loading && (
+              <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your rating:</span>
+                <StarRating artistId={artistId} readonly={false} size="md" />
+              </div>
+            )}
+
+            {!loading && (
+              <div style={{ marginTop: 8 }}>
+                <textarea
+                  placeholder="Add notes about this artist..."
+                  value={getNotes(artistId)}
+                  onChange={(e) => setNotes(artistId, e.target.value)}
+                  rows={2}
+                  maxLength={5000}
+                  style={{
+                    width: '100%',
+                    maxWidth: 400,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '0.85rem',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                  id="artist-notes"
+                />
               </div>
             )}
 

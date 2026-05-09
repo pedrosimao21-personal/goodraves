@@ -199,7 +199,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: { 
         </div>
         <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', lineHeight: 1.4 }}>
           {displayEvent?.date && <span style={{ whiteSpace: 'nowrap' }}>📅 {formatDate(displayEvent.date)}</span>}
-          {displayEvent?.venue?.city && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>📍 {displayEvent.venue.city}</span>}
+          {displayEvent?.venue && typeof displayEvent.venue === 'object' && displayEvent.venue.city && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>📍 {displayEvent.venue.city}</span>}
         </div>
       </div>
 
@@ -236,7 +236,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: { 
 
 FestivalRow.displayName = 'FestivalRow'
 
-export default function DashboardView({ activeTab }: { activeTab: 'attended' | 'upcoming' }) {
+export default function DashboardView() {
   const {
     attendedFestivals,
     upcomingFestivals,
@@ -257,6 +257,15 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const getTabFromHash = () => (typeof window !== 'undefined' && window.location.hash === '#upcoming') ? 'upcoming' : 'attended'
+  const [activeTab, setActiveTab] = useState<'attended' | 'upcoming'>(getTabFromHash)
+
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(getTabFromHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files[0]
@@ -367,14 +376,14 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => router.push('/dashboard/past')}
+            onClick={() => { window.location.hash = ''; setActiveTab('attended') }}
             style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Past ({attendedFestivals.length})
           </button>
           <button
             className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => router.push('/dashboard/upcoming')}
+            onClick={() => { window.location.hash = 'upcoming'; setActiveTab('upcoming') }}
             style={activeTab === 'upcoming' ? { background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' } : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Upcoming ({upcomingFestivals.length})

@@ -50,7 +50,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   if (key === 'ra') {
     return (
       <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ opacity: 0.6 }} />
+        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ opacity: 0.6, filter: 'invert(1)' }} />
         {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
       </span>
     )

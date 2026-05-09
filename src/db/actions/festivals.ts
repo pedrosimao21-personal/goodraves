@@ -244,7 +244,25 @@ export async function getFestival(id: string) {
     if (raMatch) {
       const imported = await fetchRAEvent(raMatch[1]);
       if (imported) {
-        return getFestival(id);
+        // Re-query the DB once (no recursion to avoid infinite loops
+        // if the insert silently fails via onConflictDoNothing)
+        const [importedFestival] = await db
+          .select()
+          .from(festivals)
+          .where(eq(festivals.id, id))
+          .limit(1);
+        if (!importedFestival) return null;
+
+        const lineup = await db
+          .select({ artistId: festivalArtists.artistId, artistName: artists.name })
+          .from(festivalArtists)
+          .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
+          .where(eq(festivalArtists.festivalId, id));
+
+        return {
+          ...importedFestival,
+          lineup,
+        };
       }
     }
     return null;

@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
+import { useAuthPrompt } from '@/context/AuthPromptContext'
 import RAImport from '@/components/RAImport'
 import AddCustomEvent from '@/components/AddCustomFestival'
 import { isAllowedImageHost } from '@/lib/imageHosts'
@@ -248,6 +250,8 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
     getFestivalMeta,
     loaded,
   } = useUserData()
+  const { promptAuth } = useAuthPrompt()
+  const { data: session } = useSession()
   const router = useRouter()
   const [showImport, setShowImport] = useState(false)
   const [showAddCustom, setShowAddCustom] = useState(false)
@@ -378,7 +382,10 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
           <div style={{ marginLeft: 'auto' }}>
             <button
               className="btn btn-secondary btn-sm"
-              onClick={() => setShowAddCustom(!showAddCustom)}
+              onClick={() => {
+                if (!session?.user) { promptAuth(); return }
+                setShowAddCustom(!showAddCustom)
+              }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               {showAddCustom ? '✕ Close' : '＋ Add Event'}

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useAuthPrompt } from './AuthPromptContext'
 import {
   getFullUserData,
   addAttendance,
@@ -199,6 +200,7 @@ interface UserDataProviderProps {
 export function UserDataProvider({ children, initialData }: UserDataProviderProps) {
   const { data: session, status } = useSession()
   const userId = (session?.user as any)?.id as string | undefined
+  const { promptAuth } = useAuthPrompt()
   const hasInitialData = initialData != null
   const [state, setState] = useState<State>(() =>
     initialData ? transformDbData(initialData) : defaultState
@@ -228,7 +230,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   // ── Mutation helpers (optimistic + server action) ──
 
   const toggleAttended = useCallback(async (eventId: string, meta: any = null) => {
-    if (!userId) return
+    if (!userId) { promptAuth(); return }
     // Compute intent BEFORE optimistic setState to avoid stale closure
     const wasAttended = state.attendedFestivals.includes(eventId)
     const isNowAttended = !wasAttended
@@ -263,10 +265,10 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     } else {
       await removeAttendance(eventId)
     }
-  }, [userId, state.attendedFestivals])
+  }, [userId, state.attendedFestivals, promptAuth])
 
   const toggleUpcoming = useCallback(async (eventId: string, meta: any = null) => {
-    if (!userId) return
+    if (!userId) { promptAuth(); return }
     // Compute intent BEFORE optimistic setState to avoid stale closure
     const wasUpcoming = state.upcomingFestivals.includes(eventId)
     const isNowUpcoming = !wasUpcoming
@@ -299,10 +301,10 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     } else {
       await removeAttendance(eventId)
     }
-  }, [userId, state.upcomingFestivals])
+  }, [userId, state.upcomingFestivals, promptAuth])
 
   const toggleSawArtist = useCallback(async (eventId: string, artistId: string, artistMeta: any = null) => {
-    if (!userId) return
+    if (!userId) { promptAuth(); return }
     setState(prev => {
       const current = prev.seenArtists[eventId] ?? []
       const saw = current.includes(artistId)
@@ -314,41 +316,38 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     })
 
     await toggleSawArtistAction(eventId, artistId)
-  }, [userId])
+  }, [userId, promptAuth])
 
   const setRating = useCallback(async (artistId: string, rating: number) => {
+    if (!userId) { promptAuth(); return }
     setState(prev => ({ ...prev, artistRatings: { ...prev.artistRatings, [artistId]: rating } }))
-    if (userId) {
-      await setGlobalArtistRating(artistId, rating)
-    }
-  }, [userId])
+    await setGlobalArtistRating(artistId, rating)
+  }, [userId, promptAuth])
 
   const setPerformanceRating = useCallback(async (eventId: string, artistId: string, rating: number) => {
-    if (!userId) return
+    if (!userId) { promptAuth(); return }
     const key = `${eventId}::${artistId}`
     setState(prev => ({ ...prev, performanceRatings: { ...prev.performanceRatings, [key]: rating } }))
     await rateArtist(eventId, artistId, rating)
-  }, [userId])
+  }, [userId, promptAuth])
 
   const setFestivalRating = useCallback(async (eventId: string, rating: number) => {
-    if (!userId) return
+    if (!userId) { promptAuth(); return }
     setState(prev => ({ ...prev, festivalRatings: { ...prev.festivalRatings, [eventId]: rating } }))
     await rateFestival(eventId, rating)
-  }, [userId])
+  }, [userId, promptAuth])
 
   const setNotes = useCallback(async (artistId: string, notes: string) => {
+    if (!userId) { promptAuth(); return }
     setState(prev => ({ ...prev, artistNotes: { ...prev.artistNotes, [artistId]: notes } }))
-    if (userId) {
-      await setGlobalArtistNotes(artistId, notes)
-    }
-  }, [userId])
+    await setGlobalArtistNotes(artistId, notes)
+  }, [userId, promptAuth])
 
   const setFestivalNotes = useCallback(async (eventId: string, notes: string) => {
+    if (!userId) { promptAuth(); return }
     setState(prev => ({ ...prev, festivalNotes: { ...prev.festivalNotes, [eventId]: notes } }))
-    if (userId) {
-      await setFestivalNotesAction(eventId, notes)
-    }
-  }, [userId])
+    await setFestivalNotesAction(eventId, notes)
+  }, [userId, promptAuth])
 
   const batchImportRA = useCallback(async (events: Record<string, any>) => {
     // Import events into DB
@@ -386,6 +385,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   }, [])
 
   const addCustomFestival = useCallback(async (meta: any, lineup: any[] = []) => {
+    if (!userId) { promptAuth(); return '' }
     const id = 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)
     const enrichedMeta = { ...meta, lineup: lineup.map((a: any) => a.name) }
 
@@ -416,7 +416,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     }
 
     return id
-  }, [userId])
+  }, [userId, promptAuth])
 
   const clearFestivals = useCallback(async (type: string) => {
     setState(prev => {
@@ -426,7 +426,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     if (userId) {
       await clearUserFestivals(type as 'attended' | 'upcoming')
     }
-  }, [userId])
+  }, [userId, promptAuth])
 
   const updateFestivalMeta = useCallback((id: string, meta: any) => {
     setState(prev => {
@@ -447,7 +447,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
         lineup: meta.lineup ?? [],
       }).catch(console.error)
     }
-  }, [userId])
+  }, [userId, promptAuth])
 
   // ── Read helpers ──
 

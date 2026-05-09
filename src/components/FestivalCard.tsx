@@ -37,6 +37,23 @@ function formatDate(dateStr: string | null | undefined) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  ra: { label: 'RA', color: '#fff', bg: '#d12d5a' },
+  custom: { label: 'Custom', color: '#fff', bg: '#6b7280' },
+  external: { label: 'External', color: '#fff', bg: '#8b5cf6' },
+}
+
+function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean }) {
+  const key = source ?? 'custom'
+  const config = SOURCE_LABELS[key] ?? { label: key, color: '#fff', bg: '#6b7280' }
+  const label = isFromDB ? config.label : `${config.label} (search)`
+  return (
+    <span className="tag" style={{ background: config.bg, color: config.color, borderColor: config.bg, fontSize: '0.65rem', padding: '1px 6px' }}>
+      {label}
+    </span>
+  )
+}
+
 export default function FestivalCard({ event }: { event: any }) {
   const router = useRouter()
   const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount } = useUserData()
@@ -128,6 +145,7 @@ export default function FestivalCard({ event }: { event: any }) {
 
       <div className="festival-card-body">
         <div className="festival-card-tags">
+          <SourceBadge source={event.source} isFromDB={!event._fromRA} />
           {event.genre && <span className="tag">{event.genre}</span>}
           {event.subGenre && event.subGenre !== event.genre && (
             <span className="tag tag-orange">{event.subGenre}</span>

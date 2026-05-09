@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, fetchRAEvent } from '@/db/actions/festivals'
+import { searchFestivalsDB, searchRAEvents, fetchRAEvent } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -52,27 +52,52 @@ export default function SearchSection() {
 
       const results: any[] = []
 
-      try {
-        const dbResults = await searchFestivalsDB(q)
-        const mapped = dbResults.map((f: any) => ({
-          id: f.id,
-          name: f.name,
-          date: f.date,
-          venue: f.venue ? { name: f.venue, city: f.location ?? '' } : undefined,
-          location: f.location,
+      // Search DB and RA in parallel
+      const [dbResults, raResults] = await Promise.all([
+        searchFestivalsDB(q).catch((err) => { console.warn('DB search failed:', err); return [] }),
+        searchRAEvents(q).catch((err) => { console.warn('RA search failed:', err); return [] }),
+      ])
+
+      // Add DB results first
+      const mapped = dbResults.map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        date: f.date,
+        venue: f.venue ? { name: f.venue, city: f.location ?? '' } : undefined,
+        location: f.location,
+        lineup: [],
+        source: f.source ?? 'ra',
+        image: f.imageUrl,
+      }))
+      results.push(...mapped)
+
+      // Collect RA source IDs already in DB results to deduplicate
+      const dbRaIds = new Set(
+        dbResults
+          .filter((f: any) => f.source === 'ra' && f.sourceId)
+          .map((f: any) => String(f.sourceId))
+      )
+
+      // Add RA results that aren't already in DB results
+      for (const ra of raResults) {
+        if (dbRaIds.has(ra.raId)) continue
+        results.push({
+          id: `ra-${ra.raId}`,
+          name: ra.name,
+          date: ra.date,
+          venue: ra.venue ? { name: ra.venue, city: ra.location ?? '' } : undefined,
+          location: ra.location,
           lineup: [],
-          source: f.source ?? 'ra',
-          image: f.imageUrl,
-        }))
-        results.push(...mapped)
-      } catch (err) {
-        console.warn('DB search failed:', err)
+          source: 'ra',
+          image: ra.imageUrl,
+          _fromRA: true,
+        })
       }
 
       const sorted = results.sort((a, b) => {
         if (!a.date) return 1
         if (!b.date) return -1
-        return a.date.localeCompare(b.date)
+        return b.date.localeCompare(a.date)
       })
 
       setPageInfo({ totalElements: sorted.length })

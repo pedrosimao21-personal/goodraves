@@ -91,6 +91,99 @@ export async function searchFestivalsDB(query: string) {
   return results;
 }
 
+// ── Search Resident Advisor events by keyword ──────────
+export async function searchRAEvents(query: string) {
+  if (!query || query.length > 200) return [];
+
+  const gql = `
+    query SEARCH_EVENTS($title: MatchFilterInputDtoInput) {
+      facetedSearch(types: [EVENT], filters: { title: $title }) {
+        totalResults
+        results {
+          data {
+            ... on Event {
+              id
+              title
+              startTime
+              endTime
+              venue {
+                name
+                area {
+                  name
+                  country {
+                    name
+                  }
+                }
+              }
+              images {
+                filename
+              }
+              artists {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const res = await fetch("https://ra.co/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://ra.co/events",
+      },
+      body: JSON.stringify({
+        query: gql,
+        variables: {
+          title: { value: query },
+        },
+      }),
+    });
+
+    if (!res.ok) return [];
+    const json = await res.json();
+    const results = json?.data?.facetedSearch?.results ?? [];
+
+    return results
+      .map((r: any) => {
+        const e = r?.data;
+        if (!e?.id) return null;
+
+        const date = e.startTime
+          ? new Date(e.startTime).toISOString().slice(0, 10)
+          : null;
+        const endDate = e.endTime
+          ? new Date(e.endTime).toISOString().slice(0, 10)
+          : null;
+        const venueName = e.venue?.name ?? null;
+        const areaName = e.venue?.area?.name ?? null;
+        const countryName = e.venue?.area?.country?.name ?? null;
+        const location =
+          [areaName, countryName].filter(Boolean).join(", ") || null;
+
+        return {
+          raId: String(e.id),
+          name: e.title ?? "Untitled Event",
+          date,
+          endDate,
+          venue: venueName,
+          location,
+          imageUrl: e.images?.[0]?.filename ?? null,
+          lineup: (e.artists ?? [])
+            .map((a: any) => a?.name)
+            .filter(Boolean) as string[],
+        };
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 // ── Get a single festival with its lineup ──────────────
 export async function getFestival(id: string) {
   const [festival] = await db
@@ -99,7 +192,17 @@ export async function getFestival(id: string) {
     .where(eq(festivals.id, id))
     .limit(1);
 
-  if (!festival) return null;
+  if (!festival) {
+    // Auto-import from RA if the ID looks like ra-{numericId}
+    const raMatch = id.match(/^ra-(\d+)$/);
+    if (raMatch) {
+      const imported = await fetchRAEvent(raMatch[1]);
+      if (imported) {
+        return getFestival(id);
+      }
+    }
+    return null;
+  }
 
   const lineup = await db
     .select({ artistId: festivalArtists.artistId, artistName: artists.name })

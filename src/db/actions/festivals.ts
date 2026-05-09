@@ -34,6 +34,34 @@ function validateRating(rating: number): number {
 }
 
 /**
+ * Parse RA's `lineup` text field which contains both linked artists
+ * (wrapped in `<artist id="...">Name</artist>`) and plain-text artist names.
+ * Returns deduplicated artist name list.
+ */
+function parseRALineup(lineupText: string | null | undefined, fallbackArtists?: string[]): string[] {
+  if (!lineupText) return fallbackArtists ?? [];
+
+  const names: string[] = [];
+  // Split by newlines; each line is either an <artist> tag, a plain name, or a mix
+  for (const rawLine of lineupText.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    // Replace <artist id="...">Name</artist> with just the name
+    const cleaned = line.replace(/<artist[^>]*>(.*?)<\/artist>/g, "$1").trim();
+    if (!cleaned) continue;
+
+    // Skip lines that are clearly not artist names (hosted by, etc.)
+    if (/^hosted by/i.test(cleaned)) continue;
+
+    names.push(cleaned);
+  }
+
+  // Deduplicate (case-sensitive since artist names are intentional)
+  return [...new Set(names)];
+}
+
+/**
  * Ensure artist names exist in the artists table, then return a name→id map.
  */
 async function ensureArtistsAndGetIds(names: string[]): Promise<Record<string, string>> {
@@ -91,9 +119,22 @@ export async function searchFestivalsDB(query: string) {
   return results;
 }
 
+// ── RA search cache (5-minute TTL) ─────────────────────
+const raSearchCache = new Map<
+  string,
+  { data: any[]; ts: number }
+>();
+const RA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // ── Search Resident Advisor events by keyword ──────────
 export async function searchRAEvents(query: string) {
   if (!query || query.length > 200) return [];
+
+  const cacheKey = query.trim().toLowerCase();
+  const cached = raSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < RA_CACHE_TTL) {
+    return cached.data;
+  }
 
   const gql = `
     query SEARCH_EVENTS($title: MatchFilterInputDtoInput) {
@@ -121,6 +162,7 @@ export async function searchRAEvents(query: string) {
               artists {
                 name
               }
+              lineup
             }
           }
         }
@@ -148,7 +190,7 @@ export async function searchRAEvents(query: string) {
     const json = await res.json();
     const results = json?.data?.facetedSearch?.results ?? [];
 
-    return results
+    const mapped = results
       .map((r: any) => {
         const e = r?.data;
         if (!e?.id) return null;
@@ -165,20 +207,24 @@ export async function searchRAEvents(query: string) {
         const location =
           [areaName, countryName].filter(Boolean).join(", ") || null;
 
-        return {
-          raId: String(e.id),
-          name: e.title ?? "Untitled Event",
-          date,
-          endDate,
-          venue: venueName,
-          location,
-          imageUrl: e.images?.[0]?.filename ?? null,
-          lineup: (e.artists ?? [])
+          const artistsFallback = (e.artists ?? [])
             .map((a: any) => a?.name)
-            .filter(Boolean) as string[],
-        };
+            .filter(Boolean) as string[];
+          return {
+            raId: String(e.id),
+            name: e.title ?? "Untitled Event",
+            date,
+            endDate,
+            venue: venueName,
+            location,
+            imageUrl: e.images?.[0]?.filename ?? null,
+            lineup: parseRALineup(e.lineup, artistsFallback),
+          };
       })
       .filter(Boolean);
+
+    raSearchCache.set(cacheKey, { data: mapped, ts: Date.now() });
+    return mapped;
   } catch {
     return [];
   }
@@ -250,6 +296,24 @@ export async function removeAttendance(festivalId: string) {
         eq(userFestivals.festivalId, festivalId)
       )
     );
+}
+
+// ── Set festival notes ─────────────────────────────────
+export async function setFestivalNotes(
+  festivalId: string,
+  notes: string
+) {
+  const userId = await requireAuth();
+  if (notes.length > 5000) {
+    throw new Error("Notes must be under 5000 characters");
+  }
+  await db
+    .insert(userFestivals)
+    .values({ userId, festivalId, notes, status: "attended" })
+    .onConflictDoUpdate({
+      target: [userFestivals.userId, userFestivals.festivalId],
+      set: { notes },
+    });
 }
 
 // ── Rate a festival ────────────────────────────────────
@@ -565,21 +629,48 @@ export async function batchImportFestivals(
   }
 }
 
+// ── Force-reimport an RA event (clears existing lineup, re-fetches from RA) ──
+export async function reimportRAEvent(eventId: string): Promise<string | null> {
+  const id = String(eventId).replace(/\D/g, "");
+  if (!id) return null;
+  const festivalId = `ra-${id}`;
+
+  // Delete existing lineup so fetchRAEvent will re-fetch
+  await db
+    .delete(festivalArtists)
+    .where(eq(festivalArtists.festivalId, festivalId));
+
+  return fetchRAEvent(eventId, { force: true });
+}
+
 // ── Fetch a single RA event by ID from ra.co and save to DB ───
-export async function fetchRAEvent(eventId: string): Promise<string | null> {
+export async function fetchRAEvent(
+  eventId: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
   // Validate input
   const id = String(eventId).replace(/\D/g, "");
   if (!id) return null;
 
   const festivalId = `ra-${id}`;
 
-  // Check if already in DB
-  const [existing] = await db
-    .select({ id: festivals.id })
-    .from(festivals)
-    .where(eq(festivals.id, festivalId))
-    .limit(1);
-  if (existing) return festivalId;
+  if (!opts?.force) {
+    // Check if already in DB with lineup
+    const [existing] = await db
+      .select({ id: festivals.id })
+      .from(festivals)
+      .where(eq(festivals.id, festivalId))
+      .limit(1);
+    if (existing) {
+      // Verify lineup exists — if not, continue to fetch it
+      const [hasLineup] = await db
+        .select({ artistId: festivalArtists.artistId })
+        .from(festivalArtists)
+        .where(eq(festivalArtists.festivalId, festivalId))
+        .limit(1);
+      if (hasLineup) return festivalId;
+    }
+  }
 
   // Fetch from RA GraphQL API
   const query = `
@@ -604,6 +695,7 @@ export async function fetchRAEvent(eventId: string): Promise<string | null> {
         artists {
           name
         }
+        lineup
       }
     }
   `;
@@ -619,10 +711,17 @@ export async function fetchRAEvent(eventId: string): Promise<string | null> {
       },
       body: JSON.stringify({ query, variables: { id } }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[fetchRAEvent] RA API returned ${res.status} for event ${id}`);
+      return null;
+    }
     const json = await res.json();
     data = json?.data?.event;
-  } catch {
+    if (!data && json?.errors) {
+      console.error(`[fetchRAEvent] RA GraphQL errors for event ${id}:`, json.errors);
+    }
+  } catch (err) {
+    console.error(`[fetchRAEvent] Failed to fetch RA event ${id}:`, err);
     return null;
   }
 
@@ -643,9 +742,11 @@ export async function fetchRAEvent(eventId: string): Promise<string | null> {
 
   const imageUrl = data.images?.[0]?.filename ?? null;
 
-  const lineup = (data.artists ?? [])
+  // Parse full lineup from the text field, falling back to the artists array
+  const artistsFallback = (data.artists ?? [])
     .map((a: any) => a?.name)
     .filter(Boolean) as string[];
+  const lineup = parseRALineup(data.lineup, artistsFallback);
 
   // Save to DB
   await db

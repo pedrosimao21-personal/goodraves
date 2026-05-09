@@ -285,7 +285,7 @@ export default function DashboardView({ activeTab }: { activeTab: 'attended' | '
     return [...attendedFestivals].sort((a, b) => {
       const da = getFestivalMeta(a)?.date ?? ''
       const db = getFestivalMeta(b)?.date ?? ''
-      return da.localeCompare(db)
+      return db.localeCompare(da)
     })
   }, [attendedFestivals, getFestivalMeta])
 

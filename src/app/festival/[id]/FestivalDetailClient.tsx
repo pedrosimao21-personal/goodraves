@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
@@ -46,11 +46,66 @@ function formatDate(dateStr: string | undefined | null) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+function FestivalNotes({ eventId, notes, onSave }: { eventId: string; notes: string; onSave: (eventId: string, notes: string) => Promise<void> }) {
+  const [value, setValue] = useState(notes)
+  const [saving, setSaving] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => { setValue(notes) }, [notes])
+
+  const debouncedSave = useCallback((text: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(async () => {
+      setSaving(true)
+      await onSave(eventId, text)
+      setSaving(false)
+    }, 600)
+  }, [eventId, onSave])
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value
+    setValue(text)
+    debouncedSave(text)
+  }
+
+  return (
+    <div style={{ marginTop: 0, flex: 1, minWidth: 200 }}>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+        Notes
+        {saving && <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>Saving...</span>}
+      </div>
+      <textarea
+        value={value}
+        onChange={handleChange}
+        placeholder="Add notes about this event..."
+        maxLength={5000}
+        rows={1}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 8,
+          padding: '6px 12px',
+          color: 'var(--text-primary)',
+          fontSize: '0.85rem',
+          resize: 'none',
+          fontFamily: 'inherit',
+          outline: 'none',
+          transition: 'border-color 150ms ease',
+        }}
+        onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'}
+        onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+      />
+    </div>
+  )
+}
+
 export default function FestivalDetail() {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
-  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, festivalMeta, artistMeta, setFestivalRating, getFestivalRating } = useUserData()
+  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, festivalMeta, artistMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
 
   const [event, setEvent] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -219,8 +274,8 @@ export default function FestivalDetail() {
 
   if (error || !event) return null
 
-  const externalUrl = event.url
-  const externalLabel = 'View Event ↗'
+  const raEventId = isRA ? id.replace(/^ra-/, '') : null
+  const externalUrl = raEventId ? `https://ra.co/events/${raEventId}` : null
   
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture 
@@ -282,51 +337,58 @@ export default function FestivalDetail() {
 
             {externalUrl && (
               <a href={externalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                {isRA ? <ResidentAdvisorIcon size={14} /> : null}
-                {isRA ? 'View on RA ↗' : externalLabel}
+                <ResidentAdvisorIcon size={14} /> View on RA ↗
               </a>
             )}
           </div>
 
-          {/* Festival Rating — only show when attended */}
+          {/* Festival Rating & Notes — only show when attended */}
           {attended && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-                Vibe Rating
+            <div style={{ marginTop: 16, display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                  Vibe Rating
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[1, 2, 3, 4, 5].map(star => {
+                    const current = getFestivalRating(id)
+                    const filled = star <= current
+                    return (
+                      <button
+                        key={star}
+                        onClick={() => setFestivalRating(id, star === current ? 0 : star)}
+                        title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '1.6rem',
+                          lineHeight: 1,
+                          padding: '2px',
+                          color: filled ? '#fbbf24' : 'rgba(255,255,255,0.2)',
+                          transition: 'transform 120ms ease, color 120ms ease',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        ★
+                      </button>
+                    )
+                  })}
+                  {getFestivalRating(id) > 0 && (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
+                      {getFestivalRating(id)}/5
+                    </span>
+                  )}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[1, 2, 3, 4, 5].map(star => {
-                  const current = getFestivalRating(id)
-                  const filled = star <= current
-                  return (
-                    <button
-                      key={star}
-                      onClick={() => setFestivalRating(id, star === current ? 0 : star)}
-                      title={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '1.6rem',
-                        lineHeight: 1,
-                        padding: '2px',
-                        color: filled ? '#fbbf24' : 'rgba(255,255,255,0.2)',
-                        transition: 'transform 120ms ease, color 120ms ease',
-                        WebkitTapHighlightColor: 'transparent',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      ★
-                    </button>
-                  )
-                })}
-                {getFestivalRating(id) > 0 && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
-                    {getFestivalRating(id)}/5
-                  </span>
-                )}
-              </div>
+
+              <FestivalNotes
+                eventId={id}
+                notes={getFestivalNotes(id)}
+                onSave={setFestivalNotes}
+              />
             </div>
           )}
         </div>

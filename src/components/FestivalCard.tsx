@@ -38,18 +38,27 @@ function formatDate(dateStr: string | null | undefined) {
 }
 
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  ra: { label: 'RA', color: '#fff', bg: '#d12d5a' },
-  custom: { label: 'Custom', color: '#fff', bg: '#6b7280' },
-  external: { label: 'External', color: '#fff', bg: '#8b5cf6' },
+  ra: { label: 'RA', color: 'var(--text-muted)', bg: 'transparent' },
+  custom: { label: 'Custom', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' },
+  external: { label: 'External', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(139,92,246,0.1))' },
 }
 
 function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean }) {
   const key = source ?? 'custom'
-  const config = SOURCE_LABELS[key] ?? { label: key, color: '#fff', bg: '#6b7280' }
-  const label = isFromDB ? config.label : `${config.label} (search)`
+  const config = SOURCE_LABELS[key] ?? { label: key, color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' }
+
+  if (key === 'ra') {
+    return (
+      <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ opacity: 0.6 }} />
+        {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
+      </span>
+    )
+  }
+
   return (
-    <span className="tag" style={{ background: config.bg, color: config.color, borderColor: config.bg, fontSize: '0.65rem', padding: '1px 6px' }}>
-      {label}
+    <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px' }}>
+      {config.label}
     </span>
   )
 }

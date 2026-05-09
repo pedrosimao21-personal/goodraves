@@ -16,6 +16,7 @@ import {
   getFestival,
   setGlobalArtistRating,
   setGlobalArtistNotes,
+  setFestivalNotes as setFestivalNotesAction,
 } from '@/db/actions/festivals'
 
 import type { InitialUserData } from '@/db/actions/get-initial-data'
@@ -45,6 +46,7 @@ interface State {
   performanceRatings: Record<string, number>
   festivalRatings: Record<string, number>
   artistNotes: Record<string, string>
+  festivalNotes: Record<string, string>
   raEvents: Record<string, any>
 }
 
@@ -58,6 +60,7 @@ const defaultState: State = {
   performanceRatings: {},
   festivalRatings: {},
   artistNotes: {},
+  festivalNotes: {},
   raEvents: {},
 }
 
@@ -72,6 +75,7 @@ interface UserDataContextType {
   performanceRatings: Record<string, number>
   festivalRatings: Record<string, number>
   artistNotes: Record<string, string>
+  festivalNotes: Record<string, string>
   raEvents: Record<string, any>
   loaded: boolean
   // Mutations
@@ -82,6 +86,7 @@ interface UserDataContextType {
   setPerformanceRating: (eventId: string, artistId: string, rating: number) => Promise<void>
   setFestivalRating: (eventId: string, rating: number) => Promise<void>
   setNotes: (artistId: string, notes: string) => Promise<void>
+  setFestivalNotes: (eventId: string, notes: string) => Promise<void>
   // Reads
   isAttended: (eventId: string) => boolean
   isUpcoming: (eventId: string) => boolean
@@ -91,6 +96,7 @@ interface UserDataContextType {
   getPerformanceRating: (eventId: string, artistId: string) => number
   getFestivalRating: (eventId: string) => number
   getNotes: (artistId: string) => string
+  getFestivalNotes: (eventId: string) => string
   getFestivalMeta: (eventId: string) => FestivalMeta | null
   getArtistMeta: (artistId: string) => any
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
@@ -117,6 +123,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
   const performanceRatings: Record<string, number> = {}
   const artistRatings: Record<string, number> = {}
   const artistNotes: Record<string, string> = {}
+  const festivalNotes: Record<string, string> = {}
 
   const lineupByFestival: Record<string, string[]> = {}
   for (const row of data.lineups) {
@@ -137,7 +144,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     festivalMeta[f.festivalId] = {
       name: f.name,
       date: f.date,
-      venue: f.venue ?? undefined,
+      venue: f.venue ? { name: f.venue, city: f.location ?? undefined } : undefined,
       location: f.location ?? undefined,
       imageUrl: f.imageUrl,
       source: f.source ?? undefined,
@@ -145,6 +152,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     }
 
     if (f.rating) festivalRatings[f.festivalId] = f.rating
+    if (f.notes) festivalNotes[f.festivalId] = f.notes
   }
 
   for (const ar of data.artistRatings) {
@@ -178,6 +186,7 @@ function transformDbData(data: NonNullable<InitialUserData>): State {
     performanceRatings,
     festivalRatings,
     artistNotes,
+    festivalNotes,
     raEvents: {},
   }
 }
@@ -334,6 +343,13 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     }
   }, [userId])
 
+  const setFestivalNotes = useCallback(async (eventId: string, notes: string) => {
+    setState(prev => ({ ...prev, festivalNotes: { ...prev.festivalNotes, [eventId]: notes } }))
+    if (userId) {
+      await setFestivalNotesAction(eventId, notes)
+    }
+  }, [userId])
+
   const batchImportRA = useCallback(async (events: Record<string, any>) => {
     // Import events into DB
     const eventArray = Object.entries(events).map(([id, e]: [string, any]) => ({
@@ -455,6 +471,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     state.festivalRatings?.[eventId] ?? 0,
   [state.festivalRatings])
   const getNotes = useCallback((artistId: string) => state.artistNotes[artistId] ?? '', [state.artistNotes])
+  const getFestivalNotes = useCallback((eventId: string) => state.festivalNotes[eventId] ?? '', [state.festivalNotes])
   const getFestivalMeta = useCallback((eventId: string) => {
     return state.festivalMeta[eventId] ?? null
   }, [state.festivalMeta])
@@ -493,6 +510,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     setPerformanceRating,
     setFestivalRating,
     setNotes,
+    setFestivalNotes,
     isAttended,
     isUpcoming,
     didSeeArtist,
@@ -501,6 +519,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     getPerformanceRating,
     getFestivalRating,
     getNotes,
+    getFestivalNotes,
     getFestivalMeta,
     getArtistMeta,
     getArtistSeenCounts,
@@ -515,9 +534,9 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   }), [
     state, loaded,
     toggleAttended, toggleUpcoming, toggleSawArtist,
-    setRating, setPerformanceRating, setFestivalRating, setNotes,
+    setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     isAttended, isUpcoming, didSeeArtist, getSeenCount,
-    getRating, getPerformanceRating, getFestivalRating, getNotes,
+    getRating, getPerformanceRating, getFestivalRating, getNotes, getFestivalNotes,
     getFestivalMeta, getArtistMeta, getArtistSeenCounts,
     exportData, importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,

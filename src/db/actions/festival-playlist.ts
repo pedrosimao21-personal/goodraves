@@ -35,7 +35,7 @@ export async function getFestivalPlaylistTracks(
     .where(inArray(artists.name, names))
     .catch(() => []);
 
-  const byName = new Map(rows.map((r) => [r.name, r]));
+  const byName = new Map(rows.map((r) => [r.name, r] as [string, typeof r]));
 
   const tracks: PlaylistTrack[] = [];
 

@@ -39,6 +39,7 @@ function formatDate(dateStr: string | null | undefined) {
 
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   ra: { label: 'RA', color: 'var(--text-muted)', bg: 'transparent' },
+  festivalfans: { label: 'FestivalFans', color: 'var(--text-muted)', bg: 'transparent' },
   custom: { label: 'Custom', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' },
   external: { label: 'External', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(139,92,246,0.1))' },
 }
@@ -51,6 +52,16 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
     return (
       <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
         <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ opacity: 0.6, filter: 'invert(1)' }} />
+        {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
+      </span>
+    )
+  }
+
+  if (key === 'festivalfans') {
+    return (
+      <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} style={{ opacity: 0.8 }} />
+        <span>FF</span>
         {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
       </span>
     )
@@ -154,7 +165,7 @@ export default function FestivalCard({ event }: { event: any }) {
 
       <div className="festival-card-body">
         <div className="festival-card-tags">
-          <SourceBadge source={event.source} isFromDB={!event._fromRA} />
+          <SourceBadge source={event.source} isFromDB={!event._fromRA && !event._fromFF} />
           {event.genre && <span className="tag">{event.genre}</span>}
           {event.subGenre && event.subGenre !== event.genre && (
             <span className="tag tag-orange">{event.subGenre}</span>

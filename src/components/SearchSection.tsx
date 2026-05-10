@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, searchRAEvents, fetchRAEvent } from '@/db/actions/festivals'
+import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -16,6 +16,12 @@ function SearchIcon() {
 /** Extract an RA event ID from a ra.co URL, or return null */
 function extractRAEventId(input: string): string | null {
   const match = input.match(/ra\.co\/events\/(\d+)/)
+  return match ? match[1] : null
+}
+
+/** Extract a FestivalFans slug from a festivalfans.nl URL, or return null */
+function extractFFSlugLocal(input: string): string | null {
+  const match = input.match(/festivalfans\.nl\/event\/([a-z0-9-]+)/i)
   return match ? match[1] : null
 }
 
@@ -50,12 +56,27 @@ export default function SearchSection() {
         }
       }
 
+      // Check if the input is a FestivalFans.nl event URL
+      const ffSlug = extractFFSlugLocal(q)
+      if (ffSlug) {
+        const festivalId = await fetchFFEvent(ffSlug)
+        if (festivalId) {
+          router.push(`/festival/${festivalId}`)
+          return
+        } else {
+          setError(new Error('Could not fetch event from FestivalFans.nl. The event may not exist or the site may be unavailable.'))
+          setSearched(true)
+          return
+        }
+      }
+
       const results: any[] = []
 
-      // Search DB and RA in parallel
-      const [dbResults, raResults] = await Promise.all([
+      // Search DB, RA, and FestivalFans in parallel
+      const [dbResults, raResults, ffResults] = await Promise.all([
         searchFestivalsDB(q).catch((err) => { console.warn('DB search failed:', err); return [] }),
         searchRAEvents(q).catch((err) => { console.warn('RA search failed:', err); return [] }),
+        searchFFEvents(q).catch((err) => { console.warn('FF search failed:', err); return [] }),
       ])
 
       // Add DB results first
@@ -91,6 +112,31 @@ export default function SearchSection() {
           source: 'ra',
           image: ra.imageUrl,
           _fromRA: true,
+        })
+      }
+
+      // Collect FF slugs already in DB results to deduplicate
+      const dbFFSlugs = new Set(
+        dbResults
+          .filter((f: any) => f.source === 'festivalfans' && f.sourceId)
+          .map((f: any) => String(f.sourceId))
+      )
+
+      // Add FF results that aren't already in DB or exact duplicates (same name + date)
+      const existingKeys = new Set(results.map((r: any) => `${r.name?.toLowerCase()}::${r.date ?? ''}`))
+      for (const ff of ffResults) {
+        if (dbFFSlugs.has(ff.ffSlug)) continue
+        if (existingKeys.has(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)) continue
+        results.push({
+          id: `ff-${ff.ffSlug}`,
+          name: ff.name,
+          date: ff.date,
+          venue: ff.venue ? { name: ff.venue, city: ff.location ?? '' } : undefined,
+          location: ff.location,
+          lineup: [],
+          source: 'festivalfans',
+          image: ff.imageUrl,
+          _fromFF: true,
         })
       }
 
@@ -140,14 +186,14 @@ export default function SearchSection() {
               id="festival-search-input"
               className="search-input"
               type="text"
-              placeholder="Search festivals, DJs, venues, cities or paste an RA event URL…"
+              placeholder="Search festivals, DJs, venues, cities or paste an RA/FestivalFans URL…"
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               autoComplete="off"
             />
           </div>
           <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? (extractRAEventId(inputValue) ? 'Fetching event…' : 'Searching…') : 'Search'}
+            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>
       </div>

@@ -261,7 +261,32 @@ export async function getFestival(id: string) {
 
         return {
           ...importedFestival,
-          lineup,
+          lineup: lineup.map((r) => ({ id: r.artistId, name: r.artistName })),
+        };
+      }
+    }
+
+    // Auto-import from FestivalFans.nl if the ID looks like ff-{slug}
+    const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+    if (ffMatch) {
+      const imported = await fetchFFEvent(ffMatch[1]);
+      if (imported) {
+        const [importedFestival] = await db
+          .select()
+          .from(festivals)
+          .where(eq(festivals.id, id))
+          .limit(1);
+        if (!importedFestival) return null;
+
+        const lineup = await db
+          .select({ artistId: festivalArtists.artistId, artistName: artists.name })
+          .from(festivalArtists)
+          .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
+          .where(eq(festivalArtists.festivalId, id));
+
+        return {
+          ...importedFestival,
+          lineup: lineup.map((r) => ({ id: r.artistId, name: r.artistName })),
         };
       }
     }
@@ -797,6 +822,356 @@ export async function fetchRAEvent(
   }
 
   return festivalId;
+}
+
+// ── FestivalFans.nl search cache (5-minute TTL) ────────
+const ffSearchCache = new Map<
+  string,
+  { data: any[]; ts: number }
+>();
+
+/**
+ * Extract festival slug from a festivalfans.nl URL.
+ * Supports: festivalfans.nl/event/{slug}/
+ */
+function extractFFSlugInternal(input: string): string | null {
+  const match = input.match(/festivalfans\.nl\/event\/([a-z0-9-]+)/i);
+  return match ? match[1] : null;
+}
+
+/** Async wrapper for use in client components. */
+export async function extractFFSlug(input: string): Promise<string | null> {
+  return extractFFSlugInternal(input);
+}
+
+/**
+ * Parse a Dutch date string like "Donderdag 1 januari 2026" to YYYY-MM-DD.
+ */
+function parseDutchDate(dateStr: string): string | null {
+  const months: Record<string, string> = {
+    januari: "01", februari: "02", maart: "03", april: "04",
+    mei: "05", juni: "06", juli: "07", augustus: "08",
+    september: "09", oktober: "10", november: "11", december: "12",
+  };
+  // e.g. "Donderdag 1 januari 2026" or "1 januari 2026"
+  const match = dateStr.match(/(\d{1,2})\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+(\d{4})/i);
+  if (!match) return null;
+  const day = match[1].padStart(2, "0");
+  const month = months[match[2].toLowerCase()];
+  const year = match[3];
+  if (!month) return null;
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Parse festivalfans.nl event page HTML to extract structured data.
+ */
+function parseFFEventPage(html: string): {
+  name: string | null;
+  date: string | null;
+  endDate: string | null;
+  venue: string | null;
+  location: string | null;
+  time: string | null;
+  imageUrl: string | null;
+  lineup: string[];
+  latitude: number | null;
+  longitude: number | null;
+} {
+  // Extract name from <h1>
+  const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
+  const name = h1Match ? h1Match[1].trim() : null;
+
+  // Extract info table fields
+  const getTableField = (label: string): string | null => {
+    // Match: <td class="td-{label}">Label</td><td>Value (may contain <a> tags)</td>
+    const re = new RegExp(`<td[^>]*class="td-${label}"[^>]*>[^<]*</td>\\s*<td[^>]*>(.*?)</td>`, "is");
+    const m = html.match(re);
+    if (!m) return null;
+    // Strip HTML tags from the value
+    return m[1].replace(/<[^>]+>/g, "").trim() || null;
+  };
+
+  const dateStr = getTableField("datum");
+  let date: string | null = null;
+  let endDate: string | null = null;
+
+  if (dateStr) {
+    // Handle date ranges like "Zaterdag 9 - Zondag 10 mei 2026" or single dates
+    // Try to extract from schema.org JSON-LD first (more reliable)
+    date = parseDutchDate(dateStr);
+  }
+
+  // Extract from schema.org JSON-LD (most reliable for dates and geo)
+  const ldJsonMatch = html.match(/<script type="application\/ld\+json"[^>]*>\s*(\{[^]*?"@type"\s*:\s*"Event"[^]*?\})\s*<\/script>/);
+  if (ldJsonMatch) {
+    try {
+      const ld = JSON.parse(ldJsonMatch[1]);
+      if (ld.startDate) {
+        date = new Date(ld.startDate).toISOString().slice(0, 10);
+      }
+      if (ld.endDate && ld.endDate !== ld.startDate) {
+        endDate = new Date(ld.endDate).toISOString().slice(0, 10);
+      }
+    } catch {}
+  }
+
+  // Venue from table (plain text, stripping links)
+  const venueRaw = getTableField("locatie");
+  const venue = venueRaw;
+
+  // City / location from table
+  const cityRaw = getTableField("stad");
+  const location = cityRaw ? `${cityRaw}, Netherlands` : null;
+
+  // Time
+  const time = getTableField("tijd");
+
+  // Image from og:image
+  const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+  const imageUrl = ogImageMatch ? ogImageMatch[1] : null;
+
+  // Lineup: extract artist names from links to /artiest/ pages in the main content
+  const lineup: string[] = [];
+  // Only extract from content area, not navigation. Find the event-text div.
+  const contentMatch = html.match(/<div class="event-text">([\s\S]*)/);
+  const contentHtml = contentMatch ? contentMatch[1] : html;
+
+  // Only get artists from the current year section (before any toggle_container divs for previous years)
+  const currentYearHtml = contentHtml.split(/<div class="trigger">/)[0] ?? contentHtml;
+
+  let artistMatch;
+  const seenNames = new Set<string>();
+  const linkRegex = /<a\s+href="https?:\/\/festivalfans\.nl\/artiest\/[^"]*"\s+title="([^"]+)"/g;
+  while ((artistMatch = linkRegex.exec(currentYearHtml)) !== null) {
+    const artistName = artistMatch[1].trim();
+    if (!seenNames.has(artistName)) {
+      seenNames.add(artistName);
+      lineup.push(artistName);
+    }
+  }
+
+  // Lat/lng from schema.org JSON-LD
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  if (ldJsonMatch) {
+    try {
+      const ld = JSON.parse(ldJsonMatch[1]);
+      if (ld.location?.geo) {
+        latitude = parseFloat(ld.location.geo.latitude) || null;
+        longitude = parseFloat(ld.location.geo.longitude) || null;
+      }
+    } catch {}
+  }
+
+  return { name, date, endDate, venue, location, time, imageUrl, lineup, latitude, longitude };
+}
+
+// ── Search FestivalFans.nl events by keyword ──────────
+export async function searchFFEvents(query: string) {
+  if (!query || query.length > 200) return [];
+
+  const cacheKey = query.trim().toLowerCase();
+  const cached = ffSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < RA_CACHE_TTL) {
+    return cached.data;
+  }
+
+  try {
+    // Use the JSON search API
+    const res = await fetch("https://festivalfans.nl/search.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: `action=zoekbalk&search=${encodeURIComponent(query)}`,
+    });
+
+    if (!res.ok) return [];
+    const json = await res.json();
+
+    if (!json.results || !Array.isArray(json.results)) return [];
+
+    // Filter out header entries and entries without a URL
+    const events = json.results.filter(
+      (r: any) => r.type !== "header" && r.url && r.title
+    );
+
+    // Resolve slugs by following redirects (HEAD requests in parallel)
+    const results = await Promise.all(
+      events.map(async (ev: any) => {
+        // Resolve the slug from the redirect
+        let ffSlug: string | null = null;
+        try {
+          const permalink = ev.url.startsWith("http")
+            ? ev.url
+            : `https://festivalfans.nl${ev.url}`;
+          const headRes = await fetch(permalink, {
+            method: "HEAD",
+            redirect: "manual",
+          });
+          const loc = headRes.headers.get("location");
+          if (loc) {
+            const slugMatch = loc.match(/\/event\/([a-z0-9-]+)\/?$/i);
+            if (slugMatch) ffSlug = slugMatch[1].toLowerCase();
+          }
+        } catch {}
+
+        // Fallback: derive slug from title
+        if (!ffSlug) {
+          ffSlug = ev.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+        }
+
+        // Parse date from "30 mei 2026" format
+        let date: string | null = null;
+        if (ev.strtotime) {
+          date = new Date(ev.strtotime * 1000).toISOString().slice(0, 10);
+        }
+
+        return {
+          ffSlug,
+          name: ev.title,
+          date,
+          endDate: null as string | null,
+          venue: ev.venue || null,
+          location: ev.locatie ? `${ev.locatie}, Netherlands` : null,
+          imageUrl: null as string | null,
+          lineup: [] as string[],
+          latitude: null as number | null,
+          longitude: null as number | null,
+        };
+      })
+    );
+
+    ffSearchCache.set(cacheKey, { data: results, ts: Date.now() });
+    return results;
+  } catch {
+    return [];
+  }
+}
+
+// ── Fetch a single FestivalFans.nl event by slug and save to DB ───
+export async function fetchFFEvent(
+  slug: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
+  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
+
+  const festivalId = `ff-${slug}`;
+
+  if (!opts?.force) {
+    // Check if already in DB with lineup
+    const [existing] = await db
+      .select({ id: festivals.id })
+      .from(festivals)
+      .where(eq(festivals.id, festivalId))
+      .limit(1);
+    if (existing) {
+      const [hasLineup] = await db
+        .select({ artistId: festivalArtists.artistId })
+        .from(festivalArtists)
+        .where(eq(festivalArtists.festivalId, festivalId))
+        .limit(1);
+      if (hasLineup) return festivalId;
+    }
+  }
+
+  // Fetch the event page
+  let html: string;
+  try {
+    const res = await fetch(`https://festivalfans.nl/event/${slug}/`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept": "text/html",
+      },
+    });
+    if (!res.ok) {
+      console.error(`[fetchFFEvent] festivalfans.nl returned ${res.status} for slug ${slug}`);
+      return null;
+    }
+    html = await res.text();
+  } catch (err) {
+    console.error(`[fetchFFEvent] Failed to fetch festivalfans.nl event ${slug}:`, err);
+    return null;
+  }
+
+  const parsed = parseFFEventPage(html);
+  if (!parsed.name) return null;
+
+  const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+
+  // Save to DB
+  const festivalValues = {
+    id: festivalId,
+    name: parsed.name,
+    date,
+    endDate: parsed.endDate,
+    venue: parsed.venue,
+    location: parsed.location,
+    source: "festivalfans" as const,
+    sourceId: slug,
+    imageUrl: parsed.imageUrl,
+    latitude: parsed.latitude,
+    longitude: parsed.longitude,
+  };
+
+  if (opts?.force) {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoUpdate({
+        target: festivals.id,
+        set: {
+          name: festivalValues.name,
+          date: festivalValues.date,
+          endDate: festivalValues.endDate,
+          venue: festivalValues.venue,
+          location: festivalValues.location,
+          imageUrl: festivalValues.imageUrl,
+          latitude: festivalValues.latitude,
+          longitude: festivalValues.longitude,
+        },
+      });
+  } else {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoNothing();
+  }
+
+  // Save lineup
+  if (parsed.lineup.length > 0) {
+    const nameToId = await ensureArtistsAndGetIds(parsed.lineup);
+
+    await db
+      .insert(festivalArtists)
+      .values(
+        parsed.lineup
+          .filter((name) => nameToId[name])
+          .map((name) => ({ festivalId, artistId: nameToId[name] }))
+      )
+      .onConflictDoNothing();
+  }
+
+  return festivalId;
+}
+
+// ── Force-reimport a FestivalFans.nl event ──────────────
+export async function reimportFFEvent(slug: string): Promise<string | null> {
+  if (!slug) return null;
+  const festivalId = `ff-${slug}`;
+
+  // Delete existing lineup
+  await db
+    .delete(festivalArtists)
+    .where(eq(festivalArtists.festivalId, festivalId));
+
+  return fetchFFEvent(slug, { force: true });
 }
 
 // ── Global artist rating (not per-festival) ────────────

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { spotifySearchArtist } from '@/services/spotify/client'
-import { lastfmGetArtistInfo } from '@/services/lastfm/client'
+import { enrichArtistNamesBatch } from '@/db/actions/artists'
 
 const BATCH_SIZE = 10
 
@@ -18,52 +17,26 @@ export function useSpotifyEnrichment(
     let cancelled = false
 
     const fetchBatch = async () => {
-      const results: Record<string, any> = {}
+      const allResults: Record<string, any> = {}
 
       for (let i = 0; i < artistNames.length && !cancelled; i += BATCH_SIZE) {
         const batch = artistNames.slice(i, i + BATCH_SIZE)
-        const promises = batch.map(async (name) => {
-          let genres: string[] = []
-          let image: string | null = null
-
-          try {
-            const sp = await spotifySearchArtist(name)
-            if (sp) image = sp.image
-          } catch {
-            // Spotify lookup failed; will try Last.fm below
-          }
-
-          try {
-            const info = await lastfmGetArtistInfo(name)
-            if (info) {
-              genres = info.tags || []
-              if (!image) image = info.image
-            }
-          } catch {
-            // Last.fm lookup failed; continue with partial data
-          }
-
-          return { name, genres, image }
-        })
-
-        const batchResults = await Promise.all(promises)
-        batchResults.forEach((res) => {
-          if (res) results[res.name] = res
-        })
+        try {
+          const results = await (enrichArtistNamesBatch(batch) as unknown as Promise<Record<string, any>>)
+          Object.assign(allResults, results)
+        } catch {
+          // batch failed, continue
+        }
       }
 
       if (cancelled) return
-
-      const normalizedResults: Record<string, any> = {}
-      Object.keys(results).forEach(name => {
-        normalizedResults[name.toLowerCase()] = results[name]
-      })
-      setData(normalizedResults)
-      if (onEnrich) onEnrich(normalizedResults)
+      setData(allResults)
+      if (onEnrich) onEnrich(allResults)
     }
 
     fetchBatch()
     return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artistNames.join(',')])
 
   return data

@@ -279,3 +279,41 @@ export async function getOrCreateArtistByName(name: string): Promise<{ id: strin
 // ── Legacy: bulk Spotify image fetch for lineup cards ─────────────────────
 // Extracted to artist-images.ts for SRP compliance.
 // Import directly: import { getArtistsWithImages } from "@/db/actions/artist-images"
+
+// ── Batch enrichment server action for Top DJs page ───────────────────────
+// Called from useSpotifyEnrichment hook on the client side.
+// Returns Spotify image + Last.fm genres for each artist name.
+
+export async function enrichArtistNamesBatch(
+  names: string[]
+): Promise<Record<string, { name: string; image: string | null; genres: string[] }>> {
+  const results: Record<string, { name: string; image: string | null; genres: string[] }> = {};
+
+  await Promise.all(
+    names.map(async (name) => {
+      let image: string | null = null;
+      let genres: string[] = [];
+
+      try {
+        const sp = await spotifySearchArtist(name);
+        if (sp) image = sp.image;
+      } catch {
+        // Spotify lookup failed
+      }
+
+      try {
+        const info = await lastfmGetArtistInfo(name);
+        if (info) {
+          genres = info.tags || [];
+          if (!image) image = info.image;
+        }
+      } catch {
+        // Last.fm lookup failed
+      }
+
+      results[name.toLowerCase()] = { name, image, genres };
+    })
+  );
+
+  return results;
+}

@@ -213,49 +213,55 @@ export function UpcomingShowsList({ shows }: { shows: ArtistShow[] }) {
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
         DJ sets &amp; mixes on Spotify
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {shows.map(show => (
-          <a
-            key={show.id}
-            href={show.url ?? '#'}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '12px 14px',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'border-color 200ms ease, background 200ms ease',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
-          >
-            {show.image ? (
-              <Image
-                src={show.image}
-                alt={show.name}
-                width={48}
-                height={48}
-                sizes="48px"
-                quality={85}
-                style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-              />
-            ) : (
-              <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🎙️</div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{show.name}</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{show.publisher}</div>
-            </div>
-            <SpotifyIcon size={16} />
-          </a>
-        ))}
-      </div>
+      {shows.length === 0 ? (
+        <div style={{ padding: '16px 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+          No upcoming shows found on Spotify.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {shows.map(show => (
+            <a
+              key={show.id}
+              href={show.url ?? '#'}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '12px 14px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'border-color 200ms ease, background 200ms ease',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+            >
+              {show.image ? (
+                <Image
+                  src={show.image}
+                  alt={show.name}
+                  width={48}
+                  height={48}
+                  sizes="48px"
+                  quality={85}
+                  style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                />
+              ) : (
+                <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🎙️</div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{show.name}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{show.publisher}</div>
+              </div>
+              <SpotifyIcon size={16} />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

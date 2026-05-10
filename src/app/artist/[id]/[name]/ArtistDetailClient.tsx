@@ -25,6 +25,7 @@ export default function ArtistDetail() {
   const [timedOut, setTimedOut] = useState(false)
   const [similarUrls, setSimilarUrls] = useState<Map<string, string>>(new Map())
   const [shows, setShows] = useState<ArtistShow[]>([])
+  const [showsLoaded, setShowsLoaded] = useState(false)
 
   useEffect(() => {
     if (!artistId) return
@@ -34,7 +35,7 @@ export default function ArtistDetail() {
 
     // Safety timeout — if enrichment takes >15s, unblock the UI
     const timeout = setTimeout(() => {
-      if (!cancelled) setTimedOut(true)
+      if (!cancelled) { setTimedOut(true); setLoading(false) }
     }, 15_000)
 
     ;(getArtistData(artistId) as unknown as Promise<ArtistData | null>)
@@ -84,8 +85,8 @@ export default function ArtistDetail() {
     if (!displayName || loading) return
     let cancelled = false
     ;(getArtistShows(displayName) as unknown as Promise<ArtistShow[]>)
-      .then(data => { if (!cancelled) setShows(data) })
-      .catch(() => {})
+      .then(data => { if (!cancelled) { setShows(data); setShowsLoaded(true) } })
+      .catch(() => { if (!cancelled) setShowsLoaded(true) })
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, loading])
@@ -164,7 +165,7 @@ export default function ArtistDetail() {
           <TopTracksList tracks={artist!.lastfmTopTracks} artistName={displayName} />
         )}
 
-        {shows.length > 0 && !loading && (
+        {showsLoaded && !loading && (
           <UpcomingShowsList shows={shows} />
         )}
 

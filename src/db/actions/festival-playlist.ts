@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { inArray } from "drizzle-orm";
 import { artists } from "@/db/schema";
+import { lastfmGetArtistTopTracks } from "@/services/lastfm/client";
 
 export type PlaylistTrack = {
   artistName: string;
@@ -13,12 +14,13 @@ export type PlaylistTrack = {
 
 /**
  * Build a curated festival playlist preview.
- * Fetches up to `tracksPerArtist` top tracks from Last.fm for each artist in the lineup,
- * looking them up by name from the DB (where lastfmTopTracks are cached).
+ * First checks the DB for cached Last.fm top tracks.
+ * For artists without cached tracks, fetches from Last.fm live.
+ * Returns up to `tracksPerArtist` tracks per artist.
  */
 export async function getFestivalPlaylistTracks(
   artistNames: string[],
-  tracksPerArtist = 2
+  tracksPerArtist = 3
 ): Promise<PlaylistTrack[]> {
   if (!artistNames.length) return [];
 
@@ -39,26 +41,42 @@ export async function getFestivalPlaylistTracks(
 
   const tracks: PlaylistTrack[] = [];
 
-  for (const name of names) {
-    const row = byName.get(name);
-    if (!row) continue;
+  await Promise.all(
+    names.map(async (name) => {
+      const row = byName.get(name);
+      const artistImage = row?.imageUrl ?? null;
 
-    let parsed: Array<{ name: string; playcount: number }> = [];
-    try {
-      parsed = row.lastfmTopTracks ? JSON.parse(row.lastfmTopTracks) : [];
-    } catch {
-      parsed = [];
-    }
+      let parsed: Array<{ name: string; playcount: number }> = [];
 
-    parsed.slice(0, tracksPerArtist).forEach((t) => {
-      tracks.push({
-        artistName: row.name,
-        artistImage: row.imageUrl ?? null,
-        trackName: t.name,
-        spotifySearchUrl: `https://open.spotify.com/search/${encodeURIComponent(row.name + " " + t.name)}`,
+      // Try cached DB data first
+      if (row?.lastfmTopTracks) {
+        try {
+          parsed = JSON.parse(row.lastfmTopTracks);
+        } catch {
+          parsed = [];
+        }
+      }
+
+      // Fall back to live Last.fm fetch if no cached data
+      if (!parsed.length) {
+        try {
+          const liveTracks = await lastfmGetArtistTopTracks(name);
+          if (liveTracks?.length) parsed = liveTracks;
+        } catch {
+          // Last.fm unavailable for this artist
+        }
+      }
+
+      parsed.slice(0, tracksPerArtist).forEach((t) => {
+        tracks.push({
+          artistName: name,
+          artistImage,
+          trackName: t.name,
+          spotifySearchUrl: `https://open.spotify.com/search/${encodeURIComponent(name + " " + t.name)}`,
+        });
       });
-    });
-  }
+    })
+  );
 
   return tracks;
 }

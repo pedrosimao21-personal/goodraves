@@ -180,12 +180,12 @@ export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; a
       <h2 className="section-title" style={{ marginBottom: 16 }}>Top Tracks</h2>
       <ul className="track-list" id="top-tracks-list">
         {tracks.map((t, i) => {
-          const spotifySearchUrl = `https://open.spotify.com/search/${encodeURIComponent(artistName + ' ' + t.name)}`
+          const trackUrl = t.url || `https://open.spotify.com/search/${encodeURIComponent(artistName + ' ' + t.name)}`
           return (
             <li key={t.name + i} className="track-item">
               <span className="track-num">{i + 1}</span>
               <div className="track-info">
-                <a href={spotifySearchUrl} target="_blank" rel="noreferrer" className="track-name" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <a href={trackUrl} target="_blank" rel="noreferrer" className="track-name" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {t.name}
                   <SpotifyIcon size={12} />
                 </a>
@@ -201,67 +201,41 @@ export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; a
   )
 }
 
-type ArtistShow = { id: string; name: string; publisher: string; image: string | null; url: string | null; description: string }
-
-export function UpcomingShowsList({ shows }: { shows: ArtistShow[] }) {
+export function UpcomingShowsList({ artistName }: { artistName: string }) {
+  const raSearchUrl = `https://ra.co/search?q=${encodeURIComponent(artistName)}`
   return (
     <div style={{ marginBottom: 40 }}>
-      <h2 className="section-title" style={{ marginBottom: 4 }}>
-        Podcasts & Sets
-        <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
+      <h2 className="section-title" style={{ marginBottom: 16 }}>
+        Upcoming Shows
       </h2>
-      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-        DJ sets &amp; mixes on Spotify
-      </p>
-      {shows.length === 0 ? (
-        <div style={{ padding: '16px 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-          No podcasts or sets found on Spotify.
+      <div style={{
+        padding: '24px',
+        background: 'var(--bg-card)',
+        borderRadius: 16,
+        border: '1px dashed var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: 12
+      }}>
+        <div style={{ fontSize: '2rem' }}>🗓️</div>
+        <div>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '1.05rem' }}>Find {artistName}'s next gig</h3>
+          <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+            Check out Resident Advisor for their full tour schedule and tickets.
+          </p>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {shows.map(show => (
-            <a
-              key={show.id}
-              href={show.url ?? '#'}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '12px 14px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                textDecoration: 'none',
-                color: 'inherit',
-                transition: 'border-color 200ms ease, background 200ms ease',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
-            >
-              {show.image ? (
-                <Image
-                  src={show.image}
-                  alt={show.name}
-                  width={48}
-                  height={48}
-                  sizes="48px"
-                  quality={85}
-                  style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-                />
-              ) : (
-                <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🎙️</div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{show.name}</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{show.publisher}</div>
-              </div>
-              <SpotifyIcon size={16} />
-            </a>
-          ))}
-        </div>
-      )}
+        <a 
+          href={raSearchUrl} 
+          target="_blank" 
+          rel="noreferrer"
+          className="btn btn-secondary"
+          style={{ marginTop: 8, textDecoration: 'none' }}
+        >
+          View on Resident Advisor
+        </a>
+      </div>
     </div>
   )
 }

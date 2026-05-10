@@ -8,8 +8,9 @@ import {
   spotifyGetArtist,
   spotifyGetArtistAlbums,
   spotifySearchArtistsBatch,
+  spotifyGetArtistTopTracks,
 } from "@/services/spotify/client";
-import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm/client";
+import { lastfmGetArtistInfo } from "@/services/lastfm/client";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
@@ -107,7 +108,6 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     updateFields.lastfmListeners = lastfmUpdate.listeners ? parseInt(lastfmUpdate.listeners, 10) || null : null;
     updateFields.lastfmPlaycount = lastfmUpdate.playcount ? parseInt(lastfmUpdate.playcount, 10) || null : null;
     updateFields.lastfmSimilar = JSON.stringify(lastfmUpdate.similar ?? []);
-    updateFields.lastfmTopTracks = JSON.stringify(lastfmUpdate.topTracks ?? []);
     updateFields.lastfmFetchedAt = now;
   }
 
@@ -116,6 +116,9 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     updateFields.imageUrl = spotifyUpdate.image ?? null;
     updateFields.spotifyFollowers = spotifyUpdate.followers ?? null;
     updateFields.spotifyAlbums = JSON.stringify(spotifyUpdate.albums ?? []);
+    if (spotifyUpdate.topTracks) {
+      updateFields.lastfmTopTracks = JSON.stringify(spotifyUpdate.topTracks);
+    }
     updateFields.spotifyFetchedAt = now;
   }
 
@@ -188,10 +191,7 @@ async function upsertArtistGenres(artistId: string, genreNames: string[]): Promi
 
 async function refreshLastfm(name: string) {
   try {
-    const [info, topTracks] = await Promise.all([
-      lastfmGetArtistInfo(name),
-      lastfmGetArtistTopTracks(name, 8),
-    ]);
+    const info = await lastfmGetArtistInfo(name);
 
     const similarNames = (info.similar ?? []).map((a: any) => a.name).filter(Boolean);
 
@@ -231,7 +231,7 @@ async function refreshLastfm(name: string) {
       url: a.url ?? null,
     }));
 
-    return { ...info, topTracks, similar };
+    return { ...info, similar };
   } catch (err) {
     console.error(`[artists] Last.fm refresh failed for "${name}":`, err instanceof Error ? err.message : err);
     return null;
@@ -247,9 +247,10 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
     if (!spArtist) return null;
 
     const albums = await spotifyGetArtistAlbums(spArtist.id).catch(() => [] as any[]);
+    const topTracks = await spotifyGetArtistTopTracks(spArtist.id).catch(() => [] as any[]);
     albums.sort((a: any, b: any) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
 
-    return { ...spArtist, albums };
+    return { ...spArtist, albums, topTracks };
   } catch (err) {
     console.error(`[artists] Spotify refresh failed for "${name}":`, err instanceof Error ? err.message : err);
     return null;

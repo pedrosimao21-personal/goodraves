@@ -105,10 +105,10 @@ export default function FestivalDetail() {
   useEffect(() => {
     if (!event?.attractions?.length) return
     const needsEnrich = event.attractions.filter((a: any) => !a.image).map((a: any) => a.name)
-    if (!needsEnrich.length) return
     let cancelled = false
-
-    ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
+    
+    if (needsEnrich.length > 0) {
+      ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
       .then((data) => {
         if (cancelled) return
         const normalized: Record<string, any> = {}
@@ -116,15 +116,15 @@ export default function FestivalDetail() {
           if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
         }
         setSpotifyData(normalized)
-
-        // Fetch playlist once we have artist data (to avoid layout shift too early)
-        ;(getFestivalPlaylist(event.name) as unknown as Promise<FestivalPlaylistData | null>)
-          .then(data => { if (!cancelled) setPlaylist(data) })
-          .catch(() => {})
       })
       .catch((err) => {
         console.error('[festival] Failed to enrich artist images:', err)
       })
+
+    // Always fetch playlist, even if no artists need enrichment
+    ;(getFestivalPlaylist(event.name) as unknown as Promise<FestivalPlaylistData | null>)
+      .then(data => { if (!cancelled) setPlaylist(data) })
+      .catch(() => {})
 
     return () => { cancelled = true }
   }, [event])

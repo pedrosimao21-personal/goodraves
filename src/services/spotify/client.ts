@@ -154,6 +154,18 @@ export async function spotifySearchPlaylist(query: string, limit = 1) {
   }));
 }
 
+export async function spotifyGetArtistTopTracks(spotifyId: string) {
+  const data = await apiFetch(`/artists/${spotifyId}/top-tracks`, {
+    market: SPOTIFY_MARKET,
+  });
+
+  return (data.tracks ?? []).slice(0, 8).map((t: any) => ({
+    name: t.name,
+    playcount: t.popularity ?? 0, // Using popularity for playcount field compatibility
+    url: t.external_urls?.spotify ?? null,
+    listeners: 0,
+  }));
+}
 export async function spotifyGetArtistAlbums(
   spotifyId: string,
   limit = DEFAULT_ALBUM_LIMIT

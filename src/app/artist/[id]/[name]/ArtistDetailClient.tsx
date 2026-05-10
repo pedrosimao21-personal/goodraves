@@ -7,7 +7,6 @@ import { useUserData } from '@/context/UserDataContext'
 import { BackIcon } from '@/components/icons'
 import { SimilarArtistCard } from './SimilarArtistCard'
 import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList } from './ArtistSections'
-import { getArtistShows, type ArtistShow } from '@/db/actions/artist-shows'
 
 const MAX_TAGS = 8
 
@@ -24,8 +23,6 @@ export default function ArtistDetail() {
   const [notFound, setNotFound] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const [similarUrls, setSimilarUrls] = useState<Map<string, string>>(new Map())
-  const [shows, setShows] = useState<ArtistShow[]>([])
-  const [showsLoaded, setShowsLoaded] = useState(false)
 
   useEffect(() => {
     if (!artistId) return
@@ -38,18 +35,52 @@ export default function ArtistDetail() {
       if (!cancelled) { setTimedOut(true); setLoading(false) }
     }, 15_000)
 
-    ;(getArtistData(artistId) as unknown as Promise<ArtistData | null>)
-      .then((data) => {
+    const fetchArtist = async () => {
+      try {
+        let data = await (getArtistData(artistId) as unknown as Promise<ArtistData | null>)
+        if (!data) {
+          const created = await (getOrCreateArtistByName(artistName) as unknown as Promise<{ id: string; name: string }>)
+          data = await (getArtistData(created.id) as unknown as Promise<ArtistData | null>)
+          // Optionally update the URL to have the correct ID without reloading
+          if (data && typeof window !== 'undefined') {
+            window.history.replaceState(null, '', `/artist/${data.id}/${encodeURIComponent(data.name)}`)
+          }
+        }
+        
         clearTimeout(timeout)
         if (cancelled) return
-        if (!data) { setNotFound(true); setLoading(false); return }
-        setArtist(data)
+        
+        if (!data) {
+          setNotFound(true)
+        } else {
+          setArtist(data)
+        }
         setLoading(false)
-      })
-      .catch(() => {
+      } catch (err) {
         clearTimeout(timeout)
-        if (!cancelled) { setNotFound(true); setLoading(false) }
-      })
+        if (!cancelled) {
+          try {
+            // If the error was an invalid UUID, try by name one last time
+            const created = await (getOrCreateArtistByName(artistName) as unknown as Promise<{ id: string; name: string }>)
+            const data = await (getArtistData(created.id) as unknown as Promise<ArtistData | null>)
+            if (data) {
+              setArtist(data)
+              setLoading(false)
+              if (typeof window !== 'undefined') {
+                window.history.replaceState(null, '', `/artist/${data.id}/${encodeURIComponent(data.name)}`)
+              }
+              return
+            }
+          } catch (e) {
+            // ignore
+          }
+          setNotFound(true)
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchArtist()
     return () => { cancelled = true; clearTimeout(timeout) }
   }, [artistId])
 
@@ -79,17 +110,6 @@ export default function ArtistDetail() {
   const displayImage = artist?.imageUrl ?? null
   const displayName = artist?.name ?? artistName
   const mergedTags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
-
-  // Fetch Spotify shows once we know the artist name
-  useEffect(() => {
-    if (!displayName || loading) return
-    let cancelled = false
-    ;(getArtistShows(displayName) as unknown as Promise<ArtistShow[]>)
-      .then(data => { if (!cancelled) { setShows(data); setShowsLoaded(true) } })
-      .catch(() => { if (!cancelled) setShowsLoaded(true) })
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayName, loading])
 
   async function navigateToSimilar(name: string) {
     try {
@@ -165,8 +185,8 @@ export default function ArtistDetail() {
           <TopTracksList tracks={artist!.lastfmTopTracks} artistName={displayName} />
         )}
 
-        {showsLoaded && !loading && (
-          <UpcomingShowsList shows={shows} />
+        {!loading && (
+          <UpcomingShowsList artistName={displayName} />
         )}
 
         {(artist?.lastfmSimilar?.length ?? 0) > 0 && !loading && (

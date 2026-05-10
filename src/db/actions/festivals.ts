@@ -293,11 +293,24 @@ export async function getFestival(id: string) {
     return null;
   }
 
-  const lineup = await db
+  let lineup = await db
     .select({ artistId: festivalArtists.artistId, artistName: artists.name })
     .from(festivalArtists)
     .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
     .where(eq(festivalArtists.festivalId, id));
+
+  // If the festival has no lineup and is from FestivalFans, re-fetch to populate it
+  if (lineup.length === 0) {
+    const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+    if (ffMatch) {
+      await fetchFFEvent(ffMatch[1]);
+      lineup = await db
+        .select({ artistId: festivalArtists.artistId, artistName: artists.name })
+        .from(festivalArtists)
+        .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
+        .where(eq(festivalArtists.festivalId, id));
+    }
+  }
 
   return {
     ...festival,

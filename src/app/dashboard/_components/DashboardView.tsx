@@ -151,10 +151,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: { 
   const router = useRouter()
   const { getSeenCount, getFestivalMeta } = useUserData()
 
-  const isLocal = eventId.startsWith('ra-') || eventId.startsWith('custom-')
-
-  const localMeta = isLocal ? getFestivalMeta(eventId) : null
-  const displayEvent = localMeta
+  const displayEvent = getFestivalMeta(eventId)
   const seenCount = getSeenCount(eventId)
 
   const handleRemove = useCallback((e: React.MouseEvent) => {
@@ -210,16 +207,14 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: { 
         </div>
       )}
 
-      {isLocal && (
-        <button
-          className="btn-ghost"
-          onClick={handleEdit}
-          title="Edit festival details"
-          style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
-        >
-          ✏️
-        </button>
-      )}
+      <button
+        className="btn-ghost"
+        onClick={handleEdit}
+        title="Edit festival details"
+        style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
+      >
+        ✏️
+      </button>
 
       <button
         className="btn-ghost"

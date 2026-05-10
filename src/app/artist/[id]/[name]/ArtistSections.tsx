@@ -207,7 +207,7 @@ export function UpcomingShowsList({ shows }: { shows: ArtistShow[] }) {
   return (
     <div style={{ marginBottom: 40 }}>
       <h2 className="section-title" style={{ marginBottom: 4 }}>
-        Upcoming Shows
+        Podcasts & Sets
         <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
       </h2>
       <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
@@ -215,7 +215,7 @@ export function UpcomingShowsList({ shows }: { shows: ArtistShow[] }) {
       </p>
       {shows.length === 0 ? (
         <div style={{ padding: '16px 0', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-          No upcoming shows found on Spotify.
+          No podcasts or sets found on Spotify.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

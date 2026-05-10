@@ -135,6 +135,25 @@ export async function spotifyGetArtist(spotifyId: string) {
   return normalizeArtist(data);
 }
 
+export async function spotifySearchPlaylist(query: string, limit = 1) {
+  const data = await apiFetch("/search", {
+    q: query,
+    type: "playlist",
+    limit,
+  });
+
+  const playlists = data.playlists?.items ?? [];
+  return playlists.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    url: p.external_urls?.spotify ?? null,
+    image: p.images?.[0]?.url ?? null,
+    owner: p.owner?.display_name ?? "",
+    tracksTotal: p.tracks?.total ?? 0,
+  }));
+}
+
 export async function spotifyGetArtistAlbums(
   spotifyId: string,
   limit = DEFAULT_ALBUM_LIMIT

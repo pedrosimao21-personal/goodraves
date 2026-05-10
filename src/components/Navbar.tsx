@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
+import { useState, useRef, useEffect } from 'react'
 
 const LogoIcon = () => (
   <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
@@ -50,12 +51,24 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'My Festivals', icon: <MyFestivalsIcon />, end: false },
   { to: '/timeline', label: 'Timeline', icon: <TimelineIcon />, end: false },
   { to: '/top-djs', label: 'Top DJs', icon: <TopDjsIcon />, end: false },
-  { to: '/insights', label: 'Insights', icon: <ChartIcon />, end: false },
 ]
 
 export default function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
+
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [dropdownRef])
 
   const isActive = (to: string, end?: boolean) => {
     if (end) return pathname === to
@@ -85,15 +98,57 @@ export default function Navbar() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {status === 'authenticated' && session?.user ? (
-              <>
-                <span className="navbar-username">{session.user.name}</span>
-                <button
-                  className="navbar-auth-btn"
-                  onClick={() => signOut({ callbackUrl: '/' })}
+              <div className="navbar-profile" ref={dropdownRef} style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setDropdownOpen(!dropdownOpen)} 
+                  style={{ 
+                    background: 'var(--gradient-card)', 
+                    border: '1px solid var(--border)', 
+                    width: 36, 
+                    height: 36, 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    cursor: 'pointer',
+                    color: 'var(--text-primary)',
+                    fontSize: '1rem'
+                  }}
                 >
-                  Sign out
+                  {session.user.name?.[0]?.toUpperCase() || 'U'}
                 </button>
-              </>
+                {dropdownOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 8,
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    width: 160,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    zIndex: 100
+                  }}>
+                    <Link 
+                      href="/profile" 
+                      onClick={() => setDropdownOpen(false)}
+                      style={{ padding: '12px 16px', color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', borderBottom: '1px solid var(--border)' }}
+                    >
+                      Go to Profile
+                    </Link>
+                    <button 
+                      onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: '/' }) }}
+                      style={{ padding: '12px 16px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem' }}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : status === 'unauthenticated' ? (
               <>
                 <Link href="/login" className="navbar-auth-btn">Log in</Link>

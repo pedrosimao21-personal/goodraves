@@ -3,15 +3,46 @@
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
-let _token: string | null = null;
-let _tokenExpiry = 0;
+const TOKEN_REFRESH_BUFFER_MS = 60_000;
+const MS_PER_SECOND = 1000;
+const CACHE_REVALIDATE_SECONDS = 3600;
+const MIN_IMAGE_WIDTH = 300;
+const MAX_IMAGE_WIDTH = 640;
+const DEFAULT_ALBUM_LIMIT = 10;
+const DEFAULT_SHOW_LIMIT = 5;
+const BATCH_MAX_IDS = 50;
+const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
+const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
+const SPOTIFY_MARKET = "NL";
+
+const tokenCache = (() => {
+  let token: string | null = null;
+  let expiry = 0;
+
+  return {
+    isValid(): boolean {
+      return !!token && Date.now() < expiry - TOKEN_REFRESH_BUFFER_MS;
+    },
+    get(): string | null {
+      return token;
+    },
+    set(newToken: string, expiresInSeconds: number): void {
+      token = newToken;
+      expiry = Date.now() + expiresInSeconds * MS_PER_SECOND;
+    },
+    invalidate(): void {
+      token = null;
+      expiry = 0;
+    },
+  };
+})();
 
 async function getAccessToken() {
-  if (_token && Date.now() < _tokenExpiry - 60_000) {
-    return _token;
+  if (tokenCache.isValid()) {
+    return tokenCache.get()!;
   }
 
-  const res = await fetch("https://accounts.spotify.com/api/token", {
+  const res = await fetch(SPOTIFY_TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -28,28 +59,26 @@ async function getAccessToken() {
   }
 
   const data = await res.json();
-  _token = data.access_token;
-  _tokenExpiry = Date.now() + data.expires_in * 1000;
-  return _token;
+  tokenCache.set(data.access_token, data.expires_in);
+  return data.access_token;
 }
 
 async function apiFetch(path: string, params: Record<string, any> = {}) {
   if (!CLIENT_ID || !CLIENT_SECRET) throw new Error("NO_SPOTIFY_KEYS");
 
   const token = await getAccessToken();
-  const url = new URL(`https://api.spotify.com/v1${path}`);
+  const url = new URL(`${SPOTIFY_API_BASE}${path}`);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   });
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 3600 }, // Cache artist data for 1 hour
+    next: { revalidate: CACHE_REVALIDATE_SECONDS },
   });
 
   if (res.status === 401) {
-    _token = null;
-    _tokenExpiry = 0;
+    tokenCache.invalidate();
     const newToken = await getAccessToken();
     const retry = await fetch(url, {
       headers: { Authorization: `Bearer ${newToken}` },
@@ -61,7 +90,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
   if (res.status === 429) {
     const retryAfter = parseInt(res.headers.get("Retry-After") ?? "1", 10);
     console.warn(`[spotify] Rate limited on ${path}; retrying after ${retryAfter}s`);
-    await new Promise((r) => setTimeout(r, retryAfter * 1000));
+    await new Promise((r) => setTimeout(r, retryAfter * MS_PER_SECOND));
     const retry = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -76,7 +105,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
 function normalizeArtist(a: any) {
   const images = a.images ?? [];
   const image =
-    images.find((i: any) => i.width >= 300 && i.width <= 640)?.url ??
+    images.find((i: any) => i.width >= MIN_IMAGE_WIDTH && i.width <= MAX_IMAGE_WIDTH)?.url ??
     images[0]?.url ??
     null;
 
@@ -108,12 +137,12 @@ export async function spotifyGetArtist(spotifyId: string) {
 
 export async function spotifyGetArtistAlbums(
   spotifyId: string,
-  limit = 10
+  limit = DEFAULT_ALBUM_LIMIT
 ) {
   const data = await apiFetch(`/artists/${spotifyId}/albums`, {
     limit,
     include_groups: "album,single",
-    market: "NL",
+    market: SPOTIFY_MARKET,
   });
 
   return (data.items ?? []).map((a: any) => ({
@@ -126,12 +155,12 @@ export async function spotifyGetArtistAlbums(
   }));
 }
 
-export async function spotifySearchArtistShows(name: string, limit = 5) {
+export async function spotifySearchArtistShows(name: string, limit = DEFAULT_SHOW_LIMIT) {
   const data = await apiFetch("/search", {
     q: name,
     type: "show",
     limit,
-    market: "NL",
+    market: SPOTIFY_MARKET,
   });
 
   return (data.shows?.items ?? []).map((s: any) => ({
@@ -159,7 +188,7 @@ export async function spotifyGetArtistsBatch(
   if (!ids.length) return {};
   // Endpoint accepts max 50 IDs at a time
   const chunks: string[][] = [];
-  for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
+  for (let i = 0; i < ids.length; i += BATCH_MAX_IDS) chunks.push(ids.slice(i, i + BATCH_MAX_IDS));
 
   const results: Record<string, ReturnType<typeof normalizeArtist>> = {};
   for (const chunk of chunks) {

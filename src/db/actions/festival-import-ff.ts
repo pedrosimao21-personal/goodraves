@@ -1,0 +1,95 @@
+"use server";
+
+import { db } from "@/db";
+import { eq } from "drizzle-orm";
+import { festivals, festivalArtists } from "@/db/schema";
+import { ensureArtistsAndGetIds, checkExistingLineup } from "./festival-helpers";
+import { fetchFFEventHtml } from "@/services/festivalfans/client";
+import { parseFFEventPage } from "@/services/festivalfans/parser";
+
+/** Force-reimport a FestivalFans.nl event (deletes existing lineup first) */
+export async function reimportFFEvent(slug: string): Promise<string | null> {
+  if (!slug) return null;
+  const festivalId = `ff-${slug}`;
+
+  await db
+    .delete(festivalArtists)
+    .where(eq(festivalArtists.festivalId, festivalId));
+
+  return fetchFFEvent(slug, { force: true });
+}
+
+/** Fetch a single FestivalFans.nl event by slug and persist to DB */
+export async function fetchFFEvent(
+  slug: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
+  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
+
+  const festivalId = `ff-${slug}`;
+
+  if (!opts?.force) {
+    const hasExisting = await checkExistingLineup(festivalId);
+    if (hasExisting) return festivalId;
+  }
+
+  const html = await fetchFFEventHtml(slug);
+  if (!html) return null;
+
+  const parsed = parseFFEventPage(html);
+  if (!parsed.name) return null;
+
+  const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+
+  const festivalValues = {
+    id: festivalId,
+    name: parsed.name,
+    date,
+    endDate: parsed.endDate,
+    venue: parsed.venue,
+    location: parsed.location,
+    source: "festivalfans" as const,
+    sourceId: slug,
+    imageUrl: parsed.imageUrl,
+    latitude: parsed.latitude,
+    longitude: parsed.longitude,
+  };
+
+  if (opts?.force) {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoUpdate({
+        target: festivals.id,
+        set: {
+          name: festivalValues.name,
+          date: festivalValues.date,
+          endDate: festivalValues.endDate,
+          venue: festivalValues.venue,
+          location: festivalValues.location,
+          imageUrl: festivalValues.imageUrl,
+          latitude: festivalValues.latitude,
+          longitude: festivalValues.longitude,
+        },
+      });
+  } else {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoNothing();
+  }
+
+  if (parsed.lineup.length > 0) {
+    const nameToId = await ensureArtistsAndGetIds(parsed.lineup);
+    await db
+      .insert(festivalArtists)
+      .values(
+        parsed.lineup
+          .filter((name) => nameToId[name])
+          .map((name) => ({ festivalId, artistId: nameToId[name] }))
+      )
+      .onConflictDoNothing();
+  }
+
+  return festivalId;
+}

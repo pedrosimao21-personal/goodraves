@@ -5,17 +5,12 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useUserData } from '@/context/UserDataContext'
+import { formatDate } from '@/lib/format-date'
 
 const MONTHS = [
   'All', 'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
-
-function formatDate(dateStr: string | undefined | null) {
-  if (!dateStr) return 'Date TBA'
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' })
-}
 
 export default function Timeline() {
   const router = useRouter()
@@ -175,7 +170,7 @@ export default function Timeline() {
                       {f.meta?.name ?? f.id}
                     </div>
                     <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      <span>📅 {formatDate(f.meta?.date)}</span>
+                      <span>📅 {formatDate(f.meta?.date, 'timeline')}</span>
                       {typeof f.meta?.venue === 'object' && f.meta?.venue?.name && (
                         <span>📍 {f.meta.venue.name}{f.meta.venue.city ? `, ${f.meta.venue.city}` : ''}</span>
                       )}

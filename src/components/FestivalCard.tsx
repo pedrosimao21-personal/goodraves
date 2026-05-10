@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
-import { spotifySearchArtist } from '@/db/actions/spotify'
-import { getWikiImage } from '@/db/actions/wikipedia'
+import { spotifySearchArtist } from '@/services/spotify/client'
+import { getWikiImage } from '@/services/wikipedia/client'
+import { formatDate } from '@/lib/format-date'
 
 function CalendarIcon() {
   return (
@@ -29,12 +30,6 @@ function CheckIcon() {
       <polyline points="20 6 9 17 4 12"/>
     </svg>
   )
-}
-
-function formatDate(dateStr: string | null | undefined) {
-  if (!dateStr) return 'Date TBA'
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -99,11 +94,11 @@ export default function FestivalCard({ event }: { event: any }) {
       let img: string | null = null
       // Try venue name first
       if (event.venue?.name) {
-        try { img = await getWikiImage(event.venue.name) } catch (e) {}
+        try { img = await getWikiImage(event.venue.name) } catch { /* wiki image unavailable for venue */ }
       }
       // If no venue image found, try city name
       if (!img && event.venue?.city) {
-        try { img = await getWikiImage(event.venue.city) } catch (e) {}
+        try { img = await getWikiImage(event.venue.city) } catch { /* wiki image unavailable for city */ }
       }
       if (!cancelled && img) setFallbackImage(img)
     }

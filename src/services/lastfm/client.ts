@@ -2,9 +2,15 @@
 
 const BASE_URL = "https://ws.audioscrobbler.com/2.0/";
 const API_KEY = process.env.LASTFM_KEY;
+const PLACEHOLDER_KEY = "your_lastfm_api_key_here";
+const CACHE_REVALIDATE_SECONDS = 3600;
+const MIN_BIO_PARAGRAPH_LENGTH = 10;
+const MAX_GENRE_TAGS = 5;
+const MAX_SIMILAR_ARTISTS = 5;
+const DEFAULT_TOP_TRACKS_LIMIT = 8;
 
 async function call(params: Record<string, any>) {
-  if (!API_KEY || API_KEY === "your_lastfm_api_key_here") {
+  if (!API_KEY || API_KEY === PLACEHOLDER_KEY) {
     throw new Error("NO_LASTFM_KEY");
   }
 
@@ -14,7 +20,7 @@ async function call(params: Record<string, any>) {
   );
 
   const res = await fetch(url, {
-    next: { revalidate: 3600 }, // Cache for 1 hour
+    next: { revalidate: CACHE_REVALIDATE_SECONDS },
   });
   if (!res.ok) throw new Error(`Last.fm error ${res.status}`);
   const data = await res.json();
@@ -66,7 +72,7 @@ export async function lastfmGetArtistInfo(name: string) {
   if (cleanBio.includes("1. ") && cleanBio.includes("2. ")) {
     const parts = cleanBio
       .split(/\b\d+\. /g)
-      .filter((p: string) => p.trim().length > 10);
+      .filter((p: string) => p.trim().length > MIN_BIO_PARAGRAPH_LENGTH);
     if (parts.length > 1) {
       const electronicKeywords = [
         "dj",
@@ -94,10 +100,10 @@ export async function lastfmGetArtistInfo(name: string) {
     listeners: artist.stats?.listeners ?? null,
     playcount: artist.stats?.playcount ?? null,
     tags: normalizeGenres(
-      (artist.tags?.tag ?? []).slice(0, 5).map((t: any) => t.name)
+      (artist.tags?.tag ?? []).slice(0, MAX_GENRE_TAGS).map((t: any) => t.name)
     ),
     bio: cleanBio,
-    similar: (artist.similar?.artist ?? []).slice(0, 5).map((a: any) => ({
+    similar: (artist.similar?.artist ?? []).slice(0, MAX_SIMILAR_ARTISTS).map((a: any) => ({
       name: a.name,
       url: a.url,
       image:
@@ -106,7 +112,7 @@ export async function lastfmGetArtistInfo(name: string) {
   };
 }
 
-export async function lastfmGetArtistTopTracks(name: string, limit = 8) {
+export async function lastfmGetArtistTopTracks(name: string, limit = DEFAULT_TOP_TRACKS_LIMIT) {
   const data = await call({
     method: "artist.gettoptracks",
     artist: name,

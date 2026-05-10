@@ -1,11 +1,14 @@
 "use server";
 
+const THUMBNAIL_SIZE = 600;
+const CACHE_REVALIDATE_SECONDS = 86400;
+
 export async function getWikiImage(searchQuery: string) {
   if (!searchQuery) return null;
   try {
     const res = await fetch(
-      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(searchQuery)}&prop=pageimages&format=json&pithumbsize=600&origin=*`,
-      { next: { revalidate: 86400 } } // Cache for 24 hours
+      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(searchQuery)}&prop=pageimages&format=json&pithumbsize=${THUMBNAIL_SIZE}&origin=*`,
+      { next: { revalidate: CACHE_REVALIDATE_SECONDS } }
     );
     const data = await res.json();
     const pages = data.query?.pages;

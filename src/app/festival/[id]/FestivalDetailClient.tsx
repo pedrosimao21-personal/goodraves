@@ -1,20 +1,19 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
 import { getFestival } from '@/db/actions/festivals'
-import { getArtistsWithImages } from '@/db/actions/artists'
+import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
+import FestivalNotes from './FestivalNotes'
+import { BackIcon, ResidentAdvisorIcon } from '@/components/icons'
+import { formatDate } from '@/lib/format-date'
 
-function BackIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-    </svg>
-  )
-}
+const STAR_COUNT = 5
+const STAR_COLOR_FILLED = '#fbbf24'
+const STAR_COLOR_EMPTY = 'rgba(255,255,255,0.2)'
 
 function CalIcon() {
   return (
@@ -40,79 +39,32 @@ function CheckIcon() {
   )
 }
 
-function formatDate(dateStr: string | undefined | null) {
-  if (!dateStr) return 'Date TBA'
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-function FestivalNotes({ eventId, notes, onSave }: { eventId: string; notes: string; onSave: (eventId: string, notes: string) => Promise<void> }) {
-  const [value, setValue] = useState(notes)
-  const [saving, setSaving] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => { setValue(notes) }, [notes])
-
-  const debouncedSave = useCallback((text: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(async () => {
-      setSaving(true)
-      await onSave(eventId, text)
-      setSaving(false)
-    }, 600)
-  }, [eventId, onSave])
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value
-    setValue(text)
-    debouncedSave(text)
+/** Transform DB festival into the local event shape */
+function transformDbFestival(dbFestival: any) {
+  return {
+    id: dbFestival.id,
+    name: dbFestival.name,
+    date: dbFestival.date,
+    venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
+    location: dbFestival.location,
+    imageUrl: dbFestival.imageUrl,
+    attractions: dbFestival.lineup
+      ? dbFestival.lineup.map((a: any) => ({ id: a.id, name: a.name }))
+      : [],
   }
-
-  return (
-    <div style={{ marginTop: 0, flex: 1, minWidth: 200 }}>
-      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-        Notes
-        {saving && <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>Saving...</span>}
-      </div>
-      <textarea
-        value={value}
-        onChange={handleChange}
-        placeholder="Add notes about this event..."
-        maxLength={5000}
-        rows={1}
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 8,
-          padding: '6px 12px',
-          color: 'var(--text-primary)',
-          fontSize: '0.85rem',
-          resize: 'none',
-          fontFamily: 'inherit',
-          outline: 'none',
-          transition: 'border-color 150ms ease',
-        }}
-        onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'}
-        onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
-      />
-    </div>
-  )
 }
 
 export default function FestivalDetail() {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
-  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, festivalMeta, artistMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
+  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
 
-  const [event, setEvent] = useState(null)
+  const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
 
-  const isRA = id.startsWith('ra-')
   const isCustom = id.startsWith('custom-')
 
   useEffect(() => {
@@ -120,140 +72,65 @@ export default function FestivalDetail() {
     setLoading(true)
     setError(null)
 
-    if (isCustom) {
-      // Load from DB to get proper artist UUIDs
-      getFestival(id).then(dbFestival => {
+    getFestival(id)
+      .then(dbFestival => {
         if (cancelled) return
         if (dbFestival) {
-          setEvent({
-            id: dbFestival.id,
-            name: dbFestival.name,
-            date: dbFestival.date,
-            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
-            location: dbFestival.location,
-            imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
-              id: a.id,
-              name: a.name
-            })) : []
-          })
-        } else {
-          // Fallback to local meta if not yet in DB
+          setEvent(transformDbFestival(dbFestival))
+        } else if (isCustom) {
           const meta = festivalMeta[id]
           if (meta) {
-            const attractions = (meta.lineup || []).map(name => ({
-              id: name,
-              name: name,
-            }))
+            const attractions = (meta.lineup || []).map((name: string) => ({ id: name, name }))
             setEvent({ ...meta, attractions })
           } else {
-            setError(new Error('Custom event not found.'))
+            setError(new Error('Event not found.'))
           }
-        }
-        setLoading(false)
-      }).catch(err => {
-        if (!cancelled) {
-          setError(err)
-          setLoading(false)
-        }
-      })
-    } else if (isRA) {
-      getFestival(id).then(dbFestival => {
-        if (cancelled) return
-        if (dbFestival) {
-          setEvent({
-            id: dbFestival.id,
-            name: dbFestival.name,
-            date: dbFestival.date,
-            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
-            location: dbFestival.location,
-            imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
-              id: a.id,
-              name: a.name
-            })) : []
-          })
-          setLoading(false)
-        } else {
-          setError(new Error('Resident Advisor event not found.'))
-          setLoading(false)
-        }
-      }).catch(err => {
-        if (!cancelled) {
-          setError(err)
-          setLoading(false)
-        }
-      })
-    } else {
-      // Try to load from DB as a generic event
-      getFestival(id).then(dbFestival => {
-        if (cancelled) return
-        if (dbFestival) {
-          setEvent({
-            id: dbFestival.id,
-            name: dbFestival.name,
-            date: dbFestival.date,
-            venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
-            location: dbFestival.location,
-            imageUrl: dbFestival.imageUrl,
-            attractions: dbFestival.lineup ? dbFestival.lineup.map(a => ({
-              id: a.id,
-              name: a.name
-            })) : []
-          })
         } else {
           setError(new Error('Event not found.'))
         }
-      }).catch(err => {
-        if (!cancelled) setError(err)
-      }).finally(() => {
-        if (!cancelled) setLoading(false)
+        setLoading(false)
       })
-    }
+      .catch(err => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error('Failed to load event'))
+          setLoading(false)
+        }
+      })
 
     return () => { cancelled = true }
   }, [id])
 
-  // Batch-fetch artist images: check DB first, fetch from Spotify only when missing or stale
   useEffect(() => {
     if (!event?.attractions?.length) return
     const needsEnrich = event.attractions.filter((a: any) => !a.image).map((a: any) => a.name)
     if (!needsEnrich.length) return
     let cancelled = false
+
     ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
       .then((data) => {
         if (cancelled) return
-        // Normalize to the shape ArtistCard expects ({ image })
         const normalized: Record<string, any> = {}
         for (const [name, entry] of Object.entries(data)) {
           if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
         }
         setSpotifyData(normalized)
       })
-      .catch((err) => { console.error('[festival] getArtistsWithImages failed:', err) })
+      .catch((err) => {
+        console.error('[festival] Failed to enrich artist images:', err)
+      })
+
     return () => { cancelled = true }
   }, [event])
 
   const isFuture = event?.date && new Date(event.date + 'T00:00:00') > new Date()
-  
   const attended = isAttended(id)
   const upcoming = isUpcoming(id)
   const seenCount = getSeenCount(id)
 
   const handleAction = () => {
-    const payload = {
-      name: event.name,
-      date: event.date,
-      venue: event.venue,
-      image: event.image,
-      genre: event.genre,
-      source: event.source,
-    }
-    if (isFuture) {
-      toggleUpcoming(id, payload)
-    } else {
-      toggleAttended(id, payload)
-    }
+    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, genre: event.genre, source: event.source }
+    if (isFuture) { toggleUpcoming(id, payload) }
+    else { toggleAttended(id, payload) }
   }
 
   if (loading) {
@@ -274,13 +151,13 @@ export default function FestivalDetail() {
 
   if (error || !event) return null
 
+  const isRA = id.startsWith('ra-')
   const raEventId = isRA ? id.replace(/^ra-/, '') : null
   const externalUrl = raEventId ? `https://ra.co/events/${raEventId}` : null
-  
   const isActive = isFuture ? upcoming : attended
-  const actionLabelText = isFuture 
-    ? (upcoming ? 'Going ✓' : 'Mark as Going')
-    : (attended ? 'Attended ✓' : 'Mark as Attended')
+  const actionLabelText = isFuture
+    ? (upcoming ? 'Going \u2713' : 'Mark as Going')
+    : (attended ? 'Attended \u2713' : 'Mark as Attended')
 
   return (
     <div className="page">
@@ -296,26 +173,17 @@ export default function FestivalDetail() {
             <BackIcon /> Back to search
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-            <h1 className="festival-hero-title" style={{ margin: 0 }}>{event.name}</h1>
-          </div>
+          <h1 className="festival-hero-title">{event.name}</h1>
 
           <div className="festival-meta-row">
-            <div className="festival-meta-chip">
-              <CalIcon />
-              {formatDate(event.date)}
-            </div>
+            <div className="festival-meta-chip"><CalIcon />{formatDate(event.date, 'long')}</div>
             {event.venue?.name && (
               <div className="festival-meta-chip">
                 <PinIcon />
-                {event.venue.name}
-                {event.venue.city ? `, ${event.venue.city}` : ''}
-                {event.venue.country ? `, ${event.venue.country}` : ''}
+                {event.venue.name}{event.venue.city ? `, ${event.venue.city}` : ''}{event.venue.country ? `, ${event.venue.country}` : ''}
               </div>
             )}
             {event.genre && <span className="tag">{event.genre}</span>}
-            {event.subGenre && event.subGenre !== event.genre && <span className="tag tag-orange">{event.subGenre}</span>}
-            {event.ages && <span className="tag tag-purple">{event.ages}</span>}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -337,58 +205,15 @@ export default function FestivalDetail() {
 
             {externalUrl && (
               <a href={externalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                <ResidentAdvisorIcon size={14} /> View on RA ↗
+                <ResidentAdvisorIcon size={14} /> View on RA
               </a>
             )}
           </div>
 
-          {/* Festival Rating & Notes — only show when attended */}
           {attended && (
             <div style={{ marginTop: 16, display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flexShrink: 0 }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-                  Vibe Rating
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {[1, 2, 3, 4, 5].map(star => {
-                    const current = getFestivalRating(id)
-                    const filled = star <= current
-                    return (
-                      <button
-                        key={star}
-                        onClick={() => setFestivalRating(id, star === current ? 0 : star)}
-                        title={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '1.6rem',
-                          lineHeight: 1,
-                          padding: '2px',
-                          color: filled ? '#fbbf24' : 'rgba(255,255,255,0.2)',
-                          transition: 'transform 120ms ease, color 120ms ease',
-                          WebkitTapHighlightColor: 'transparent',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                      >
-                        ★
-                      </button>
-                    )
-                  })}
-                  {getFestivalRating(id) > 0 && (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
-                      {getFestivalRating(id)}/5
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <FestivalNotes
-                eventId={id}
-                notes={getFestivalNotes(id)}
-                onSave={setFestivalNotes}
-              />
+              <VibeRating eventId={id} rating={getFestivalRating(id)} onRate={setFestivalRating} />
+              <FestivalNotes eventId={id} notes={getFestivalNotes(id)} onSave={setFestivalNotes} />
             </div>
           )}
         </div>
@@ -396,7 +221,6 @@ export default function FestivalDetail() {
 
       <div className="container">
         <div className="divider" />
-
         {event.attractions.length > 0 ? (
           <>
             <div className="section-header">
@@ -404,16 +228,16 @@ export default function FestivalDetail() {
               <span className="section-count">{event.attractions.length} artist{event.attractions.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="grid-artists">
-              {event.attractions.map(artist => (
+              {event.attractions.map((artist: any) => (
                 <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} />
               ))}
             </div>
           </>
         ) : (
           <div className="empty-state">
-            <div className="empty-state-icon">🎭</div>
+            <div className="empty-state-icon">&#127917;</div>
             <h3>Lineup not available</h3>
-            <p>The full lineup for this event hasn&apos;t been announced yet, or isn&apos;t available through the API.</p>
+            <p>The full lineup for this event hasn&apos;t been announced yet.</p>
           </div>
         )}
       </div>
@@ -421,10 +245,41 @@ export default function FestivalDetail() {
   )
 }
 
-function ResidentAdvisorIcon({ size = 18 }) {
+function VibeRating({ eventId, rating, onRate }: { eventId: string; rating: number; onRate: (id: string, r: number) => void }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm1 4h-4v12h2v-4h1l2 4h2.2l-2.2-4.4C14.1 13.2 15 12.2 15 11V9c0-1.7-1.3-3-3-3l1-2zm-1 2c.6 0 1 .4 1 1v2c0 .6-.4 1-1 1h-2V8h2z"/>
-    </svg>
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+        Vibe Rating
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {Array.from({ length: STAR_COUNT }, (_, i) => {
+          const star = i + 1
+          const filled = star <= rating
+          return (
+            <button
+              key={star}
+              onClick={() => onRate(eventId, star === rating ? 0 : star)}
+              title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '1.6rem', lineHeight: 1, padding: '2px',
+                color: filled ? STAR_COLOR_FILLED : STAR_COLOR_EMPTY,
+                transition: 'transform 120ms ease, color 120ms ease',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.25)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              &#9733;
+            </button>
+          )
+        })}
+        {rating > 0 && (
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
+            {rating}/{STAR_COUNT}
+          </span>
+        )}
+      </div>
+    </div>
   )
 }

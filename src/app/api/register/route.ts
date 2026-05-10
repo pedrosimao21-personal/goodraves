@@ -7,6 +7,10 @@ import { isRateLimited } from "@/db/rate-limit";
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const MIN_USERNAME_LENGTH = 3;
+const MAX_USERNAME_LENGTH = 30;
+const MIN_PASSWORD_LENGTH = 6;
+const BCRYPT_SALT_ROUNDS = 10;
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,16 +34,16 @@ export async function POST(req: NextRequest) {
 
     const { username, password } = await req.json();
 
-    if (!username || typeof username !== "string" || username.length < 3) {
+    if (!username || typeof username !== "string" || username.length < MIN_USERNAME_LENGTH) {
       return NextResponse.json(
-        { error: "Username must be at least 3 characters" },
+        { error: `Username must be at least ${MIN_USERNAME_LENGTH} characters` },
         { status: 400 }
       );
     }
 
-    if (username.length > 30) {
+    if (username.length > MAX_USERNAME_LENGTH) {
       return NextResponse.json(
-        { error: "Username must be at most 30 characters" },
+        { error: `Username must be at most ${MAX_USERNAME_LENGTH} characters` },
         { status: 400 }
       );
     }
@@ -51,9 +55,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!password || typeof password !== "string" || password.length < 6) {
+    if (!password || typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
         { status: 400 }
       );
     }
@@ -73,7 +77,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
     await db.insert(users).values({
       username,

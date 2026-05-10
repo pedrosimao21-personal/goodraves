@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useUserData } from '../context/UserDataContext'
 import { isAllowedImageHost } from '../lib/imageHosts'
 
+const SUCCESS_TOAST_DELAY_MS = 1200
+
 export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
   const { addCustomFestival } = useUserData()
   const [name, setName] = useState('')
@@ -45,7 +47,7 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
     setSaved(true)
     setTimeout(() => {
       onClose?.()
-    }, 1200)
+    }, SUCCESS_TOAST_DELAY_MS)
   }
 
   if (saved) {

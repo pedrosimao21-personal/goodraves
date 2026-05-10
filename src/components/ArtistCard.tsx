@@ -39,7 +39,16 @@ const ArtistCard = memo(function ArtistCard({
 
       <div style={{ position: 'relative', zIndex: 1, display: 'contents' }}>
         {displayImage ? (
-          <Image className="artist-avatar" src={displayImage} alt={artist.name} width={48} height={48} style={{ objectFit: 'cover' }} />
+          <Image
+            className="artist-avatar"
+            src={displayImage}
+            alt={artist.name}
+            width={48}
+            height={48}
+            quality={90}
+            sizes="48px"
+            style={{ objectFit: 'cover' }}
+          />
         ) : (
           <div className="artist-avatar-placeholder">🎤</div>
         )}

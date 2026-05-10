@@ -8,17 +8,19 @@ const STAR_COLOR_FILLED = '#fbbf24'
 const STAR_COLOR_EMPTY = 'rgba(255,255,255,0.15)'
 const MEDALS = ['\u{1F947}', '\u{1F948}', '\u{1F949}']
 
-export function PageHeader({ availableYears, selectedYear, onYearChange }: {
+export function PageHeader({ availableYears, selectedYear, onYearChange, sortMode, onSortModeChange }: {
   availableYears: string[]
   selectedYear: string
   onYearChange: (year: string) => void
+  sortMode: 'count' | 'rating'
+  onSortModeChange: (mode: 'count' | 'rating') => void
 }) {
   return (
     <div style={{ paddingTop: 8, marginBottom: 24 }}>
       <h1 className="section-title" style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 6 }}>
         Most Watched DJs
       </h1>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
           Your ranking of artists by live performances seen
         </p>
@@ -42,6 +44,29 @@ export function PageHeader({ availableYears, selectedYear, onYearChange }: {
             {availableYears.map((y: string) => <option key={y} value={y}>{y}</option>)}
           </select>
         )}
+      </div>
+      {/* Sort mode segmented control */}
+      <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+        {([['count', '# Times Seen'], ['rating', '\u2b50 By Rating']] as const).map(([mode, label]) => (
+          <button
+            key={mode}
+            onClick={() => onSortModeChange(mode)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 7,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              fontFamily: 'var(--font-sans)',
+              transition: 'background 200ms ease, color 200ms ease',
+              background: sortMode === mode ? 'var(--accent)' : 'transparent',
+              color: sortMode === mode ? '#fff' : 'var(--text-muted)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -137,7 +162,7 @@ function ArtistRow({ artist, index, displayImage, hasSpotifyImage, onSelect }: {
 
       <div style={{ position: 'relative', flexShrink: 0 }}>
         {displayImage ? (
-          <Image src={displayImage} alt={artist.name} width={50} height={50} style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
+          <Image src={displayImage} alt={artist.name} width={50} height={50} quality={90} sizes="50px" style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
         ) : (
           <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '2px solid var(--border)' }}>&#127908;</div>
         )}

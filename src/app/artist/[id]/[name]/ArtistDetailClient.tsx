@@ -6,7 +6,8 @@ import { getArtistData, getOrCreateArtistByName, type ArtistData } from '@/db/ac
 import { useUserData } from '@/context/UserDataContext'
 import { BackIcon } from '@/components/icons'
 import { SimilarArtistCard } from './SimilarArtistCard'
-import { ArtistHeader, AlbumList, TopTracksList } from './ArtistSections'
+import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList } from './ArtistSections'
+import { getArtistShows, type ArtistShow } from '@/db/actions/artist-shows'
 
 const MAX_TAGS = 8
 
@@ -21,23 +22,34 @@ export default function ArtistDetail() {
   const [artist, setArtist] = useState<ArtistData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [timedOut, setTimedOut] = useState(false)
   const [similarUrls, setSimilarUrls] = useState<Map<string, string>>(new Map())
+  const [shows, setShows] = useState<ArtistShow[]>([])
 
   useEffect(() => {
     if (!artistId) return
     let cancelled = false
     setLoading(true)
+    setTimedOut(false)
+
+    // Safety timeout — if enrichment takes >15s, unblock the UI
+    const timeout = setTimeout(() => {
+      if (!cancelled) setTimedOut(true)
+    }, 15_000)
+
     ;(getArtistData(artistId) as unknown as Promise<ArtistData | null>)
       .then((data) => {
+        clearTimeout(timeout)
         if (cancelled) return
         if (!data) { setNotFound(true); setLoading(false); return }
         setArtist(data)
         setLoading(false)
       })
       .catch(() => {
+        clearTimeout(timeout)
         if (!cancelled) { setNotFound(true); setLoading(false) }
       })
-    return () => { cancelled = true }
+    return () => { cancelled = true; clearTimeout(timeout) }
   }, [artistId])
 
   useEffect(() => {
@@ -62,6 +74,17 @@ export default function ArtistDetail() {
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artist?.lastfmSimilar])
+
+  // Fetch Spotify shows once we know the artist name
+  useEffect(() => {
+    if (!displayName || loading) return
+    let cancelled = false
+    ;(getArtistShows(displayName) as unknown as Promise<ArtistShow[]>)
+      .then(data => { if (!cancelled) setShows(data) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayName, loading])
 
   async function navigateToSimilar(name: string) {
     try {
@@ -107,10 +130,16 @@ export default function ArtistDetail() {
 
         <div className="divider" />
 
-        {loading && (
+        {(loading && !timedOut) && (
           <div>
             <div className="skeleton" style={{ height: 24, width: '30%', marginBottom: 16 }} />
             <div className="skeleton" style={{ height: 120, marginBottom: 24 }} />
+          </div>
+        )}
+
+        {timedOut && !artist && (
+          <div style={{ padding: '24px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Still loading enrichment data… check back in a moment.
           </div>
         )}
 
@@ -131,6 +160,10 @@ export default function ArtistDetail() {
 
         {(artist?.lastfmTopTracks?.length ?? 0) > 0 && !loading && (
           <TopTracksList tracks={artist!.lastfmTopTracks} artistName={displayName} />
+        )}
+
+        {shows.length > 0 && !loading && (
+          <UpcomingShowsList shows={shows} />
         )}
 
         {(artist?.lastfmSimilar?.length ?? 0) > 0 && !loading && (

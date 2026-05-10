@@ -33,7 +33,17 @@ export function ArtistHeader({
   return (
     <div className="artist-detail-header">
       {displayImage ? (
-        <Image className="artist-detail-img" src={displayImage} alt={displayName} width={200} height={200} style={{ objectFit: 'cover' }} />
+        <Image
+          className="artist-detail-img"
+          src={displayImage}
+          alt={displayName}
+          width={200}
+          height={200}
+          sizes="(max-width: 768px) 140px, 200px"
+          quality={90}
+          priority
+          style={{ objectFit: 'cover' }}
+        />
       ) : (
         <div className="artist-detail-img-placeholder">🎤</div>
       )}
@@ -145,7 +155,7 @@ export function AlbumList({ albums }: { albums: SpotifyAlbum[] }) {
           <a key={album.id} href={album.url ?? '#'} target="_blank" rel="noreferrer" className="album-list-item">
             <div className="album-list-img-wrap">
               {album.image ? (
-                <Image src={album.image} alt={album.name} width={48} height={48} style={{ objectFit: 'cover' }} />
+                <Image src={album.image} alt={album.name} width={48} height={48} quality={85} sizes="48px" style={{ objectFit: 'cover' }} />
               ) : (
                 <div className="album-list-placeholder">💿</div>
               )}
@@ -187,6 +197,65 @@ export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; a
           )
         })}
       </ul>
+    </div>
+  )
+}
+
+type ArtistShow = { id: string; name: string; publisher: string; image: string | null; url: string | null; description: string }
+
+export function UpcomingShowsList({ shows }: { shows: ArtistShow[] }) {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <h2 className="section-title" style={{ marginBottom: 4 }}>
+        Upcoming Shows
+        <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
+      </h2>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+        DJ sets &amp; mixes on Spotify
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {shows.map(show => (
+          <a
+            key={show.id}
+            href={show.url ?? '#'}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '12px 14px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'border-color 200ms ease, background 200ms ease',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+          >
+            {show.image ? (
+              <Image
+                src={show.image}
+                alt={show.name}
+                width={48}
+                height={48}
+                sizes="48px"
+                quality={85}
+                style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>🎙️</div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{show.name}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{show.publisher}</div>
+            </div>
+            <SpotifyIcon size={16} />
+          </a>
+        ))}
+      </div>
     </div>
   )
 }

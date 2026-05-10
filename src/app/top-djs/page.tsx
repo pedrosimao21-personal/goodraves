@@ -13,6 +13,7 @@ export default function TopDJs() {
   const router = useRouter()
   const { getArtistSeenCounts, artistMeta, performanceRatings, getFestivalMeta, batchEnrichArtists, loaded } = useUserData()
   const [selectedYear, setSelectedYear] = useState('all')
+  const [sortMode, setSortMode] = useState<'count' | 'rating'>('count')
   const [artistToManage, setArtistToManage] = useState(null)
 
   const { ranking, availableYears } = useMemo(() => {
@@ -51,6 +52,13 @@ export default function TopDJs() {
       })
       .filter(Boolean)
       .sort((a: any, b: any) => {
+        if (sortMode === 'rating') {
+          // Primary: avg rating desc, secondary: count desc, tertiary: name
+          if (b.avgSetRating !== a.avgSetRating) return b.avgSetRating - a.avgSetRating
+          if (b.count !== a.count) return b.count - a.count
+          return a.name.localeCompare(b.name)
+        }
+        // Default: times seen desc, then rating, then name
         if (b.count !== a.count) return b.count - a.count
         if (b.avgSetRating !== a.avgSetRating) return b.avgSetRating - a.avgSetRating
         return a.name.localeCompare(b.name)
@@ -60,7 +68,7 @@ export default function TopDJs() {
       ranking: list,
       availableYears: [...years].sort((a: any, b: any) => b.localeCompare(a)),
     }
-  }, [getArtistSeenCounts, artistMeta, performanceRatings, getFestivalMeta, selectedYear])
+  }, [getArtistSeenCounts, artistMeta, performanceRatings, getFestivalMeta, selectedYear, sortMode])
 
   const artistNames = useMemo(() => {
     return ranking
@@ -116,6 +124,8 @@ export default function TopDJs() {
           availableYears={availableYears}
           selectedYear={selectedYear}
           onYearChange={setSelectedYear}
+          sortMode={sortMode}
+          onSortModeChange={setSortMode}
         />
 
         {ranking.length > 0 && <StatsBar ranking={ranking} />}

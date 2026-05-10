@@ -19,7 +19,7 @@ export function SimilarArtistCard({
   const inner = (
     <>
       {image ? (
-        <Image className="related-artist-img" src={image} alt={artistName} width={80} height={80} style={{ objectFit: 'cover' }} />
+        <Image className="related-artist-img" src={image} alt={artistName} width={80} height={80} quality={90} sizes="80px" style={{ objectFit: 'cover' }} />
       ) : (
         <div className="related-artist-img-placeholder">🎤</div>
       )}

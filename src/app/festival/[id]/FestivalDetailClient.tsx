@@ -8,8 +8,9 @@ import { getFestival } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
 import FestivalNotes from './FestivalNotes'
-import { BackIcon, ResidentAdvisorIcon } from '@/components/icons'
+import { BackIcon, ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
 import { formatDate } from '@/lib/format-date'
+import { getFestivalPlaylistTracks, type PlaylistTrack } from '@/db/actions/festival-playlist'
 
 const STAR_COUNT = 5
 const STAR_COLOR_FILLED = '#fbbf24'
@@ -64,6 +65,7 @@ export default function FestivalDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
+  const [playlistTracks, setPlaylistTracks] = useState<PlaylistTrack[]>([])
 
   const isCustom = id.startsWith('custom-')
 
@@ -114,6 +116,14 @@ export default function FestivalDetail() {
           if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
         }
         setSpotifyData(normalized)
+
+        // Fetch playlist tracks once we have artist data
+        const allNames = event.attractions.map((a: any) => a.name) as string[]
+        if (allNames.length) {
+          ;(getFestivalPlaylistTracks(allNames) as unknown as Promise<PlaylistTrack[]>)
+            .then(tracks => { if (!cancelled) setPlaylistTracks(tracks) })
+            .catch(() => {})
+        }
       })
       .catch((err) => {
         console.error('[festival] Failed to enrich artist images:', err)
@@ -240,6 +250,72 @@ export default function FestivalDetail() {
             <p>The full lineup for this event hasn&apos;t been announced yet.</p>
           </div>
         )}
+
+        {playlistTracks.length > 0 && (
+          <FestivalPlaylist tracks={playlistTracks} festivalName={event.name} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function FestivalPlaylist({ tracks, festivalName }: { tracks: PlaylistTrack[]; festivalName: string }) {
+  const spotifyFallbackUrl = `https://open.spotify.com/search/${encodeURIComponent(festivalName)}`
+  return (
+    <div style={{ marginTop: 48, paddingBottom: 48 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
+        <h2 className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          Festival Playlist
+          <SpotifyIcon size={16} />
+        </h2>
+        <a
+          href={spotifyFallbackUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="btn spotify-link btn-sm"
+          style={{ textDecoration: 'none' }}
+        >
+          <SpotifyIcon size={14} /> Open Spotify
+        </a>
+      </div>
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+        Top tracks from this lineup &middot; click to search on Spotify
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {tracks.map((track, i) => (
+          <a
+            key={`${track.artistName}-${track.trackName}`}
+            href={track.spotifySearchUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '10px 14px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'border-color 180ms ease',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}
+          >
+            <span style={{ width: 22, textAlign: 'right', color: 'var(--text-muted)', fontSize: '0.78rem', flexShrink: 0 }}>{i + 1}</span>
+            {track.artistImage ? (
+              <Image src={track.artistImage} alt={track.artistName} width={32} height={32} sizes="32px" quality={80} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>🎤</div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.trackName}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{track.artistName}</div>
+            </div>
+            <SpotifyIcon size={13} />
+          </a>
+        ))}
       </div>
     </div>
   )

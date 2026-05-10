@@ -111,15 +111,25 @@ export default function RaveMap({ events }: { events: any[] }) {
     const container = containerRef.current
     if (!container) return
 
-    // Compute city counts
+    // Compute city counts — events may store location as e.location (string) or e.venue?.city
     const cityCounts: Record<string, number> = {}
-    events.forEach(e => {
-      const city = e.venue?.city
-      if (city && CITY_COORDS[city]) {
-        cityCounts[city] = (cityCounts[city] || 0) + 1
-      } else if (e.venue?.name?.includes('Ibiza') || e.venue?.city === 'Ibiza') {
-        cityCounts['Ibiza'] = (cityCounts['Ibiza'] || 0) + 1
+    const cityNames = Object.keys(CITY_COORDS)
+
+    function resolveCity(e: any): string | null {
+      // Direct match: e.location or e.venue?.city
+      const candidates = [e.location, e.venue?.city, e.venue?.name].filter(Boolean)
+      for (const candidate of candidates) {
+        if (CITY_COORDS[candidate]) return candidate
+        // Partial match: "Berlin, Germany" → "Berlin"
+        const match = cityNames.find(c => candidate.startsWith(c) || candidate.includes(c))
+        if (match) return match
       }
+      return null
+    }
+
+    events.forEach(e => {
+      const city = resolveCity(e)
+      if (city) cityCounts[city] = (cityCounts[city] || 0) + 1
     })
 
     // Imperatively init Leaflet so we fully control cleanup and avoid

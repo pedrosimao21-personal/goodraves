@@ -75,6 +75,10 @@ export default function ArtistDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artist?.lastfmSimilar])
 
+  const displayImage = artist?.imageUrl ?? null
+  const displayName = artist?.name ?? artistName
+  const mergedTags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
+
   // Fetch Spotify shows once we know the artist name
   useEffect(() => {
     if (!displayName || loading) return
@@ -95,9 +99,7 @@ export default function ArtistDetail() {
     }
   }
 
-  const displayImage = artist?.imageUrl ?? null
-  const displayName = artist?.name ?? artistName
-  const mergedTags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
+
 
   if (notFound) {
     return (

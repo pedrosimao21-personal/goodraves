@@ -8,7 +8,7 @@ import { getFestival } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
 import FestivalNotes from './FestivalNotes'
-import { BackIcon, ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
+import { BackIcon, SpotifyIcon } from '@/components/icons'
 import { formatDate } from '@/lib/format-date'
 import { getFestivalPlaylist, type FestivalPlaylistData } from '@/db/actions/festival-playlist'
 
@@ -164,6 +164,9 @@ export default function FestivalDetail() {
   const isRA = id.startsWith('ra-')
   const raEventId = isRA ? id.replace(/^ra-/, '') : null
   const externalUrl = raEventId ? `https://ra.co/events/${raEventId}` : null
+  const isFF = id.startsWith('ff-')
+  const ffSlug = isFF ? id.replace(/^ff-/, '') : null
+  const ffExternalUrl = ffSlug ? `https://festivalfans.nl/event/${ffSlug}/` : null
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture
     ? (upcoming ? 'Going \u2713' : 'Mark as Going')
@@ -215,7 +218,12 @@ export default function FestivalDetail() {
 
             {externalUrl && (
               <a href={externalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                <ResidentAdvisorIcon size={14} /> View on RA
+                <Image src="/ra-logo.svg" alt="" width={20} height={10} style={{ filter: 'invert(1)' }} /> View on Resident Advisor ↗
+              </a>
+            )}
+            {ffExternalUrl && (
+              <a href={ffExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
+                <Image src="/festivalfans-icon.png" alt="" width={14} height={14} /> View on FestivalFans ↗
               </a>
             )}
           </div>

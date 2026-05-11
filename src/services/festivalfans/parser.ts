@@ -61,10 +61,12 @@ function extractSchemaOrgDates(html: string): { date: string | null; endDate: st
   try {
     const ld = JSON.parse(ldJsonMatch[1]);
     const date = ld.startDate
-      ? new Date(ld.startDate).toISOString().slice(0, 10)
+      ? new Date(ld.startDate)
+          .toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" })
       : null;
     const endDate = ld.endDate && ld.endDate !== ld.startDate
-      ? new Date(ld.endDate).toISOString().slice(0, 10)
+      ? new Date(ld.endDate)
+          .toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" })
       : null;
     return { date, endDate };
   } catch {

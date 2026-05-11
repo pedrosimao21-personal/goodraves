@@ -92,7 +92,10 @@ export async function searchFFEvents(query: string) {
 
       let date: string | null = null;
       if (ev.strtotime) {
-        date = new Date(ev.strtotime * 1000).toISOString().slice(0, 10);
+        const localDate = new Date(ev.strtotime * 1000);
+        date = localDate
+          .toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" })
+          .slice(0, 10);
       }
 
       return {

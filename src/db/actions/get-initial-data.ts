@@ -28,7 +28,6 @@ export async function getInitialUserData() {
       db
         .select({
           festivalId: userFestivals.festivalId,
-          status: userFestivals.status,
           rating: userFestivals.rating,
           notes: userFestivals.notes,
           name: festivals.name,

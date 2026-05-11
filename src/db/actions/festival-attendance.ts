@@ -15,7 +15,7 @@ export async function addAttendance(festivalId: string) {
   const userId = await requireAuth();
   await db
     .insert(userFestivals)
-    .values({ userId, festivalId, status: "attended" })
+    .values({ userId, festivalId })
     .onConflictDoNothing({
       target: [userFestivals.userId, userFestivals.festivalId],
     });
@@ -52,7 +52,7 @@ export async function setFestivalNotes(
   }
   await db
     .insert(userFestivals)
-    .values({ userId, festivalId, notes, status: "attended" })
+    .values({ userId, festivalId, notes })
     .onConflictDoUpdate({
       target: [userFestivals.userId, userFestivals.festivalId],
       set: { notes },
@@ -68,7 +68,7 @@ export async function rateFestival(
   const validRating = validateRating(rating);
   await db
     .insert(userFestivals)
-    .values({ userId, festivalId, rating: validRating, status: "attended" })
+    .values({ userId, festivalId, rating: validRating })
     .onConflictDoUpdate({
       target: [userFestivals.userId, userFestivals.festivalId],
       set: { rating: validRating },

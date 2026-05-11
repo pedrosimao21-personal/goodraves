@@ -105,7 +105,6 @@ export async function getFullUserData() {
     db
       .select({
         festivalId: userFestivals.festivalId,
-        status: userFestivals.status,
         rating: userFestivals.rating,
         notes: userFestivals.notes,
         name: festivals.name,

@@ -122,6 +122,20 @@ export async function rateArtist(
   rating: number
 ) {
   const userId = await requireAuth();
+
+  if (rating === 0) {
+    await db
+      .delete(userFestivalArtistRatings)
+      .where(
+        and(
+          eq(userFestivalArtistRatings.userId, userId),
+          eq(userFestivalArtistRatings.festivalId, festivalId),
+          eq(userFestivalArtistRatings.artistId, artistId)
+        )
+      );
+    return;
+  }
+
   const validRating = validateRating(rating);
   await db
     .insert(userFestivalArtistRatings)

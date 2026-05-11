@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, memo } from 'react'
+import { memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
@@ -17,8 +17,7 @@ const ArtistCard = memo(function ArtistCard({
   spotifyData?: any
   isPast?: boolean
 }) {
-  const { didSeeArtist, toggleSawArtist, getAverageArtistRating } = useUserData()
-  const saw = didSeeArtist(eventId, artist.id)
+  const { getAverageArtistRating } = useUserData()
   const averageRating = getAverageArtistRating(artist.id)
 
   const displayImage = artist.image || spotifyData?.image || null
@@ -26,14 +25,6 @@ const ArtistCard = memo(function ArtistCard({
   // Use the real DB id from spotifyData if available, otherwise fall back to artist.id
   const dbId = spotifyData?.id || artist.id
   const artistHref = `/artist/${dbId}/${encodeURIComponent(artist.name)}`
-
-  const handleToggle = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    toggleSawArtist(eventId, artist.id, { 
-      name: artist.name, 
-      image: displayImage,
-    })
-  }, [eventId, artist.id, artist.name, displayImage, toggleSawArtist])
 
   return (
     <div className="artist-card fade-in" id={`artist-${artist.id}`} style={{ position: 'relative' }}>
@@ -65,21 +56,10 @@ const ArtistCard = memo(function ArtistCard({
         </div>
       </div>
 
-      {isPast && saw && (
-        <div style={{ position: 'relative', zIndex: 1, marginTop: 8 }}>
-          <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="sm" />
-        </div>
-      )}
-
       {isPast && (
-        <button
-          className={`artist-saw-toggle ${saw ? 'saw' : ''}`}
-          onClick={handleToggle}
-          id={`saw-${artist.id}`}
-          style={{ position: 'relative', zIndex: 1, marginTop: 8 }}
-        >
-          {saw ? '✓ I saw them!' : 'Mark as seen'}
-        </button>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
+        </div>
       )}
     </div>
   )

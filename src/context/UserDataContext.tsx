@@ -131,7 +131,23 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const setPerformanceRating = useCallback(async (eventId: string, artistId: string, rating: number) => {
     if (!userId) { promptAuth(); return }
     const key = `${eventId}::${artistId}`
-    setState(prev => ({ ...prev, performanceRatings: { ...prev.performanceRatings, [key]: rating } }))
+    setState(prev => {
+      const currentSeen = prev.seenArtists[eventId] ?? []
+      const isSeen = currentSeen.includes(artistId)
+      let updatedSeen = currentSeen
+
+      if (rating > 0 && !isSeen) {
+        updatedSeen = [...currentSeen, artistId]
+      } else if (rating === 0 && isSeen) {
+        updatedSeen = currentSeen.filter(x => x !== artistId)
+      }
+
+      return {
+        ...prev,
+        performanceRatings: { ...prev.performanceRatings, [key]: rating },
+        seenArtists: { ...prev.seenArtists, [eventId]: updatedSeen },
+      }
+    })
     await rateArtist(eventId, artistId, rating)
   }, [userId, promptAuth])
 

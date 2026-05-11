@@ -112,8 +112,10 @@ export function parseFFEventPage(html: string): ParsedFFEvent {
   const location = cityRaw ? `${cityRaw}, Netherlands` : null;
   const time = extractTableField(html, "tijd");
 
-  const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-  const imageUrl = ogImageMatch ? ogImageMatch[1] : null;
+  const ogImageMatch = html.match(
+    /<meta\s+(?:property="og:image"\s+content="([^"]+)"|content="([^"]+)"\s+property="og:image")/
+  );
+  const imageUrl = ogImageMatch ? (ogImageMatch[1] ?? ogImageMatch[2]) : null;
 
   // Extract lineup from artist links in the event content area
   const lineup: string[] = [];

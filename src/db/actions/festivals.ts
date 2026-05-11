@@ -39,7 +39,7 @@ export {
 export { reimportRAEvent, fetchRAEvent } from "./festival-import-ra";
 
 // FestivalFans import
-export { reimportFFEvent, fetchFFEvent } from "./festival-import-ff";
+export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 
 // FestivalFans slug extraction (re-exported from service for backward compat)
 export { extractFFSlug } from "@/services/festivalfans/client";

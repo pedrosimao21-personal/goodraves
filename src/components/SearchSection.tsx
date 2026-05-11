@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent } from '@/db/actions/festivals'
+import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -132,6 +132,7 @@ export default function SearchSection() {
 
       // Add FF results that aren't already in DB or exact duplicates (same name + date)
       for (const ff of ffResults) {
+        if (!ff.date) continue
         if (dbFFSlugs.has(ff.ffSlug)) continue
         if (existingKeys.has(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)) continue
         results.push({
@@ -156,6 +157,20 @@ export default function SearchSection() {
       setPageInfo({ totalElements: sorted.length })
       setEvents(sorted)
       setSearched(true)
+
+      // Lazily fetch images for FF results that don't have one
+      const ffWithoutImage = sorted.filter(
+        (e: any) => !e.image && e.id?.startsWith('ff-')
+      )
+      for (const ff of ffWithoutImage) {
+        const slug = ff.id.replace(/^ff-/, '')
+        fetchFFEventImageUrl(slug).then((imageUrl) => {
+          if (!imageUrl) return
+          setEvents((prev) =>
+            prev.map((e) => (e.id === ff.id ? { ...e, image: imageUrl } : e))
+          )
+        }).catch(() => { /* image fetch failed, tile stays without image */ })
+      }
     } catch (err) {
       setError(err as Error)
     } finally {

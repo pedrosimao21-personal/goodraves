@@ -92,6 +92,11 @@ export default function SearchSection() {
       }))
       results.push(...mapped)
 
+      // Build a set of name+date keys from DB results to deduplicate across all sources
+      const existingKeys = new Set(
+        results.map((r: any) => `${r.name?.toLowerCase()}::${r.date ?? ''}`)
+      )
+
       // Collect RA source IDs already in DB results to deduplicate
       const dbRaIds = new Set(
         dbResults
@@ -99,9 +104,12 @@ export default function SearchSection() {
           .map((f: any) => String(f.sourceId))
       )
 
-      // Add RA results that aren't already in DB results
+      // Add RA results that aren't already in DB results (by sourceId or name+date)
       for (const ra of raResults) {
         if (dbRaIds.has(ra.raId)) continue
+        const key = `${ra.name?.toLowerCase()}::${ra.date ?? ''}`
+        if (existingKeys.has(key)) continue
+        existingKeys.add(key)
         results.push({
           id: `ra-${ra.raId}`,
           name: ra.name,
@@ -123,7 +131,6 @@ export default function SearchSection() {
       )
 
       // Add FF results that aren't already in DB or exact duplicates (same name + date)
-      const existingKeys = new Set(results.map((r: any) => `${r.name?.toLowerCase()}::${r.date ?? ''}`))
       for (const ff of ffResults) {
         if (dbFFSlugs.has(ff.ffSlug)) continue
         if (existingKeys.has(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)) continue

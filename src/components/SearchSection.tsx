@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl } from '@/db/actions/festivals'
+import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl, fetchRAEventImageUrl } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -168,6 +168,20 @@ export default function SearchSection() {
           if (!imageUrl) return
           setEvents((prev) =>
             prev.map((e) => (e.id === ff.id ? { ...e, image: imageUrl } : e))
+          )
+        }).catch(() => { /* image fetch failed, tile stays without image */ })
+      }
+
+      // Lazily fetch images for RA results that don't have one
+      const raWithoutImage = sorted.filter(
+        (e: any) => !e.image && e.id?.startsWith('ra-')
+      )
+      for (const ra of raWithoutImage) {
+        const raId = ra.id.replace(/^ra-/, '')
+        fetchRAEventImageUrl(raId).then((imageUrl) => {
+          if (!imageUrl) return
+          setEvents((prev) =>
+            prev.map((e) => (e.id === ra.id ? { ...e, image: imageUrl } : e))
           )
         }).catch(() => { /* image fetch failed, tile stays without image */ })
       }

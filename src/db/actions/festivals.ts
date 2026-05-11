@@ -36,7 +36,7 @@ export {
 } from "./festival-import";
 
 // RA import
-export { reimportRAEvent, fetchRAEvent } from "./festival-import-ra";
+export { reimportRAEvent, fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 
 // FestivalFans import
 export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";

@@ -7,6 +7,36 @@ import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByName
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { parseRALineup } from "@/services/ra/parser";
 
+/** Fetch and store imageUrl for an RA event that was imported without one. */
+async function backfillMissingImage(festivalId: string, raId: string): Promise<void> {
+  const [row] = await db
+    .select({ imageUrl: festivals.imageUrl })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+
+  if (row?.imageUrl) return;
+
+  const imageUrl = await fetchRAEventImageUrl(raId);
+  if (!imageUrl) return;
+
+  await db
+    .update(festivals)
+    .set({ imageUrl })
+    .where(eq(festivals.id, festivalId));
+}
+
+/** Fetch only the image URL for an RA event by numeric ID. */
+export async function fetchRAEventImageUrl(raId: string): Promise<string | null> {
+  const id = String(raId).replace(/\D/g, "");
+  if (!id) return null;
+
+  const data = await fetchRAEventRaw(id);
+  if (!data) return null;
+
+  return data.images?.[0]?.filename ?? null;
+}
+
 /** Force-reimport an RA event (deletes existing lineup first) */
 export async function reimportRAEvent(eventId: string): Promise<string | null> {
   const id = String(eventId).replace(/\D/g, "");
@@ -32,7 +62,10 @@ export async function fetchRAEvent(
 
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
-    if (hasExisting) return festivalId;
+    if (hasExisting) {
+      await backfillMissingImage(festivalId, id);
+      return festivalId;
+    }
   }
 
   const data = await fetchRAEventRaw(id);

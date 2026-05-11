@@ -13,7 +13,7 @@ import {
   artistGenres as artistGenresTable,
 } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
-import { fetchRAEvent } from "./festival-import-ra";
+import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 
 // ── Get a single festival with its lineup ──────────────
@@ -52,26 +52,37 @@ export async function getFestival(id: string) {
   let lineup = await fetchLineup(id);
 
   // If the festival has no lineup and is from FestivalFans, re-fetch to populate
+  // If the festival has no lineup, re-fetch from original source to populate
   if (lineup.length === 0) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+    const raMatch = id.match(/^ra-(\d+)$/);
     if (ffMatch) {
       await fetchFFEvent(ffMatch[1]);
+      lineup = await fetchLineup(id);
+    } else if (raMatch) {
+      await fetchRAEvent(raMatch[1]);
       lineup = await fetchLineup(id);
     }
   }
 
-  // Backfill missing image for FF events that already have a lineup
+  // Backfill missing image from the original source
   if (!festival.imageUrl) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+    const raMatch = id.match(/^ra-(\d+)$/);
+    let imageUrl: string | null = null;
+
     if (ffMatch) {
-      const imageUrl = await fetchFFEventImageUrl(ffMatch[1]);
-      if (imageUrl) {
-        await db
-          .update(festivals)
-          .set({ imageUrl })
-          .where(eq(festivals.id, id));
-        festival.imageUrl = imageUrl;
-      }
+      imageUrl = await fetchFFEventImageUrl(ffMatch[1]);
+    } else if (raMatch) {
+      imageUrl = await fetchRAEventImageUrl(raMatch[1]);
+    }
+
+    if (imageUrl) {
+      await db
+        .update(festivals)
+        .set({ imageUrl })
+        .where(eq(festivals.id, id));
+      festival.imageUrl = imageUrl;
     }
   }
 

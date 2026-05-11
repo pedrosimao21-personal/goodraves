@@ -4,43 +4,14 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { searchFestivalsDB } from '@/db/actions/festival-search'
-
-function FestivalRow({ fest }: { fest: any }) {
-  const isCustom = typeof fest.id === 'string' && fest.id.startsWith('custom-')
-  const href = `/festival/${fest.id}`
-  return (
-    <Link href={href} style={{
-      display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
-      background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12,
-      textDecoration: 'none', color: 'inherit', transition: 'border-color 200ms ease'
-    }}>
-      {fest.imageUrl ? (
-        <Image src={fest.imageUrl} alt={fest.name} width={48} height={48} style={{ borderRadius: 8, objectFit: 'cover' }} />
-      ) : (
-        <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', flexShrink: 0 }} />
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fest.name}</div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{fest.date} &middot; {fest.location || fest.venue}</div>
-      </div>
-    </Link>
-  )
-}
-
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
   const [locationInput, setLocationInput] = useState('')
   const [locationSaved, setLocationSaved] = useState('')
-  const [nearbyShows, setNearbyShows] = useState<any[]>([])
-  const [nearbyLoading, setNearbyLoading] = useState(false)
-
   const [genreInput, setGenreInput] = useState('')
   const [genresSaved, setGenresSaved] = useState<string>('')
-  const [tailoredShows, setTailoredShows] = useState<any[]>([])
-  const [tailoredLoading, setTailoredLoading] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

@@ -1,11 +1,33 @@
 "use server";
 
 import { db } from "@/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
 import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate } from "./festival-helpers";
 import { fetchFFEventHtml } from "@/services/festivalfans/client";
 import { parseFFEventPage } from "@/services/festivalfans/parser";
+
+/** Fetch and store imageUrl for a festival that was imported without one. */
+async function backfillMissingImage(festivalId: string, slug: string): Promise<void> {
+  const [row] = await db
+    .select({ imageUrl: festivals.imageUrl })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+
+  if (row?.imageUrl) return;
+
+  const html = await fetchFFEventHtml(slug);
+  if (!html) return;
+
+  const parsed = parseFFEventPage(html);
+  if (!parsed.imageUrl) return;
+
+  await db
+    .update(festivals)
+    .set({ imageUrl: parsed.imageUrl })
+    .where(eq(festivals.id, festivalId));
+}
 
 /** Force-reimport a FestivalFans.nl event (deletes existing lineup first) */
 export async function reimportFFEvent(slug: string): Promise<string | null> {
@@ -30,7 +52,10 @@ export async function fetchFFEvent(
 
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
-    if (hasExisting) return festivalId;
+    if (hasExisting) {
+      await backfillMissingImage(festivalId, slug);
+      return festivalId;
+    }
   }
 
   const html = await fetchFFEventHtml(slug);
@@ -81,7 +106,14 @@ export async function fetchFFEvent(
     await db
       .insert(festivals)
       .values(festivalValues)
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: festivals.id,
+        set: {
+          imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
+          latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
+          longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
+        },
+      });
   }
 
   if (parsed.lineup.length > 0) {

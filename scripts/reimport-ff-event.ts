@@ -75,8 +75,10 @@ function parseFFEventPage(html: string): {
   const cityRaw = getTableField("stad");
   const location = cityRaw ? `${cityRaw}, Netherlands` : null;
 
-  const ogImageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-  const imageUrl = ogImageMatch ? ogImageMatch[1] : null;
+  const ogImageMatch = html.match(
+    /<meta\s+(?:property="og:image"\s+content="([^"]+)"|content="([^"]+)"\s+property="og:image")/
+  );
+  const imageUrl = ogImageMatch ? (ogImageMatch[1] ?? ogImageMatch[2]) : null;
 
   const lineup: string[] = [];
   const contentMatch = html.match(/<div class="event-text">([\s\S]*)/);

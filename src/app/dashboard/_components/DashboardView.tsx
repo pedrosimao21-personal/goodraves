@@ -136,14 +136,14 @@ export default function DashboardView() {
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => { window.location.hash = ''; setActiveTab('attended') }}
+            onClick={() => { history.replaceState(null, '', window.location.pathname); setActiveTab('attended') }}
             style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Past ({attendedFestivals.length})
           </button>
           <button
             className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => { window.location.hash = 'upcoming'; setActiveTab('upcoming') }}
+            onClick={() => { history.replaceState(null, '', `${window.location.pathname}#upcoming`); setActiveTab('upcoming') }}
             style={activeTab === 'upcoming' ? { background: UPCOMING_BG_COLOR, color: '#fff', borderColor: UPCOMING_BG_COLOR } : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Upcoming ({upcomingFestivals.length})

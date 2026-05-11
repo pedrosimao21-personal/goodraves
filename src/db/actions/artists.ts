@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { artists, genres, artistGenres } from "@/db/schema";
 import {
   spotifySearchArtist,
@@ -203,26 +203,25 @@ async function refreshLastfm(name: string) {
       const spotifyResults = await spotifySearchArtistsBatch(similarNames).catch(() => ({}) as Record<string, any>);
       const now = new Date().toISOString();
       await Promise.allSettled(
-        similarNames.map((similarName: string) => {
+        similarNames.map(async (similarName: string) => {
           const sp = spotifyResults[similarName];
-          return db
-            .insert(artists)
-            .values({
-              name: similarName,
-              spotifyId: sp?.id ?? null,
-              imageUrl: sp?.image ?? null,
-              spotifyFollowers: sp?.followers ?? null,
-              spotifyFetchedAt: now,
-            })
-            .onConflictDoUpdate({
-              target: artists.name,
-              set: {
-                spotifyId: sp?.id ?? null,
-                imageUrl: sp?.image ?? null,
-                spotifyFollowers: sp?.followers ?? null,
-                spotifyFetchedAt: now,
-              },
-            });
+          const spotifyFields = {
+            spotifyId: sp?.id ?? null,
+            imageUrl: sp?.image ?? null,
+            spotifyFollowers: sp?.followers ?? null,
+            spotifyFetchedAt: now,
+          };
+
+          const [existing] = await db.select({ id: artists.id })
+            .from(artists)
+            .where(sql`lower(${artists.name}) = lower(${similarName})`)
+            .limit(1);
+
+          if (existing) {
+            return db.update(artists).set(spotifyFields).where(eq(artists.id, existing.id));
+          }
+
+          return db.insert(artists).values({ name: similarName, ...spotifyFields }).onConflictDoNothing();
         })
       );
     }
@@ -265,7 +264,7 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
 export async function getOrCreateArtistByName(name: string): Promise<{ id: string; name: string }> {
   const [existing] = await db.select({ id: artists.id, name: artists.name })
     .from(artists)
-    .where(eq(artists.name, name))
+    .where(sql`lower(${artists.name}) = lower(${name})`)
     .limit(1);
 
   if (existing) return existing;
@@ -273,10 +272,18 @@ export async function getOrCreateArtistByName(name: string): Promise<{ id: strin
   const [created] = await db
     .insert(artists)
     .values({ name })
-    .onConflictDoUpdate({ target: artists.name, set: { name } })
+    .onConflictDoNothing()
     .returning({ id: artists.id, name: artists.name });
 
-  return created;
+  if (created) return created;
+
+  // Race condition: another request inserted between our select and insert
+  const [raced] = await db.select({ id: artists.id, name: artists.name })
+    .from(artists)
+    .where(sql`lower(${artists.name}) = lower(${name})`)
+    .limit(1);
+
+  return raced;
 }
 
 // ── Legacy: bulk Spotify image fetch for lineup cards ─────────────────────

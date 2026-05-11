@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { artists } from "@/db/schema";
 import {
   spotifySearchArtist,
@@ -98,24 +98,24 @@ async function fetchAndUpsertArtists(
   ];
 
   const upsertResults = await Promise.allSettled(
-    toUpsert.map(({ name, data }) =>
-      db
-        .insert(artists)
-        .values({
-          name,
-          spotifyId: data?.id ?? null,
-          imageUrl: data?.image ?? null,
-          spotifyFetchedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: artists.name,
-          set: {
-            spotifyId: data?.id ?? null,
-            imageUrl: data?.image ?? null,
-            spotifyFetchedAt: now,
-          },
-        })
-    )
+    toUpsert.map(async ({ name, data }) => {
+      const spotifyFields = {
+        spotifyId: data?.id ?? null,
+        imageUrl: data?.image ?? null,
+        spotifyFetchedAt: now,
+      };
+
+      const [existing] = await db.select({ id: artists.id })
+        .from(artists)
+        .where(sql`lower(${artists.name}) = lower(${name})`)
+        .limit(1);
+
+      if (existing) {
+        return db.update(artists).set(spotifyFields).where(eq(artists.id, existing.id));
+      }
+
+      return db.insert(artists).values({ name, ...spotifyFields }).onConflictDoNothing();
+    })
   );
 
   upsertResults.forEach((r, i) => {

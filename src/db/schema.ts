@@ -60,7 +60,7 @@ export const artists = pgTable("artists", {
 	relatedArtistsFetchedAt: timestamp("related_artists_fetched_at", { withTimezone: true, mode: 'string' }),
 }, (table) => [
 	index("artists_spotify_followers_idx").using("btree", table.spotifyFollowers.asc().nullsLast().op("int4_ops")),
-	unique("artists_name_unique").on(table.name),
+	uniqueIndex("artists_name_ci_unique").on(sql`lower(${table.name})`),
 ]);
 
 export const genres = pgTable("genres", {

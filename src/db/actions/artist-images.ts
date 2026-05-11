@@ -10,9 +10,10 @@ import {
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 
-function isStaleSpotify(fetchedAt: string | null | undefined): boolean {
+function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - new Date(fetchedAt).getTime() > TWO_MONTHS_MS;
+  const ms = fetchedAt instanceof Date ? fetchedAt.getTime() : new Date(fetchedAt).getTime();
+  return Date.now() - ms > TWO_MONTHS_MS;
 }
 
 type SpotifyResult = Awaited<ReturnType<typeof spotifySearchArtist>>;

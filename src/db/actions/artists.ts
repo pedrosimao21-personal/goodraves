@@ -106,7 +106,7 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     return data;
   }
 
-  const now = new Date().toISOString();
+      const now = new Date();
 
   // Run all refreshes in parallel where needed
   const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate] = await Promise.all([
@@ -220,7 +220,7 @@ async function refreshLastfm(name: string) {
     // table so their images are available for DB lookups and navigation is instant.
     if (similarNames.length) {
       const spotifyResults = await spotifySearchArtistsBatch(similarNames).catch(() => ({}) as Record<string, any>);
-      const now = new Date().toISOString();
+  const now = new Date();
       await Promise.allSettled(
         similarNames.map(async (similarName: string) => {
           const sp = spotifyResults[similarName];

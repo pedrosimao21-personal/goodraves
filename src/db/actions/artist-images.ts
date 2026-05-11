@@ -88,7 +88,7 @@ async function fetchAndUpsertArtists(
     searchResults.push({ name, fetch: await fetchByName(name) });
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const toUpsert: Array<{ name: string; data: SpotifyResult }> = [
     ...withId
       .filter(({ spotifyId }) => spotifyId in batchResults)

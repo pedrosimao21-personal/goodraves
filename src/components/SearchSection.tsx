@@ -160,7 +160,7 @@ export default function SearchSection() {
 
       // Lazily fetch images for FF results that don't have one
       const ffWithoutImage = sorted.filter(
-        (e: any) => e._fromFF && !e.image && e.id?.startsWith('ff-')
+        (e: any) => !e.image && e.id?.startsWith('ff-')
       )
       for (const ff of ffWithoutImage) {
         const slug = ff.id.replace(/^ff-/, '')

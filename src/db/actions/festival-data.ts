@@ -14,7 +14,7 @@ import {
 } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
 import { fetchRAEvent } from "./festival-import-ra";
-import { fetchFFEvent } from "./festival-import-ff";
+import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -57,6 +57,21 @@ export async function getFestival(id: string) {
     if (ffMatch) {
       await fetchFFEvent(ffMatch[1]);
       lineup = await fetchLineup(id);
+    }
+  }
+
+  // Backfill missing image for FF events that already have a lineup
+  if (!festival.imageUrl) {
+    const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+    if (ffMatch) {
+      const imageUrl = await fetchFFEventImageUrl(ffMatch[1]);
+      if (imageUrl) {
+        await db
+          .update(festivals)
+          .set({ imageUrl })
+          .where(eq(festivals.id, id));
+        festival.imageUrl = imageUrl;
+      }
     }
   }
 

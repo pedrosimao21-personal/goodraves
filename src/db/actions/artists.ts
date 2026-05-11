@@ -82,8 +82,10 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
 
   const needsLastfm = isStaleLastfm(row.lastfmFetchedAt);
   // Also refresh Spotify if albums have never been fetched (row was created by the
-  // old getArtistsWithImages flow which didn't save albums).
-  const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null;
+  // old getArtistsWithImages flow which didn't save albums), or if the top tracks
+  // don't have Spotify's previewUrl format yet.
+  const hasSpotifyTracks = typeof row.lastfmTopTracks === 'string' && row.lastfmTopTracks.includes('previewUrl');
+  const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null || !hasSpotifyTracks;
 
   if (!needsLastfm && !needsSpotify) {
     const data = await enrichWithSimilarImages(rowToArtistData(row));

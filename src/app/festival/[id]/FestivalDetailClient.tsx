@@ -103,11 +103,12 @@ export default function FestivalDetail() {
   }, [id])
 
   useEffect(() => {
-    if (!event?.attractions?.length) return
-    const needsEnrich = event.attractions.filter((a: any) => !a.image).map((a: any) => a.name)
+    if (!event) return
     let cancelled = false
-    
-    if (needsEnrich.length > 0) {
+
+    if (event.attractions && event.attractions.length > 0) {
+      const needsEnrich = event.attractions.filter((a: any) => !a.image).map((a: any) => a.name)
+      if (needsEnrich.length > 0) {
       ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
       .then((data) => {
         if (cancelled) return
@@ -120,6 +121,7 @@ export default function FestivalDetail() {
       .catch((err) => {
         console.error('[festival] Failed to enrich artist images:', err)
       })
+      }
     }
 
     // Always fetch playlist, even if no artists need enrichment

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
@@ -9,6 +9,30 @@ import RAImport from '@/components/RAImport'
 import AddCustomEvent from '@/components/AddCustomFestival'
 import EditFestivalModal from './EditFestivalModal'
 import FestivalRow from './FestivalRow'
+import { searchFestivalsDB } from '@/db/actions/festival-search'
+import Link from 'next/link'
+import Image from 'next/image'
+
+function SimpleFestivalRow({ fest }: { fest: any }) {
+  const href = `/festival/${fest.id}`
+  return (
+    <Link href={href} style={{
+      display: 'flex', alignItems: 'center', gap: 12, padding: '12px',
+      background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12,
+      textDecoration: 'none', color: 'inherit', transition: 'border-color 200ms ease'
+    }}>
+      {fest.imageUrl ? (
+        <Image src={fest.imageUrl} alt={fest.name} width={48} height={48} style={{ borderRadius: 8, objectFit: 'cover' }} />
+      ) : (
+        <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', flexShrink: 0 }} />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fest.name}</div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{fest.date} &middot; {fest.location || 'Unknown location'}</div>
+      </div>
+    </Link>
+  )
+}
 
 const CLEAR_LIST_COLOR = '#ff4444'
 const UPCOMING_BG_COLOR = '#3b82f6'
@@ -28,6 +52,39 @@ export default function DashboardView() {
 
   const getTabFromHash = () => (typeof window !== 'undefined' && window.location.hash === '#upcoming') ? 'upcoming' : 'attended'
   const [activeTab, setActiveTab] = useState<'attended' | 'upcoming'>(getTabFromHash)
+
+  const [nearbyShows, setNearbyShows] = useState<any[]>([])
+  const [nearbyLoading, setNearbyLoading] = useState(false)
+  const [tailoredShows, setTailoredShows] = useState<any[]>([])
+  const [tailoredLoading, setTailoredLoading] = useState(false)
+  const [userLocation, setUserLocation] = useState('')
+  const [userGenres, setUserGenres] = useState('')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const loc = localStorage.getItem('user_location')
+      const gen = localStorage.getItem('user_genres')
+      setUserLocation(loc || '')
+      setUserGenres(gen || '')
+
+      if (loc) {
+        setNearbyLoading(true)
+        searchFestivalsDB(loc).then(res => {
+          setNearbyShows(res.slice(0, 5))
+          setNearbyLoading(false)
+        }).catch(() => setNearbyLoading(false))
+      }
+      
+      if (gen) {
+        setTailoredLoading(true)
+        const firstGenre = gen.split(',')[0].trim()
+        searchFestivalsDB(firstGenre).then(res => {
+          setTailoredShows(res.slice(0, 5))
+          setTailoredLoading(false)
+        }).catch(() => setTailoredLoading(false))
+      }
+    }
+  }, [])
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -204,6 +261,46 @@ export default function DashboardView() {
               ))}
             </div>
           </>
+        )}
+      </div>
+
+      <div className="container" style={{ paddingTop: 0, paddingBottom: 64 }}>
+        {(userLocation || userGenres) && (
+          <div className="divider" style={{ margin: '32px 0' }} />
+        )}
+
+        {userLocation && (
+          <div style={{ marginBottom: 40 }}>
+            <h2 className="section-title" style={{ marginBottom: 16 }}>Shows near {userLocation}</h2>
+            {nearbyLoading ? (
+              <div style={{ color: 'var(--text-muted)' }}>Finding shows...</div>
+            ) : nearbyShows.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {nearbyShows.map(fest => <SimpleFestivalRow key={fest.id} fest={fest} />)}
+              </div>
+            ) : (
+              <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                No upcoming shows found near {userLocation}.
+              </div>
+            )}
+          </div>
+        )}
+
+        {userGenres && (
+          <div style={{ marginBottom: 40 }}>
+            <h2 className="section-title" style={{ marginBottom: 16 }}>Tailored for You ({userGenres})</h2>
+            {tailoredLoading ? (
+              <div style={{ color: 'var(--text-muted)' }}>Finding events...</div>
+            ) : tailoredShows.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {tailoredShows.map(fest => <SimpleFestivalRow key={fest.id} fest={fest} />)}
+              </div>
+            ) : (
+              <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                No events matched your favorite genres right now.
+              </div>
+            )}
+          </div>
         )}
       </div>
 

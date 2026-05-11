@@ -22,7 +22,8 @@ export async function getFestivalPlaylist(
   if (!festivalName) return null;
 
   try {
-    const playlists = await spotifySearchPlaylist(festivalName, 1);
+    const sanitizedQuery = festivalName.replace(/\b20\d{2}\b/g, "").trim();
+    const playlists = await spotifySearchPlaylist(sanitizedQuery, 1);
     if (playlists && playlists.length > 0) {
       return playlists[0];
     }

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { searchFestivalsDB } from '@/db/actions/festival-search'
-import Image from 'next/image'
 
 function FestivalRow({ fest }: { fest: any }) {
   const isCustom = typeof fest.id === 'string' && fest.id.startsWith('custom-')
@@ -55,29 +54,20 @@ export default function ProfilePage() {
   }, [])
 
   useEffect(() => {
-    if (locationSaved) {
-      setNearbyLoading(true)
-      searchFestivalsDB(locationSaved).then(res => {
-        setNearbyShows(res.slice(0, 5))
-        setNearbyLoading(false)
-      }).catch(() => setNearbyLoading(false))
-    } else {
-      setNearbyShows([])
+    if (typeof window !== 'undefined') {
+      const loc = localStorage.getItem('user_location')
+      if (loc) {
+        setLocationSaved(loc)
+        setLocationInput(loc)
+      }
+      
+      const gen = localStorage.getItem('user_genres')
+      if (gen) {
+        setGenresSaved(gen)
+        setGenreInput(gen)
+      }
     }
-  }, [locationSaved])
-
-  useEffect(() => {
-    if (genresSaved) {
-      setTailoredLoading(true)
-      const firstGenre = genresSaved.split(',')[0].trim()
-      searchFestivalsDB(firstGenre).then(res => {
-        setTailoredShows(res.slice(0, 5))
-        setTailoredLoading(false)
-      }).catch(() => setTailoredLoading(false))
-    } else {
-      setTailoredShows([])
-    }
-  }, [genresSaved])
+  }, [])
 
   const saveLocation = () => {
     localStorage.setItem('user_location', locationInput)
@@ -140,72 +130,37 @@ export default function ProfilePage() {
           </Link>
         </div>
 
-        <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Nearby Shows</h2>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <input 
-              type="text" 
-              value={locationInput}
-              onChange={e => setLocationInput(e.target.value)}
-              placeholder="Enter your city (e.g. Amsterdam, Berlin)"
-              style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit' }}
-            />
-            <button className="btn btn-primary" onClick={saveLocation}>Save</button>
-          </div>
-          
-          {nearbyLoading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>Searching for shows near {locationSaved}...</div>
-          ) : nearbyShows.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {nearbyShows.map(fest => <FestivalRow key={fest.id} fest={fest} />)}
+        <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Personalize Your Feed</h2>
+        <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, color: 'var(--text-muted)' }}>Location for Nearby Shows</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input 
+                type="text" 
+                value={locationInput}
+                onChange={e => setLocationInput(e.target.value)}
+                placeholder="Enter your city (e.g. Amsterdam, Berlin)"
+                style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit' }}
+              />
+              <button className="btn btn-primary" onClick={saveLocation}>Save</button>
             </div>
-          ) : locationSaved ? (
-            <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              No upcoming shows found near <b>{locationSaved}</b> in our database.
-            </div>
-          ) : (
-            <div style={{ padding: 32, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>📍</div>
-              <h3 style={{ margin: '0 0 8px 0' }}>Shows near your location</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: 400, margin: '0 auto 16px auto' }}>
-                Save your city above to find upcoming raves and festivals near you.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Tailored for You</h2>
-        <div style={{ marginBottom: 48 }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <input 
-              type="text" 
-              value={genreInput}
-              onChange={e => setGenreInput(e.target.value)}
-              placeholder="Favorite genres (e.g. Techno, House)"
-              style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit' }}
-            />
-            <button className="btn btn-primary" onClick={saveGenres}>Save</button>
+            {locationSaved && <p style={{ marginTop: 8, fontSize: '0.85rem', color: '#1DB954' }}>✓ Location saved. Recommendations will appear on your Dashboard.</p>}
           </div>
 
-          {tailoredLoading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>Finding events for {genresSaved}...</div>
-          ) : tailoredShows.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {tailoredShows.map(fest => <FestivalRow key={fest.id} fest={fest} />)}
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 600, color: 'var(--text-muted)' }}>Favorite Genres</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input 
+                type="text" 
+                value={genreInput}
+                onChange={e => setGenreInput(e.target.value)}
+                placeholder="e.g. Techno, House, Trance"
+                style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit' }}
+              />
+              <button className="btn btn-primary" onClick={saveGenres}>Save</button>
             </div>
-          ) : genresSaved ? (
-            <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              No events matched your favorite genres in our database right now.
-            </div>
-          ) : (
-            <div style={{ padding: 32, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>🎧</div>
-              <h3 style={{ margin: '0 0 8px 0' }}>Shows based on your favorite genres</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: 400, margin: '0 auto 16px auto' }}>
-                Set your favorite genres to receive personalized event recommendations.
-              </p>
-            </div>
-          )}
+            {genresSaved && <p style={{ marginTop: 8, fontSize: '0.85rem', color: '#1DB954' }}>✓ Genres saved. Recommendations will appear on your Dashboard.</p>}
+          </div>
         </div>
 
       </div>

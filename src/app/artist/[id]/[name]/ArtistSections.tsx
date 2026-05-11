@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
 import StarRating from '@/components/StarRating'
 import { ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
@@ -9,7 +10,7 @@ import { formatFollowers, formatPlaycount } from './format-counts'
 import { MAX_NOTES_LENGTH } from '@/lib/constants'
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string }
-type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number }
+type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number; previewUrl?: string | null }
 
 export function ArtistHeader({
   displayImage,
@@ -175,23 +176,68 @@ export function AlbumList({ albums }: { albums: SpotifyAlbum[] }) {
 }
 
 export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; artistName: string }) {
+  const [playingTrack, setPlayingTrack] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const togglePlay = (trackUrl: string) => {
+    if (playingTrack === trackUrl) {
+      audioRef.current?.pause()
+      setPlayingTrack(null)
+    } else {
+      if (audioRef.current) {
+        audioRef.current.src = trackUrl
+        audioRef.current.play()
+      }
+      setPlayingTrack(trackUrl)
+    }
+  }
+
   return (
     <div style={{ marginBottom: 40 }}>
       <h2 className="section-title" style={{ marginBottom: 16 }}>Top Tracks</h2>
+      <audio ref={audioRef} onEnded={() => setPlayingTrack(null)} />
       <ul className="track-list" id="top-tracks-list">
         {tracks.map((t, i) => {
           const trackUrl = t.url || `https://open.spotify.com/search/${encodeURIComponent(artistName + ' ' + t.name)}`
+          const isPlaying = playingTrack === t.previewUrl
+          
           return (
-            <li key={t.name + i} className="track-item">
-              <span className="track-num">{i + 1}</span>
-              <div className="track-info">
-                <a href={trackUrl} target="_blank" rel="noreferrer" className="track-name" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <li key={t.name + i} className="track-item" style={{ padding: '12px 0' }}>
+              <span className="track-num" style={{ width: 24 }}>{i + 1}</span>
+              
+              {t.previewUrl && (
+                <button 
+                  onClick={() => togglePlay(t.previewUrl!)}
+                  style={{ 
+                    background: isPlaying ? 'var(--accent)' : 'var(--bg-card)', 
+                    border: '1px solid var(--border)', 
+                    color: isPlaying ? '#fff' : 'var(--text-primary)',
+                    borderRadius: '50%', 
+                    width: 32, 
+                    height: 32, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    marginRight: 12,
+                    transition: 'all 200ms ease'
+                  }}
+                  title="Play 30s preview"
+                >
+                  {isPlaying ? '⏸' : '▶'}
+                </button>
+              )}
+              
+              <div className="track-info" style={{ flex: 1 }}>
+                <a href={trackUrl} target="_blank" rel="noreferrer" className="track-name" style={{ color: 'inherit', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.95rem' }}>
                   {t.name}
                   <SpotifyIcon size={12} />
                 </a>
               </div>
+              
               {t.playcount > 0 && (
-                <span className="track-plays">{formatPlaycount(t.playcount)}</span>
+                <span className="track-plays" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{formatPlaycount(t.playcount)}</span>
               )}
             </li>
           )

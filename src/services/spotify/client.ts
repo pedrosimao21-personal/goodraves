@@ -164,6 +164,7 @@ export async function spotifyGetArtistTopTracks(spotifyId: string) {
     playcount: t.popularity ?? 0, // Using popularity for playcount field compatibility
     url: t.external_urls?.spotify ?? null,
     listeners: 0,
+    previewUrl: t.preview_url ?? null,
   }));
 }
 export async function spotifyGetArtistAlbums(

@@ -259,76 +259,39 @@ export default function FestivalDetail() {
 
 function FestivalPlaylist({ playlist, festivalName }: { playlist: FestivalPlaylistData; festivalName: string }) {
   const spotifyFallbackUrl = `https://open.spotify.com/search/${encodeURIComponent(festivalName)}`
+  const embedUrl = playlist.id ? `https://open.spotify.com/embed/playlist/${playlist.id}?utm_source=generator&theme=0` : null
+  
   return (
     <div style={{ marginTop: 48, paddingBottom: 48 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
         <h2 className="section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
           Festival Playlist
-          <SpotifyIcon size={16} />
         </h2>
         <a
-          href={spotifyFallbackUrl}
+          href={playlist.url ?? spotifyFallbackUrl}
           target="_blank"
           rel="noreferrer"
           className="btn spotify-link btn-sm"
           style={{ textDecoration: 'none' }}
         >
-          <SpotifyIcon size={14} /> Search Spotify
+          <SpotifyIcon size={14} /> Open in Spotify
         </a>
       </div>
-      <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-        We found this playlist on Spotify matching the festival name
-      </p>
       
-      <a
-        href={playlist.url ?? spotifyFallbackUrl}
-        target="_blank"
-        rel="noreferrer"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          padding: '16px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          textDecoration: 'none',
-          color: 'inherit',
-          transition: 'border-color 200ms ease, transform 200ms ease',
-        }}
-        onMouseEnter={e => { 
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)';
-          (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-        }}
-        onMouseLeave={e => { 
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-          (e.currentTarget as HTMLElement).style.transform = 'none';
-        }}
-      >
-        {playlist.image ? (
-          <Image 
-            src={playlist.image} 
-            alt={playlist.name} 
-            width={80} 
-            height={80} 
-            sizes="80px" 
-            quality={90} 
-            style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
-          />
-        ) : (
-          <div style={{ width: 80, height: 80, borderRadius: 10, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', flexShrink: 0 }}>🎵</div>
-        )}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontWeight: 700, fontSize: '1.05rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{playlist.name}</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>By {playlist.owner} &middot; {playlist.tracksTotal} tracks</div>
-          {playlist.description && (
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginTop: 2 }} dangerouslySetInnerHTML={{ __html: playlist.description }} />
-          )}
-        </div>
-        <div style={{ padding: 8, background: 'rgba(29, 185, 84, 0.1)', borderRadius: '50%', color: '#1DB954', display: 'flex', flexShrink: 0 }}>
-           <SpotifyIcon size={20} />
-        </div>
-      </a>
+      {embedUrl ? (
+        <iframe
+          style={{ borderRadius: '12px' }}
+          src={embedUrl}
+          width="100%"
+          height="352"
+          frameBorder="0"
+          allowFullScreen={false}
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+        />
+      ) : (
+        <p style={{ color: 'var(--text-muted)' }}>Playlist not available to embed.</p>
+      )}
     </div>
   )
 }

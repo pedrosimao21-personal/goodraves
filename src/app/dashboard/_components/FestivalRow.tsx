@@ -25,7 +25,9 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
 
   const handleRemove = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    onRemove(eventId)
+    if (confirm('Are you sure you want to remove this festival from your list?')) {
+      onRemove(eventId)
+    }
   }, [eventId, onRemove])
 
   const handleEdit = useCallback((e: React.MouseEvent) => {

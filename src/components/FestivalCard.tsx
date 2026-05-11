@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
 import { spotifySearchArtist } from '@/services/spotify/client'
@@ -69,7 +69,6 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
 }
 
 export default function FestivalCard({ event }: { event: any }) {
-  const router = useRouter()
   const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount } = useUserData()
   
   const attended = isAttended(event.id)
@@ -138,9 +137,7 @@ export default function FestivalCard({ event }: { event: any }) {
     }
   }
 
-  const handleClick = () => {
-    router.push(`/festival/${event.id}`)
-  }
+  const festivalHref = `/festival/${event.id}`
 
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture 
@@ -148,7 +145,7 @@ export default function FestivalCard({ event }: { event: any }) {
     : (attended ? 'Attended ✓' : 'Mark as Attended')
 
   return (
-    <div className="festival-card fade-in" onClick={handleClick}>
+    <Link href={festivalHref} className="festival-card fade-in">
       <div style={{ position: 'relative' }}>
         {displayImage ? (
           <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} style={{ objectFit: 'cover' }} />
@@ -213,6 +210,6 @@ export default function FestivalCard({ event }: { event: any }) {
           </span>
         )}
       </div>
-    </div>
+    </Link>
   )
 }

@@ -43,21 +43,20 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   const key = source ?? 'custom'
   const config = SOURCE_LABELS[key] ?? { label: key, color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' }
 
+  const badgeStyle = { background: '#000', borderColor: 'rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '24px' }
+
   if (key === 'ra') {
     return (
-      <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ opacity: 0.6, filter: 'invert(1)' }} />
-        {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
+      <span className="tag" style={badgeStyle}>
+        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ filter: 'invert(1)' }} />
       </span>
     )
   }
 
   if (key === 'festivalfans') {
     return (
-      <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} style={{ opacity: 0.8 }} />
-        <span>FF</span>
-        {!isFromDB && <span style={{ opacity: 0.5, fontSize: '0.6rem' }}>search</span>}
+      <span className="tag" style={badgeStyle}>
+        <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} />
       </span>
     )
   }
@@ -150,17 +149,23 @@ export default function FestivalCard({ event }: { event: any }) {
 
   return (
     <div className="festival-card fade-in" onClick={handleClick}>
-      {displayImage ? (
-        <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} style={{ objectFit: 'cover' }} />
-      ) : (
-        <div className="festival-card-img-placeholder">
-          🎪
-        </div>
-      )}
+      <div style={{ position: 'relative' }}>
+        {displayImage ? (
+          <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} style={{ objectFit: 'cover' }} />
+        ) : (
+          <div className="festival-card-img-placeholder">
+            🎪
+          </div>
+        )}
+        {(event._fromRA || event._fromFF) && (
+          <div style={{ position: 'absolute', top: 8, right: 8 }}>
+            <SourceBadge source={event.source} isFromDB={false} />
+          </div>
+        )}
+      </div>
 
       <div className="festival-card-body">
         <div className="festival-card-tags">
-          <SourceBadge source={event.source} isFromDB={!event._fromRA && !event._fromFF} />
           {event.genre && <span className="tag">{event.genre}</span>}
           {event.subGenre && event.subGenre !== event.genre && (
             <span className="tag tag-orange">{event.subGenre}</span>

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
 import { formatDate } from '@/lib/format-date'
@@ -18,7 +18,6 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   isUpcomingTab: boolean
   onEdit: (id: string) => void
 }) => {
-  const router = useRouter()
   const { getSeenCount, getFestivalMeta } = useUserData()
 
   const displayEvent = getFestivalMeta(eventId)
@@ -35,7 +34,8 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   }, [eventId, onEdit])
 
   return (
-    <div
+    <Link
+      href={`/festival/${eventId}`}
       style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
@@ -47,8 +47,9 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         cursor: 'pointer',
         transition: 'border-color 250ms ease',
         overflow: 'hidden',
+        textDecoration: 'none',
+        color: 'inherit',
       }}
-      onClick={() => router.push(`/festival/${eventId}`)}
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
       onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
     >
@@ -97,7 +98,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
       >
         &times;
       </button>
-    </div>
+    </Link>
   )
 })
 

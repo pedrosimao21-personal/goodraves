@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup } from "./festival-helpers";
+import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate } from "./festival-helpers";
 import { fetchFFEventHtml } from "@/services/festivalfans/client";
 import { parseFFEventPage } from "@/services/festivalfans/parser";
 
@@ -40,6 +40,11 @@ export async function fetchFFEvent(
   if (!parsed.name) return null;
 
   const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+
+  const existingId = await findExistingFestivalByNameDate(parsed.name, date);
+  if (existingId && existingId !== festivalId) {
+    return existingId;
+  }
 
   const festivalValues = {
     id: festivalId,

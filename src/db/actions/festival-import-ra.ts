@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup } from "./festival-helpers";
+import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate } from "./festival-helpers";
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { parseRALineup } from "@/services/ra/parser";
 
@@ -56,11 +56,17 @@ export async function fetchRAEvent(
     .filter(Boolean) as string[];
   const lineup = parseRALineup(data.lineup, artistsFallback);
 
+  const festivalName = data.title ?? `RA Event ${id}`;
+  const existingId = await findExistingFestivalByNameDate(festivalName, date);
+  if (existingId && existingId !== festivalId) {
+    return existingId;
+  }
+
   await db
     .insert(festivals)
     .values({
       id: festivalId,
-      name: data.title ?? `RA Event ${id}`,
+      name: festivalName,
       date,
       endDate,
       venue: venueName,

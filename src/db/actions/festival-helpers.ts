@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { artists, festivals, festivalArtists } from "@/db/schema";
 import { auth } from "../../../auth";
 import { MIN_RATING, MAX_RATING } from "@/lib/constants";
@@ -73,4 +73,18 @@ export async function checkExistingLineup(festivalId: string): Promise<boolean> 
     .limit(1);
 
   return !!hasLineup;
+}
+
+/** Check whether a festival with the same name and date already exists (from any source). */
+export async function findExistingFestivalByNameDate(
+  name: string,
+  date: string
+): Promise<string | null> {
+  const [existing] = await db
+    .select({ id: festivals.id })
+    .from(festivals)
+    .where(and(eq(festivals.name, name), eq(festivals.date, date)))
+    .limit(1);
+
+  return existing?.id ?? null;
 }

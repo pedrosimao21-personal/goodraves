@@ -6,6 +6,7 @@ import { festivals, festivalArtists } from "@/db/schema";
 import {
   requireAuth,
   ensureArtistsAndGetIds,
+  findExistingFestivalByNameDate,
   MAX_FESTIVAL_NAME_LENGTH,
 } from "./festival-helpers";
 
@@ -26,6 +27,11 @@ export async function upsertFestival(data: {
 
   if (!data.id || !data.name || data.name.length > MAX_FESTIVAL_NAME_LENGTH) {
     throw new Error("Invalid festival data");
+  }
+
+  const existingId = await findExistingFestivalByNameDate(data.name, data.date);
+  if (existingId && existingId !== data.id) {
+    throw new Error("A festival with this name and date already exists");
   }
 
   await db
@@ -90,10 +96,20 @@ export async function batchImportFestivals(
   for (let i = 0; i < events.length; i += BATCH_CHUNK_SIZE) {
     const chunk = events.slice(i, i + BATCH_CHUNK_SIZE);
 
+    const nonDuplicateEvents = [];
+    for (const event of chunk) {
+      const existingId = await findExistingFestivalByNameDate(event.name, event.date);
+      if (!existingId || existingId === event.id) {
+        nonDuplicateEvents.push(event);
+      }
+    }
+
+    if (nonDuplicateEvents.length === 0) continue;
+
     await db
       .insert(festivals)
       .values(
-        chunk.map((e) => ({
+        nonDuplicateEvents.map((e) => ({
           id: e.id,
           name: e.name,
           date: e.date,
@@ -104,11 +120,11 @@ export async function batchImportFestivals(
       )
       .onConflictDoNothing();
 
-    const allArtistNames = [...new Set(chunk.flatMap((e) => e.lineup ?? []))];
+    const allArtistNames = [...new Set(nonDuplicateEvents.flatMap((e) => e.lineup ?? []))];
     if (allArtistNames.length > 0) {
       const nameToId = await ensureArtistsAndGetIds(allArtistNames);
 
-      const lineupRows = chunk.flatMap((e) =>
+      const lineupRows = nonDuplicateEvents.flatMap((e) =>
         (e.lineup ?? [])
           .filter((name) => nameToId[name])
           .map((name) => ({

@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://images.universe.com https://*.ra.co https://ra.co https://upload.wikimedia.org https://i.imgur.com https://assets.awakenings.com https://*.tile.openstreetmap.org https://lastfm.freetls.fastly.net https://*.basemaps.cartocdn.com https://festivalfans.nl",
               "connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://ws.audioscrobbler.com https://en.wikipedia.org",
-              "frame-src 'none'",
+              "frame-src 'self' https://open.spotify.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

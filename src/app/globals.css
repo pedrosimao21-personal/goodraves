@@ -2485,6 +2485,13 @@ img {
   font-weight: 500;
 }
 
+.trending-badge {
+  font-size: 0.72rem;
+  color: var(--accent-orange);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* =============================================
    DJ SUGGESTION CHIPS (Top DJs page)
    ============================================= */

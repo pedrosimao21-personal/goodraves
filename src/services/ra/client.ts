@@ -20,6 +20,8 @@ const SEARCH_EVENTS_QUERY = `
             title
             startTime
             endTime
+            interestedCount
+            attending
             venue {
               name
               area {
@@ -50,6 +52,8 @@ const GET_EVENT_QUERY = `
       title
       startTime
       endTime
+      interestedCount
+      attending
       venue {
         name
         area {
@@ -75,6 +79,8 @@ export type RAEventRaw = {
   title: string | null;
   startTime: string | null;
   endTime: string | null;
+  interestedCount: number | null;
+  attending: number | null;
   venue: {
     name: string | null;
     area: {

@@ -33,6 +33,7 @@ export const festivals = pgTable("festivals", {
   source: text("source"), // "ra", "custom", "external", etc.
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
+  interestedCount: integer("interested_count").default(0),
 }, (t) => [
   uniqueIndex("festivals_name_date_idx").on(t.name, t.date),
   index("festivals_date_idx").on(t.date),

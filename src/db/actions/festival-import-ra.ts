@@ -74,6 +74,7 @@ export async function fetchRAEvent(
       source: "ra",
       sourceId: id,
       imageUrl,
+      interestedCount: (data.interestedCount ?? 0) + (data.attending ?? 0),
     })
     .onConflictDoNothing();
 

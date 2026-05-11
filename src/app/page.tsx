@@ -4,11 +4,11 @@ import { auth } from '@/../auth'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { getUpcomingFestivals, type UpcomingFestival } from '@/db/actions/homepage-festivals'
-import UpcomingFestivalsSection from '@/components/UpcomingFestivalsSection'
+import { getTrendingFestivals, type TrendingFestival } from '@/db/actions/trending-festivals'
+import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
 
-async function fetchUpcomingFestivals(): Promise<{
-  festivals: UpcomingFestival[]
+async function fetchTrendingFestivals(): Promise<{
+  festivals: TrendingFestival[]
   userCity: string | null
 }> {
   try {
@@ -24,7 +24,7 @@ async function fetchUpcomingFestivals(): Promise<{
       userCity = row?.city ?? null
     }
 
-    const festivals = await getUpcomingFestivals(userCity, null, 6)
+    const festivals = await getTrendingFestivals(userCity, null, 6)
     return { festivals, userCity }
   } catch {
     return { festivals: [], userCity: null }
@@ -32,7 +32,7 @@ async function fetchUpcomingFestivals(): Promise<{
 }
 
 export default async function Home() {
-  const { festivals, userCity } = await fetchUpcomingFestivals()
+  const { festivals, userCity } = await fetchTrendingFestivals()
 
   return (
     <div className="page">
@@ -48,7 +48,7 @@ export default async function Home() {
         </Suspense>
 
         {festivals.length > 0 && (
-          <UpcomingFestivalsSection festivals={festivals} userCity={userCity} />
+          <TrendingFestivalsSection festivals={festivals} userCity={userCity} />
         )}
       </div>
     </div>

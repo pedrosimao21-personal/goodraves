@@ -2,16 +2,8 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { type UpcomingFestival } from '@/db/actions/homepage-festivals'
+import { type TrendingFestival } from '@/db/actions/trending-festivals'
 import { formatDate } from '@/lib/format-date'
-
-function MapPinIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
-    </svg>
-  )
-}
 
 function CalendarIcon() {
   return (
@@ -21,14 +13,22 @@ function CalendarIcon() {
   )
 }
 
-function FestivalThumbnail({ festival }: { festival: UpcomingFestival }) {
+function MapPinIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" />
+    </svg>
+  )
+}
+
+function FestivalThumbnail({ festival }: { festival: TrendingFestival }) {
   if (festival.imageUrl) {
     return (
       <Image
         src={festival.imageUrl}
         alt={festival.name}
-        width={80}
-        height={80}
+        width={60}
+        height={60}
         className="upcoming-festival-thumb"
         style={{ objectFit: 'cover' }}
       />
@@ -42,7 +42,7 @@ function FestivalThumbnail({ festival }: { festival: UpcomingFestival }) {
   )
 }
 
-function FestivalRow({ festival }: { festival: UpcomingFestival }) {
+function FestivalRow({ festival }: { festival: TrendingFestival }) {
   return (
     <Link href={`/festival/${festival.id}`} className="upcoming-festival-row">
       <FestivalThumbnail festival={festival} />
@@ -68,6 +68,10 @@ function FestivalRow({ festival }: { festival: UpcomingFestival }) {
               {Math.round(festival.distanceKm)} km away
             </span>
           )}
+
+          <span className="trending-badge">
+            🔥 {festival.interestedCount.toLocaleString()} interested
+          </span>
         </div>
       </div>
     </Link>
@@ -75,14 +79,14 @@ function FestivalRow({ festival }: { festival: UpcomingFestival }) {
 }
 
 type Props = {
-  festivals: UpcomingFestival[]
+  festivals: TrendingFestival[]
   userCity: string | null
 }
 
-export default function UpcomingFestivalsSection({ festivals, userCity }: Props) {
+export default function TrendingFestivalsSection({ festivals, userCity }: Props) {
   const sectionTitle = userCity
-    ? `Upcoming Festivals near ${userCity}`
-    : 'Upcoming Festivals'
+    ? `Trending Festivals near ${userCity}`
+    : 'Trending Festivals'
 
   return (
     <section className="upcoming-festivals-section">

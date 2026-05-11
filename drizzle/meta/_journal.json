@@ -29,6 +29,13 @@
       "when": 1747051200000,
       "tag": "0012_profile_and_related_artists",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1747137600000,
+      "tag": "0013_trending_festivals",
+      "breakpoints": true
     }
   ]
 }

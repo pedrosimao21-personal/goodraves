@@ -154,17 +154,25 @@ export async function spotifySearchPlaylist(query: string, limit = 1) {
 }
 
 export async function spotifyGetArtistTopTracks(spotifyId: string) {
-  const data = await apiFetch(`/artists/${spotifyId}/top-tracks`, {
-    market: SPOTIFY_MARKET,
-  });
+  try {
+    const data = await apiFetch(`/artists/${spotifyId}/top-tracks`, {
+      market: SPOTIFY_MARKET,
+    });
 
-  return (data.tracks ?? []).slice(0, 8).map((t: any) => ({
-    name: t.name,
-    playcount: t.popularity ?? 0, // Using popularity for playcount field compatibility
-    url: t.external_urls?.spotify ?? null,
-    listeners: 0,
-    previewUrl: t.preview_url ?? null,
-  }));
+    return (data.tracks ?? []).slice(0, 8).map((t: any) => ({
+      name: t.name,
+      playcount: t.popularity ?? 0,
+      url: t.external_urls?.spotify ?? null,
+      listeners: 0,
+      previewUrl: t.preview_url ?? null,
+    }));
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("403")) {
+      console.warn(`[spotify] Top tracks unavailable for ${spotifyId} — endpoint requires user auth`);
+      return [];
+    }
+    throw err;
+  }
 }
 export async function spotifyGetArtistAlbums(
   spotifyId: string,
@@ -209,11 +217,19 @@ export async function hasSpotifyKeys() {
 }
 
 export async function spotifyGetRelatedArtists(spotifyId: string) {
-  const data = await apiFetch(`/artists/${spotifyId}/related-artists`);
-  return (data.artists ?? [])
-    .filter((a: any) => a !== null && a.id)
-    .slice(0, 6)
-    .map(normalizeArtist);
+  try {
+    const data = await apiFetch(`/artists/${spotifyId}/related-artists`);
+    return (data.artists ?? [])
+      .filter((a: any) => a !== null && a.id)
+      .slice(0, 6)
+      .map(normalizeArtist);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("403")) {
+      console.warn(`[spotify] Related artists unavailable for ${spotifyId} — endpoint requires user auth`);
+      return [];
+    }
+    throw err;
+  }
 }
 
 /**

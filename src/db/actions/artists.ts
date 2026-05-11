@@ -264,14 +264,19 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
       ? await spotifyGetArtist(existingSpotifyId).catch(() => spotifySearchArtist(name))
       : await spotifySearchArtist(name);
 
-    if (!spArtist) return null;
+    if (!spArtist) {
+      console.warn(`[artists] No Spotify artist found for "${name}" — followers will not be updated`);
+      return null;
+    }
+
+    console.log(`[artists] Spotify found for "${name}": ${spArtist.followers} followers, id=${spArtist.id}`);
 
     const albums = await spotifyGetArtistAlbums(spArtist.id).catch((err) => {
       console.error(`[spotify] Failed to fetch albums for "${spArtist.name}":`, err instanceof Error ? err.message : err);
       return [] as any[];
     });
     const topTracks = await spotifyGetArtistTopTracks(spArtist.id).catch((err) => {
-      console.error(`[spotify] Failed to fetch top tracks for "${spArtist.name}":`, err instanceof Error ? err.message : err);
+      console.warn(`[spotify] Failed to fetch top tracks for "${spArtist.name}":`, err instanceof Error ? err.message : err);
       return [] as any[];
     });
     albums.sort((a: any, b: any) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));

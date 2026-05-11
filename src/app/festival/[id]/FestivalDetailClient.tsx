@@ -239,7 +239,7 @@ export default function FestivalDetail() {
             </div>
             <div className="grid-artists">
               {event.attractions.map((artist: any) => (
-                <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} />
+                <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} isPast={!isFuture} />
               ))}
             </div>
           </>

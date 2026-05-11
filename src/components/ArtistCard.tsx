@@ -10,10 +10,12 @@ const ArtistCard = memo(function ArtistCard({
   artist,
   eventId,
   spotifyData,
+  isPast = true,
 }: {
   artist: any
   eventId: string
   spotifyData?: any
+  isPast?: boolean
 }) {
   const { didSeeArtist, toggleSawArtist } = useUserData()
   const saw = didSeeArtist(eventId, artist.id)
@@ -55,20 +57,22 @@ const ArtistCard = memo(function ArtistCard({
         <div className="artist-name">{artist.name}</div>
       </div>
 
-      {saw && (
+      {isPast && saw && (
         <div style={{ position: 'relative', zIndex: 1, marginTop: 8 }}>
           <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="sm" />
         </div>
       )}
 
-      <button
-        className={`artist-saw-toggle ${saw ? 'saw' : ''}`}
-        onClick={handleToggle}
-        id={`saw-${artist.id}`}
-        style={{ position: 'relative', zIndex: 1, marginTop: 8 }}
-      >
-        {saw ? '✓ I saw them!' : 'Mark as seen'}
-      </button>
+      {isPast && (
+        <button
+          className={`artist-saw-toggle ${saw ? 'saw' : ''}`}
+          onClick={handleToggle}
+          id={`saw-${artist.id}`}
+          style={{ position: 'relative', zIndex: 1, marginTop: 8 }}
+        >
+          {saw ? '✓ I saw them!' : 'Mark as seen'}
+        </button>
+      )}
     </div>
   )
 })

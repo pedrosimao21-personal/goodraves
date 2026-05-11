@@ -93,7 +93,6 @@ export const userFestivals = pgTable(
     festivalId: text("festival_id")
       .notNull()
       .references(() => festivals.id, { onDelete: "cascade" }),
-    status: text("status").notNull().default("attended"), // "attended" | "upcoming"
     rating: integer("rating"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

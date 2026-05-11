@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
 import StarRating from '@/components/StarRating'
@@ -11,6 +12,7 @@ import { MAX_NOTES_LENGTH } from '@/lib/constants'
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string }
 type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number; previewUrl?: string | null }
+type RelatedArtist = { id: string; name: string; image: string | null; followers: number }
 
 export function ArtistHeader({
   displayImage,
@@ -93,17 +95,16 @@ export function ArtistHeader({
         )}
 
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12 }}>
-          {(artist?.spotifyFollowers ?? 0) > 0 && (
+          {(artist?.spotifyFollowers ?? 0) > 0 ? (
             <span className="artist-stat">
               <SpotifyIcon size={14} />
               {formatFollowers(artist?.spotifyFollowers)} followers
             </span>
-          )}
-          {artist?.lastfmListeners && (
+          ) : (artist?.lastfmListeners ?? 0) > 0 ? (
             <span className="artist-stat">
-              👥 {artist.lastfmListeners.toLocaleString()} Last.fm listeners
+              👥 {artist!.lastfmListeners!.toLocaleString()} Last.fm listeners
             </span>
-          )}
+          ) : null}
         </div>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
@@ -250,37 +251,90 @@ export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; a
 export function UpcomingShowsList({ artistName }: { artistName: string }) {
   const raSearchUrl = `https://ra.co/search?q=${encodeURIComponent(artistName)}`
   return (
-    <div style={{ marginBottom: 40 }}>
-      <h2 className="section-title" style={{ marginBottom: 16 }}>
-        Upcoming Shows
-      </h2>
+    <div style={{ marginBottom: 32 }}>
+      <h2 className="section-title" style={{ marginBottom: 12 }}>Upcoming Shows</h2>
       <div style={{
-        padding: '24px',
+        padding: '14px 18px',
         background: 'var(--bg-card)',
-        borderRadius: 16,
+        borderRadius: 12,
         border: '1px dashed var(--border)',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        textAlign: 'center',
-        gap: 12
+        gap: 12,
+        flexWrap: 'wrap',
       }}>
-        <div style={{ fontSize: '2rem' }}>🗓️</div>
-        <div>
-          <h3 style={{ margin: '0 0 4px 0', fontSize: '1.05rem' }}>Find {artistName}'s next gig</h3>
-          <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-            Check out Resident Advisor for their full tour schedule and tickets.
-          </p>
-        </div>
-        <a 
-          href={raSearchUrl} 
-          target="_blank" 
+        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🗓️</span>
+        <span style={{ flex: 1, fontSize: '0.88rem', color: 'var(--text-muted)', minWidth: 160 }}>
+          Find {artistName}&apos;s upcoming shows on Resident Advisor
+        </span>
+        <a
+          href={raSearchUrl}
+          target="_blank"
           rel="noreferrer"
-          className="btn btn-secondary"
-          style={{ marginTop: 8, textDecoration: 'none' }}
+          className="btn btn-secondary btn-sm"
+          style={{ textDecoration: 'none', flexShrink: 0 }}
         >
-          View on Resident Advisor
+          View on RA
         </a>
+      </div>
+    </div>
+  )
+}
+
+export function SpotifyRelatedArtists({
+  artists,
+  currentArtistName,
+}: {
+  artists: RelatedArtist[]
+  currentArtistName: string
+}) {
+  if (!artists.length) return null
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <h2 className="section-title" style={{ marginBottom: 16 }}>
+        If you like {currentArtistName}
+        <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
+      </h2>
+      <div className="related-artists-grid">
+        {artists.map(artist => (
+          <Link
+            key={artist.id}
+            href={`https://open.spotify.com/artist/${artist.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="related-artist-card"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <div className="related-artist-img-wrap">
+              {artist.image ? (
+                <Image
+                  src={artist.image}
+                  alt={artist.name}
+                  width={72}
+                  height={72}
+                  quality={80}
+                  sizes="72px"
+                  style={{ objectFit: 'cover', borderRadius: '50%' }}
+                />
+              ) : (
+                <div style={{
+                  width: 72, height: 72, borderRadius: '50%',
+                  background: 'var(--gradient-card)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.6rem',
+                }}>🎤</div>
+              )}
+            </div>
+            <span className="related-artist-name" style={{ fontSize: '0.82rem', textAlign: 'center', marginTop: 6, fontWeight: 500 }}>
+              {artist.name}
+            </span>
+            {artist.followers > 0 && (
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                {formatFollowers(artist.followers)}
+              </span>
+            )}
+          </Link>
+        ))}
       </div>
     </div>
   )

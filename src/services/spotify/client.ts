@@ -141,7 +141,7 @@ export async function spotifySearchPlaylist(query: string, limit = 1) {
     limit,
   });
 
-  const playlists = data.playlists?.items ?? [];
+  const playlists = (data.playlists?.items ?? []).filter((p: any) => p !== null && p.id);
   return playlists.map((p: any) => ({
     id: p.id,
     name: p.name,
@@ -206,6 +206,14 @@ export async function spotifySearchArtistShows(name: string, limit = DEFAULT_SHO
 
 export async function hasSpotifyKeys() {
   return !!(CLIENT_ID && CLIENT_SECRET);
+}
+
+export async function spotifyGetRelatedArtists(spotifyId: string) {
+  const data = await apiFetch(`/artists/${spotifyId}/related-artists`);
+  return (data.artists ?? [])
+    .filter((a: any) => a !== null && a.id)
+    .slice(0, 6)
+    .map(normalizeArtist);
 }
 
 /**

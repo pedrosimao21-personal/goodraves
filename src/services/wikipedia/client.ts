@@ -10,6 +10,18 @@ export async function getWikiImage(searchQuery: string) {
       `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(searchQuery)}&prop=pageimages&format=json&pithumbsize=${THUMBNAIL_SIZE}&origin=*`,
       { next: { revalidate: CACHE_REVALIDATE_SECONDS } }
     );
+
+    if (!res.ok) {
+      console.warn(`[wikipedia] API returned status ${res.status} for "${searchQuery}"`);
+      return null;
+    }
+
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      console.warn(`[wikipedia] Non-JSON response (${contentType}) for "${searchQuery}"`);
+      return null;
+    }
+
     const data = await res.json();
     const pages = data.query?.pages;
     if (!pages) return null;

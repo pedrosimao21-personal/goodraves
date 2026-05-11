@@ -124,8 +124,10 @@ export default function FestivalDetail() {
       }
     }
 
-    // Always fetch playlist, even if no artists need enrichment
-    ;(getFestivalPlaylist(event.name) as unknown as Promise<FestivalPlaylistData | null>)
+    // Always fetch playlist, even if no artists need enrichment.
+    // Pass the first attraction as potential headliner for "This is {artist}" fallback.
+    const headliner = event.attractions?.[0]?.name as string | undefined
+    ;(getFestivalPlaylist(event.name, headliner) as unknown as Promise<FestivalPlaylistData | null>)
       .then(data => { if (!cancelled) setPlaylist(data) })
       .catch(() => {})
 

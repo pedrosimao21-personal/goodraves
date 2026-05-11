@@ -9,11 +9,13 @@ import {
   spotifyGetArtistAlbums,
   spotifySearchArtistsBatch,
   spotifyGetArtistTopTracks,
+  spotifyGetRelatedArtists,
 } from "@/services/spotify/client";
 import { lastfmGetArtistInfo } from "@/services/lastfm/client";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
+const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 
 function isStaleSpotify(fetchedAt: string | null | undefined): boolean {
   if (!fetchedAt) return true;
@@ -23,6 +25,11 @@ function isStaleSpotify(fetchedAt: string | null | undefined): boolean {
 function isStaleLastfm(fetchedAt: string | null | undefined): boolean {
   if (!fetchedAt) return true;
   return Date.now() - new Date(fetchedAt).getTime() > ONE_WEEK_MS;
+}
+
+function isStaleRelatedArtists(fetchedAt: Date | null | undefined): boolean {
+  if (!fetchedAt) return true;
+  return Date.now() - fetchedAt.getTime() > THIRTY_DAYS_MS;
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -35,6 +42,7 @@ export type ArtistData = {
   imageUrl: string | null;
   spotifyFollowers: number | null;
   spotifyAlbums: SpotifyAlbum[];
+  relatedArtists: RelatedArtist[];
   // Last.fm
   lastfmId: string | null;
   lastfmBio: string | null;
@@ -46,6 +54,7 @@ export type ArtistData = {
 };
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string };
+type RelatedArtist = { id: string; name: string; image: string | null; followers: number };
 type LastfmSimilar = { name: string; url: string | null; image: string | null }; // image resolved from artists table at read time
 type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number };
 
@@ -64,6 +73,7 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     imageUrl: row.imageUrl ?? null,
     spotifyFollowers: row.spotifyFollowers ?? null,
     spotifyAlbums: parseJson<SpotifyAlbum[]>(row.spotifyAlbums, []),
+    relatedArtists: parseJson<RelatedArtist[]>(row.relatedArtists, []),
     lastfmId: row.lastfmId ?? null,
     lastfmBio: row.lastfmBio ?? null,
     genres: [], // populated separately from artist_genres table
@@ -86,8 +96,9 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   // don't have Spotify's previewUrl format yet.
   const hasSpotifyTracks = typeof row.lastfmTopTracks === 'string' && row.lastfmTopTracks.includes('previewUrl');
   const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null || !hasSpotifyTracks;
+  const needsRelatedArtists = row.spotifyId !== null && isStaleRelatedArtists(row.relatedArtistsFetchedAt);
 
-  if (!needsLastfm && !needsSpotify) {
+  if (!needsLastfm && !needsSpotify && !needsRelatedArtists) {
     const data = await enrichWithSimilarImages(rowToArtistData(row));
     data.genres = await fetchArtistGenres(row.id);
     return data;
@@ -95,10 +106,11 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
 
   const now = new Date().toISOString();
 
-  // Run both refreshes in parallel where needed
-  const [lastfmUpdate, spotifyUpdate] = await Promise.all([
+  // Run all refreshes in parallel where needed
+  const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate] = await Promise.all([
     needsLastfm ? refreshLastfm(row.name) : Promise.resolve(null),
     needsSpotify ? refreshSpotify(row.name, row.spotifyId) : Promise.resolve(null),
+    needsRelatedArtists ? refreshRelatedArtists(row.spotifyId!) : Promise.resolve(null),
   ]);
 
   const updateFields: Partial<typeof artists.$inferInsert> = {};
@@ -122,6 +134,11 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
       updateFields.lastfmTopTracks = JSON.stringify(spotifyUpdate.topTracks);
     }
     updateFields.spotifyFetchedAt = now;
+  }
+
+  if (relatedArtistsUpdate !== null) {
+    updateFields.relatedArtists = JSON.stringify(relatedArtistsUpdate);
+    updateFields.relatedArtistsFetchedAt = now;
   }
 
   if (Object.keys(updateFields).length > 0) {
@@ -247,8 +264,14 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
 
     if (!spArtist) return null;
 
-    const albums = await spotifyGetArtistAlbums(spArtist.id).catch(() => [] as any[]);
-    const topTracks = await spotifyGetArtistTopTracks(spArtist.id).catch(() => [] as any[]);
+    const albums = await spotifyGetArtistAlbums(spArtist.id).catch((err) => {
+      console.error(`[spotify] Failed to fetch albums for "${spArtist.name}":`, err instanceof Error ? err.message : err);
+      return [] as any[];
+    });
+    const topTracks = await spotifyGetArtistTopTracks(spArtist.id).catch((err) => {
+      console.error(`[spotify] Failed to fetch top tracks for "${spArtist.name}":`, err instanceof Error ? err.message : err);
+      return [] as any[];
+    });
     albums.sort((a: any, b: any) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
 
     return { ...spArtist, albums, topTracks };
@@ -258,7 +281,15 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
   }
 }
 
-// ── Ensure an artist row exists by name, return { id, name } ──────────────
+async function refreshRelatedArtists(spotifyId: string) {
+  try {
+    const related = await spotifyGetRelatedArtists(spotifyId);
+    return related;
+  } catch (err) {
+    console.error(`[artists] Related artists refresh failed for Spotify ID "${spotifyId}":`, err instanceof Error ? err.message : err);
+    return null;
+  }
+}
 // Used when navigating to a similar artist that may not be in the DB yet.
 
 export async function getOrCreateArtistByName(name: string): Promise<{ id: string; name: string }> {

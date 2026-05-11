@@ -6,6 +6,7 @@ import { useUserData } from '@/context/UserDataContext'
 import { useSpotifyEnrichment } from './useSpotifyEnrichment'
 import ArtistActionsModal from './ArtistActionsModal'
 import { PageHeader, StatsBar, ArtistRankingList } from './TopDjsSections'
+import DjSuggestionsChips from './DjSuggestionsChips'
 
 const TOP_ENRICHMENT_LIMIT = 15
 
@@ -138,6 +139,9 @@ export default function TopDJs() {
             <button className="btn btn-primary" onClick={() => router.push('/')} id="go-discover-djs">
               Discover Festivals
             </button>
+            <div style={{ marginTop: 32, width: '100%' }}>
+              <DjSuggestionsChips />
+            </div>
           </div>
         ) : (
           <ArtistRankingList

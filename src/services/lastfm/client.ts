@@ -6,7 +6,6 @@ const PLACEHOLDER_KEY = "your_lastfm_api_key_here";
 const MIN_BIO_PARAGRAPH_LENGTH = 10;
 const MAX_GENRE_TAGS = 5;
 const MAX_SIMILAR_ARTISTS = 5;
-const DEFAULT_TOP_TRACKS_LIMIT = 8;
 
 async function call(params: Record<string, any>) {
   if (!API_KEY || API_KEY === PLACEHOLDER_KEY) {
@@ -111,20 +110,4 @@ export async function lastfmGetArtistInfo(name: string) {
   };
 }
 
-export async function lastfmGetArtistTopTracks(name: string, limit = DEFAULT_TOP_TRACKS_LIMIT) {
-  const data = await call({
-    method: "artist.gettoptracks",
-    artist: name,
-    autocorrect: 1,
-    limit,
-  });
-  const tracks = data.toptracks?.track ?? [];
-  return tracks
-    .map((t: any) => ({
-      name: t.name,
-      playcount: parseInt(t.playcount, 10) || 0,
-      url: t.url ?? null,
-      listeners: parseInt(t.listeners, 10) || 0,
-    }))
-    .sort((a: any, b: any) => b.playcount - a.playcount);
-}
+

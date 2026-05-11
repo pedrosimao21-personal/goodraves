@@ -65,6 +65,7 @@ export interface UserDataContextType {
   getFestivalMeta: (eventId: string) => FestivalMeta | null
   getArtistMeta: (artistId: string) => any
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
+  getAverageArtistRating: (artistId: string) => number
   // Actions
   exportData: () => void
   importData: (data: any) => void

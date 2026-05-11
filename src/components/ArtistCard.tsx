@@ -17,8 +17,9 @@ const ArtistCard = memo(function ArtistCard({
   spotifyData?: any
   isPast?: boolean
 }) {
-  const { didSeeArtist, toggleSawArtist } = useUserData()
+  const { didSeeArtist, toggleSawArtist, getAverageArtistRating } = useUserData()
   const saw = didSeeArtist(eventId, artist.id)
+  const averageRating = getAverageArtistRating(artist.id)
 
   const displayImage = artist.image || spotifyData?.image || null
 
@@ -54,7 +55,14 @@ const ArtistCard = memo(function ArtistCard({
         ) : (
           <div className="artist-avatar-placeholder">🎤</div>
         )}
-        <div className="artist-name">{artist.name}</div>
+        <div className="artist-name">
+          {artist.name}
+          {averageRating > 0 && (
+            <span className="artist-avg-rating" title={`Your average rating: ${averageRating.toFixed(1)}`}>
+              <span className="artist-avg-rating-star">★</span> {averageRating.toFixed(1)}
+            </span>
+          )}
+        </div>
       </div>
 
       {isPast && saw && (

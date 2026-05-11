@@ -681,6 +681,17 @@ img {
   line-height: 1.3;
 }
 
+.artist-avg-rating {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.artist-avg-rating-star {
+  color: #f5a623;
+}
+
 .artist-saw-toggle {
   display: flex;
   align-items: center;

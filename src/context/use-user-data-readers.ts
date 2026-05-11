@@ -42,6 +42,17 @@ export function useUserDataReaders(state: UserDataState) {
     return counts
   }, [state.seenArtists, attendedSet, upcomingSet])
 
+  const getAverageArtistRating = useCallback((artistId: string) => {
+    const ratings: number[] = []
+    for (const [key, value] of Object.entries(state.performanceRatings)) {
+      if (!value) continue
+      const keyArtistId = key.split('::')[1]
+      if (keyArtistId === artistId) ratings.push(value)
+    }
+    if (ratings.length === 0) return 0
+    return ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+  }, [state.performanceRatings])
+
   const exportData = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -54,7 +65,7 @@ export function useUserDataReaders(state: UserDataState) {
 
   return {
     isAttended, isUpcoming, didSeeArtist, getSeenCount,
-    getRating, getPerformanceRating, getFestivalRating, getNotes, getFestivalNotes,
-    getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
+    getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
+    getNotes, getFestivalNotes, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
   }
 }

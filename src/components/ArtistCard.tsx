@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
@@ -17,8 +17,11 @@ const ArtistCard = memo(function ArtistCard({
   spotifyData?: any
   isPast?: boolean
 }) {
-  const { getAverageArtistRating } = useUserData()
+  const { getAverageArtistRating, getPerformanceRating } = useUserData()
   const averageRating = getAverageArtistRating(artist.id)
+  const performanceRating = getPerformanceRating(eventId, artist.id)
+  const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
+  const hasRating = performanceRating > 0
 
   const displayImage = artist.image || spotifyData?.image || null
 
@@ -58,7 +61,17 @@ const ArtistCard = memo(function ArtistCard({
 
       {isPast && (
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
+          {hasRating || isStarRatingVisible ? (
+            <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
+          ) : (
+            <button
+              className="mark-seen-btn"
+              onClick={() => setIsStarRatingVisible(true)}
+              aria-label={`Mark ${artist.name} as seen`}
+            >
+              Mark as seen
+            </button>
+          )}
         </div>
       )}
     </div>

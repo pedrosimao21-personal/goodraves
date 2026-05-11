@@ -5,7 +5,6 @@ const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
 const TOKEN_REFRESH_BUFFER_MS = 60_000;
 const MS_PER_SECOND = 1000;
-const CACHE_REVALIDATE_SECONDS = 3600;
 const MIN_IMAGE_WIDTH = 300;
 const MAX_IMAGE_WIDTH = 640;
 const DEFAULT_ALBUM_LIMIT = 10;
@@ -74,7 +73,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: CACHE_REVALIDATE_SECONDS },
+    cache: "no-store",
   });
 
   if (res.status === 401) {

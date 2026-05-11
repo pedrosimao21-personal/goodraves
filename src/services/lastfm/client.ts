@@ -3,7 +3,6 @@
 const BASE_URL = "https://ws.audioscrobbler.com/2.0/";
 const API_KEY = process.env.LASTFM_KEY;
 const PLACEHOLDER_KEY = "your_lastfm_api_key_here";
-const CACHE_REVALIDATE_SECONDS = 3600;
 const MIN_BIO_PARAGRAPH_LENGTH = 10;
 const MAX_GENRE_TAGS = 5;
 const MAX_SIMILAR_ARTISTS = 5;
@@ -20,7 +19,7 @@ async function call(params: Record<string, any>) {
   );
 
   const res = await fetch(url, {
-    next: { revalidate: CACHE_REVALIDATE_SECONDS },
+    cache: "no-store",
   });
   if (!res.ok) throw new Error(`Last.fm error ${res.status}`);
   const data = await res.json();

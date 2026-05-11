@@ -120,6 +120,7 @@ export default function FestivalDetail() {
       .catch((err) => {
         console.error('[festival] Failed to enrich artist images:', err)
       })
+    }
 
     // Always fetch playlist, even if no artists need enrichment
     ;(getFestivalPlaylist(event.name) as unknown as Promise<FestivalPlaylistData | null>)

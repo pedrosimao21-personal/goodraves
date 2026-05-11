@@ -69,7 +69,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
 }
 
 export default function FestivalCard({ event }: { event: any }) {
-  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserData()
   
   const attended = isAttended(event.id)
   const upcoming = isUpcoming(event.id)
@@ -130,11 +130,7 @@ export default function FestivalCard({ event }: { event: any }) {
       genre: event.genre,
       source: event.source,
     }
-    if (isFuture) {
-      toggleUpcoming(event.id, payload)
-    } else {
-      toggleAttended(event.id, payload)
-    }
+    toggleFestival(event.id, payload)
   }
 
   const festivalHref = `/festival/${event.id}`

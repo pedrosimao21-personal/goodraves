@@ -59,7 +59,7 @@ export default function FestivalDetail() {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
-  const { isAttended, isUpcoming, toggleAttended, toggleUpcoming, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
 
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -139,8 +139,7 @@ export default function FestivalDetail() {
 
   const handleAction = () => {
     const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, genre: event.genre, source: event.source }
-    if (isFuture) { toggleUpcoming(id, payload) }
-    else { toggleAttended(id, payload) }
+    toggleFestival(id, payload)
   }
 
   if (loading) {

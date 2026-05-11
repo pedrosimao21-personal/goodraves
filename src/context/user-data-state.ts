@@ -1,4 +1,5 @@
 import type { InitialUserData } from '@/db/actions/get-initial-data'
+import { isFestivalPast } from '@/lib/festival-date'
 
 export interface FestivalMeta {
   name: string
@@ -44,8 +45,7 @@ export interface UserDataContextType {
   raEvents: Record<string, any>
   loaded: boolean
   // Mutations
-  toggleAttended: (eventId: string, meta?: any) => Promise<void>
-  toggleUpcoming: (eventId: string, meta?: any) => Promise<void>
+  toggleFestival: (eventId: string, meta?: any) => Promise<void>
   toggleSawArtist: (eventId: string, artistId: string, artistMeta?: any) => Promise<void>
   setRating: (artistId: string, rating: number) => Promise<void>
   setPerformanceRating: (eventId: string, artistId: string, rating: number) => Promise<void>
@@ -77,7 +77,7 @@ export interface UserDataContextType {
   clearImportedRA: () => void
 }
 
-/** Build the upsert payload used by toggleAttended / toggleUpcoming / addCustomFestival */
+/** Build the upsert payload used by toggleFestival / addCustomFestival */
 export function buildUpsertPayload(eventId: string, meta: any) {
   return {
     id: eventId,
@@ -124,7 +124,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   }
 
   for (const f of data.festivals) {
-    if (f.status === 'attended') attended.push(f.festivalId)
+    if (isFestivalPast(f.date)) attended.push(f.festivalId)
     else upcoming.push(f.festivalId)
 
     festivalMeta[f.festivalId] = {

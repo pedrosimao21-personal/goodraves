@@ -16,7 +16,7 @@ const UPCOMING_BG_COLOR = '#3b82f6'
 export default function DashboardView() {
   const {
     attendedFestivals, upcomingFestivals, seenArtists, festivalRatings,
-    toggleAttended, toggleUpcoming, importData, clearFestivals, getFestivalMeta, loaded,
+    toggleFestival, importData, clearFestivals, getFestivalMeta, loaded,
   } = useUserData()
   const { promptAuth } = useAuthPrompt()
   const { data: session } = useSession()
@@ -75,7 +75,7 @@ export default function DashboardView() {
   [upcomingFestivals, getFestivalMeta])
 
   const displayList = activeTab === 'attended' ? sortedAttended : sortedUpcoming
-  const removeHandler = activeTab === 'attended' ? toggleAttended : toggleUpcoming
+  const removeHandler = toggleFestival
 
   if (!loaded) {
     return (
@@ -184,8 +184,8 @@ export default function DashboardView() {
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => {
-                  if (confirm(`Are you sure you want to clear your ${activeTab} list? This will also remove any artist ratings associated with these festivals.`)) {
-                    clearFestivals(activeTab)
+                  if (confirm(`Are you sure you want to clear your ${activeTab === 'attended' ? 'past' : 'upcoming'} list? This will also remove any artist ratings associated with these festivals.`)) {
+                    clearFestivals(activeTab === 'attended' ? 'past' : 'upcoming')
                   }
                 }}
                 style={{ color: CLEAR_LIST_COLOR }}

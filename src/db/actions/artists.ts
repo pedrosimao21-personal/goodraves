@@ -15,14 +15,14 @@ import { lastfmGetArtistInfo } from "@/services/lastfm/client";
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 
-function isStaleSpotify(fetchedAt: Date | null | undefined): boolean {
+function isStaleSpotify(fetchedAt: string | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - fetchedAt.getTime() > TWO_MONTHS_MS;
+  return Date.now() - new Date(fetchedAt).getTime() > TWO_MONTHS_MS;
 }
 
-function isStaleLastfm(fetchedAt: Date | null | undefined): boolean {
+function isStaleLastfm(fetchedAt: string | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - fetchedAt.getTime() > ONE_WEEK_MS;
+  return Date.now() - new Date(fetchedAt).getTime() > ONE_WEEK_MS;
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     return data;
   }
 
-  const now = new Date();
+  const now = new Date().toISOString();
 
   // Run both refreshes in parallel where needed
   const [lastfmUpdate, spotifyUpdate] = await Promise.all([
@@ -201,7 +201,7 @@ async function refreshLastfm(name: string) {
     // table so their images are available for DB lookups and navigation is instant.
     if (similarNames.length) {
       const spotifyResults = await spotifySearchArtistsBatch(similarNames).catch(() => ({}) as Record<string, any>);
-      const now = new Date();
+      const now = new Date().toISOString();
       await Promise.allSettled(
         similarNames.map((similarName: string) => {
           const sp = spotifyResults[similarName];

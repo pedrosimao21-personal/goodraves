@@ -1,11 +1,11 @@
 {
-  "id": "5cb2d5ee-b436-484d-b63f-ea3b0bee5d00",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.artists": {
-      "name": "artists",
+    "public.users": {
+      "name": "users",
       "schema": "",
       "columns": {
         "id": {
@@ -15,26 +15,33 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
+        "username": {
+          "name": "username",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "spotify_id": {
-          "name": "spotify_id",
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "city": {
+          "name": "city",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "genres": {
-          "name": "genres",
+        "favorite_genres": {
+          "name": "favorite_genres",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -44,63 +51,16 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "artists_name_unique": {
-          "name": "artists_name_unique",
+        "users_username_unique": {
+          "columns": [
+            "username"
+          ],
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "name": "users_username_unique"
         }
       },
-      "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.festival_artists": {
-      "name": "festival_artists",
-      "schema": "",
-      "columns": {
-        "festival_id": {
-          "name": "festival_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "artist_name": {
-          "name": "artist_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "festival_artists_festival_id_festivals_id_fk": {
-          "name": "festival_artists_festival_id_festivals_id_fk",
-          "tableFrom": "festival_artists",
-          "tableTo": "festivals",
-          "columnsFrom": [
-            "festival_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "festival_artists_festival_id_artist_name_pk": {
-          "name": "festival_artists_festival_id_artist_name_pk",
-          "columns": [
-            "festival_id",
-            "artist_name"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.festivals": {
@@ -174,16 +134,543 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "festivals_date_idx": {
+          "name": "festivals_date_idx",
+          "columns": [
+            {
+              "expression": "date",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "festivals_name_date_idx": {
+          "name": "festivals_name_date_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "date",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "festivals_source_idx": {
+          "name": "festivals_source_idx",
+          "columns": [
+            {
+              "expression": "source",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
+      "policies": {},
       "isRLSEnabled": false
     },
-    "public.user_artist_ratings": {
-      "name": "user_artist_ratings",
+    "public.rate_limit_attempts": {
+      "name": "rate_limit_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "rate_limit_identifier_action_idx": {
+          "name": "rate_limit_identifier_action_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "action",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            },
+            {
+              "expression": "created_at",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.artists": {
+      "name": "artists",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "spotify_id": {
+          "name": "spotify_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spotify_fetched_at": {
+          "name": "spotify_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spotify_followers": {
+          "name": "spotify_followers",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spotify_albums": {
+          "name": "spotify_albums",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_id": {
+          "name": "lastfm_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_bio": {
+          "name": "lastfm_bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_listeners": {
+          "name": "lastfm_listeners",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_playcount": {
+          "name": "lastfm_playcount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_similar": {
+          "name": "lastfm_similar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_top_tracks": {
+          "name": "lastfm_top_tracks",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastfm_fetched_at": {
+          "name": "lastfm_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "related_artists": {
+          "name": "related_artists",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "related_artists_fetched_at": {
+          "name": "related_artists_fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "artists_spotify_followers_idx": {
+          "name": "artists_spotify_followers_idx",
+          "columns": [
+            {
+              "expression": "spotify_followers",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "int4_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "artists_name_unique": {
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false,
+          "name": "artists_name_unique"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.genres": {
+      "name": "genres",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "genres_name_unique": {
+          "columns": [
+            "name"
+          ],
+          "nullsNotDistinct": false,
+          "name": "genres_name_unique"
+        }
+      },
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.festival_artists": {
+      "name": "festival_artists",
+      "schema": "",
+      "columns": {
+        "festival_id": {
+          "name": "festival_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artist_id": {
+          "name": "artist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "festival_artists_artist_id_idx": {
+          "name": "festival_artists_artist_id_idx",
+          "columns": [
+            {
+              "expression": "artist_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "festival_artists_festival_id_festivals_id_fk": {
+          "name": "festival_artists_festival_id_festivals_id_fk",
+          "tableFrom": "festival_artists",
+          "tableTo": "festivals",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "festival_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "festival_artists_artist_id_artists_id_fk": {
+          "name": "festival_artists_artist_id_artists_id_fk",
+          "tableFrom": "festival_artists",
+          "tableTo": "artists",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "artist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "festival_artists_festival_id_artist_id_pk": {
+          "name": "festival_artists_festival_id_artist_id_pk",
+          "columns": [
+            "festival_id",
+            "artist_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.artist_genres": {
+      "name": "artist_genres",
+      "schema": "",
+      "columns": {
+        "artist_id": {
+          "name": "artist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "genre_id": {
+          "name": "genre_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "artist_genres_genre_id_idx": {
+          "name": "artist_genres_genre_id_idx",
+          "columns": [
+            {
+              "expression": "genre_id",
+              "asc": true,
+              "nulls": "last",
+              "opclass": "uuid_ops",
+              "isExpression": false
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "artist_genres_artist_id_artists_id_fk": {
+          "name": "artist_genres_artist_id_artists_id_fk",
+          "tableFrom": "artist_genres",
+          "tableTo": "artists",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "artist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "artist_genres_genre_id_genres_id_fk": {
+          "name": "artist_genres_genre_id_genres_id_fk",
+          "tableFrom": "artist_genres",
+          "tableTo": "genres",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "genre_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "artist_genres_artist_id_genre_id_pk": {
+          "name": "artist_genres_artist_id_genre_id_pk",
+          "columns": [
+            "artist_id",
+            "genre_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.user_artist_global": {
+      "name": "user_artist_global",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rating": {
+          "name": "rating",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "artist_id": {
+          "name": "artist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_artist_global_user_id_users_id_fk": {
+          "name": "user_artist_global_user_id_users_id_fk",
+          "tableFrom": "user_artist_global",
+          "tableTo": "users",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_artist_global_artist_id_artists_id_fk": {
+          "name": "user_artist_global_artist_id_artists_id_fk",
+          "tableFrom": "user_artist_global",
+          "tableTo": "artists",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "artist_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_artist_global_user_id_artist_id_pk": {
+          "name": "user_artist_global_user_id_artist_id_pk",
+          "columns": [
+            "user_id",
+            "artist_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {},
+      "policies": {},
+      "isRLSEnabled": false
+    },
+    "public.user_festival_artist_ratings": {
+      "name": "user_festival_artist_ratings",
       "schema": "",
       "columns": {
         "user_id": {
@@ -194,12 +681,6 @@
         },
         "festival_id": {
           "name": "festival_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "artist_name": {
-          "name": "artist_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -215,14 +696,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "artist_id": {
+          "name": "artist_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
         "user_artist_ratings_user_id_users_id_fk": {
           "name": "user_artist_ratings_user_id_users_id_fk",
-          "tableFrom": "user_artist_ratings",
+          "tableFrom": "user_festival_artist_ratings",
           "tableTo": "users",
+          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -234,10 +722,25 @@
         },
         "user_artist_ratings_festival_id_festivals_id_fk": {
           "name": "user_artist_ratings_festival_id_festivals_id_fk",
-          "tableFrom": "user_artist_ratings",
+          "tableFrom": "user_festival_artist_ratings",
           "tableTo": "festivals",
+          "schemaTo": "public",
           "columnsFrom": [
             "festival_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_artist_ratings_artist_id_artists_id_fk": {
+          "name": "user_artist_ratings_artist_id_artists_id_fk",
+          "tableFrom": "user_festival_artist_ratings",
+          "tableTo": "artists",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "artist_id"
           ],
           "columnsTo": [
             "id"
@@ -247,18 +750,18 @@
         }
       },
       "compositePrimaryKeys": {
-        "user_artist_ratings_user_id_festival_id_artist_name_pk": {
-          "name": "user_artist_ratings_user_id_festival_id_artist_name_pk",
+        "user_artist_ratings_user_id_festival_id_artist_id_pk": {
+          "name": "user_artist_ratings_user_id_festival_id_artist_id_pk",
           "columns": [
             "user_id",
             "festival_id",
-            "artist_name"
+            "artist_id"
           ]
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
+      "policies": {},
       "isRLSEnabled": false
     },
     "public.user_festivals": {
@@ -276,13 +779,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'attended'"
         },
         "rating": {
           "name": "rating",
@@ -302,6 +798,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'attended'"
         }
       },
       "indexes": {},
@@ -310,6 +813,7 @@
           "name": "user_festivals_user_id_users_id_fk",
           "tableFrom": "user_festivals",
           "tableTo": "users",
+          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -323,6 +827,7 @@
           "name": "user_festivals_festival_id_festivals_id_fk",
           "tableFrom": "user_festivals",
           "tableTo": "festivals",
+          "schemaTo": "public",
           "columnsFrom": [
             "festival_id"
           ],
@@ -343,55 +848,8 @@
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.users": {
-      "name": "users",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "username": {
-          "name": "username",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "password_hash": {
-          "name": "password_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "users_username_unique": {
-          "name": "users_username_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
-        }
-      },
       "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },
@@ -402,8 +860,11 @@
   "policies": {},
   "views": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
     "tables": {}
   }
 }

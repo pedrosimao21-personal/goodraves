@@ -1,8 +1,9 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, lte, gt } from "drizzle-orm";
 import {
+  festivals,
   userFestivals,
   userFestivalArtistRatings,
   userArtistGlobal,
@@ -10,17 +11,13 @@ import {
 import { requireAuth, validateRating, MAX_NOTES_LENGTH } from "./festival-helpers";
 
 // ── Add / remove attendance ────────────────────────────
-export async function addAttendance(
-  festivalId: string,
-  status: "attended" | "upcoming" = "attended"
-) {
+export async function addAttendance(festivalId: string) {
   const userId = await requireAuth();
   await db
     .insert(userFestivals)
-    .values({ userId, festivalId, status })
-    .onConflictDoUpdate({
+    .values({ userId, festivalId, status: "attended" })
+    .onConflictDoNothing({
       target: [userFestivals.userId, userFestivals.festivalId],
-      set: { status },
     });
 }
 
@@ -150,34 +147,42 @@ export async function rateArtist(
     });
 }
 
-// ── Clear all user festivals by status ─────────────────
+// ── Clear user festivals by date (past or upcoming) ───
 export async function clearUserFestivals(
-  status: "attended" | "upcoming"
+  type: "past" | "upcoming"
 ) {
   const userId = await requireAuth();
+  const today = new Date().toISOString().split("T")[0];
+  const dateCondition =
+    type === "past"
+      ? lte(festivals.date, today)
+      : gt(festivals.date, today);
+
   const toDelete = await db
     .select({ festivalId: userFestivals.festivalId })
     .from(userFestivals)
-    .where(
-      and(eq(userFestivals.userId, userId), eq(userFestivals.status, status))
-    );
+    .innerJoin(festivals, eq(userFestivals.festivalId, festivals.id))
+    .where(and(eq(userFestivals.userId, userId), dateCondition));
 
   const ids = toDelete.map((r) => r.festivalId);
-  if (ids.length > 0) {
-    await db
-      .delete(userFestivalArtistRatings)
-      .where(
-        and(
-          eq(userFestivalArtistRatings.userId, userId),
-          sql`${userFestivalArtistRatings.festivalId} IN ${ids}`
-        )
-      );
-  }
+  if (ids.length === 0) return;
+
+  await db
+    .delete(userFestivalArtistRatings)
+    .where(
+      and(
+        eq(userFestivalArtistRatings.userId, userId),
+        sql`${userFestivalArtistRatings.festivalId} IN ${ids}`
+      )
+    );
 
   await db
     .delete(userFestivals)
     .where(
-      and(eq(userFestivals.userId, userId), eq(userFestivals.status, status))
+      and(
+        eq(userFestivals.userId, userId),
+        sql`${userFestivals.festivalId} IN ${ids}`
+      )
     );
 }
 

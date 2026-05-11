@@ -10,9 +10,9 @@ import {
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 
-function isStaleSpotify(fetchedAt: Date | null | undefined): boolean {
+function isStaleSpotify(fetchedAt: string | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - fetchedAt.getTime() > TWO_MONTHS_MS;
+  return Date.now() - new Date(fetchedAt).getTime() > TWO_MONTHS_MS;
 }
 
 type SpotifyResult = Awaited<ReturnType<typeof spotifySearchArtist>>;
@@ -87,7 +87,7 @@ async function fetchAndUpsertArtists(
     searchResults.push({ name, fetch: await fetchByName(name) });
   }
 
-  const now = new Date();
+  const now = new Date().toISOString();
   const toUpsert: Array<{ name: string; data: SpotifyResult }> = [
     ...withId
       .filter(({ spotifyId }) => spotifyId in batchResults)

@@ -19,6 +19,7 @@ import {
   setFestivalNotes as setFestivalNotesAction,
 } from '@/db/actions/festivals'
 
+import { isFestivalPast } from '@/lib/festival-date'
 import type { InitialUserData } from '@/db/actions/get-initial-data'
 import type { FestivalMeta, UserDataState, UserDataContextType } from './user-data-state'
 import { DEFAULT_STATE, transformDbData, buildUpsertPayload } from './user-data-state'
@@ -60,53 +61,35 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   // ── Mutation helpers ──
 
-  const toggleAttended = useCallback(async (eventId: string, meta: any = null) => {
+  const toggleFestival = useCallback(async (eventId: string, meta: any = null) => {
     if (!userId) { promptAuth(); return }
-    const wasAttended = state.attendedFestivals.includes(eventId)
-    const isNowAttended = !wasAttended
+
+    const isAdded = state.attendedFestivals.includes(eventId) || state.upcomingFestivals.includes(eventId)
 
     setState(prev => {
-      const isAttended = prev.attendedFestivals.includes(eventId)
-      const attended = isAttended
-        ? prev.attendedFestivals.filter(x => x !== eventId)
-        : [...prev.attendedFestivals, eventId]
-      const upcoming = prev.upcomingFestivals.filter(x => x !== eventId)
-      const festivalMeta = { ...prev.festivalMeta }
-      if (!isAttended && meta) festivalMeta[eventId] = meta
-      return { ...prev, attendedFestivals: attended, upcomingFestivals: upcoming, festivalMeta }
+      const alreadyAdded = prev.attendedFestivals.includes(eventId) || prev.upcomingFestivals.includes(eventId)
+      if (alreadyAdded) {
+        return {
+          ...prev,
+          attendedFestivals: prev.attendedFestivals.filter(x => x !== eventId),
+          upcomingFestivals: prev.upcomingFestivals.filter(x => x !== eventId),
+        }
+      }
+      const festivalMeta = meta ? { ...prev.festivalMeta, [eventId]: meta } : prev.festivalMeta
+      const date = meta?.date ?? prev.festivalMeta[eventId]?.date
+      if (isFestivalPast(date)) {
+        return { ...prev, attendedFestivals: [...prev.attendedFestivals, eventId], festivalMeta }
+      }
+      return { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId], festivalMeta }
     })
 
-    if (isNowAttended) {
+    if (!isAdded) {
       if (meta) await upsertFestival(buildUpsertPayload(eventId, meta))
-      await addAttendance(eventId, 'attended')
+      await addAttendance(eventId)
     } else {
       await removeAttendance(eventId)
     }
-  }, [userId, state.attendedFestivals, promptAuth])
-
-  const toggleUpcoming = useCallback(async (eventId: string, meta: any = null) => {
-    if (!userId) { promptAuth(); return }
-    const wasUpcoming = state.upcomingFestivals.includes(eventId)
-    const isNowUpcoming = !wasUpcoming
-
-    setState(prev => {
-      const isUpcoming = prev.upcomingFestivals.includes(eventId)
-      const upcoming = isUpcoming
-        ? prev.upcomingFestivals.filter(x => x !== eventId)
-        : [...prev.upcomingFestivals, eventId]
-      const attended = prev.attendedFestivals.filter(x => x !== eventId)
-      const festivalMeta = { ...prev.festivalMeta }
-      if (!isUpcoming && meta) festivalMeta[eventId] = meta
-      return { ...prev, upcomingFestivals: upcoming, attendedFestivals: attended, festivalMeta }
-    })
-
-    if (isNowUpcoming) {
-      if (meta) await upsertFestival(buildUpsertPayload(eventId, meta))
-      await addAttendance(eventId, 'upcoming')
-    } else {
-      await removeAttendance(eventId)
-    }
-  }, [userId, state.upcomingFestivals, promptAuth])
+  }, [userId, state.attendedFestivals, state.upcomingFestivals, promptAuth])
 
   const toggleSawArtist = useCallback(async (eventId: string, artistId: string, artistMeta: any = null) => {
     if (!userId) { promptAuth(); return }
@@ -228,18 +211,18 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       source: 'custom',
       lineup: lineup.map((a: any) => a.name),
     })
-    await addAttendance(id, 'attended')
+    await addAttendance(id)
 
     return id
   }, [userId, promptAuth])
 
   const clearFestivals = useCallback(async (type: string) => {
     setState(prev => {
-      if (type === 'attended') return { ...prev, attendedFestivals: [] }
+      if (type === 'past') return { ...prev, attendedFestivals: [] }
       return { ...prev, upcomingFestivals: [] }
     })
     if (userId) {
-      await clearUserFestivals(type as 'attended' | 'upcoming')
+      await clearUserFestivals(type as 'past' | 'upcoming')
     }
   }, [userId])
 
@@ -272,14 +255,14 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const contextValue = useMemo(() => ({
     ...state,
     loaded,
-    toggleAttended, toggleUpcoming, toggleSawArtist,
+    toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     ...readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
   }), [
     state, loaded,
-    toggleAttended, toggleUpcoming, toggleSawArtist,
+    toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     readers,
     importData, addCustomFestival, clearFestivals,

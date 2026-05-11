@@ -1,1 +1,0 @@
-ALTER TABLE "artists" ADD COLUMN "spotify_fetched_at" timestamp with time zone;

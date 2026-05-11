@@ -5,85 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1778157572993,
-      "tag": "0000_nappy_mysterio",
+      "when": 1778502742964,
+      "tag": "0000_lyrical_scarlet_witch",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1778161779038,
-      "tag": "0001_lean_longshot",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1778162741899,
-      "tag": "0002_yellow_nekra",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1778165035369,
-      "tag": "0003_careful_grim_reaper",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1778226259825,
-      "tag": "0004_next_loki",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1778227110147,
-      "tag": "0005_talented_giant_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1778231825993,
-      "tag": "0006_round_george_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1778318400000,
-      "tag": "0007_artist_id_foreign_keys",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1778404800000,
-      "tag": "0008_drop_url_columns",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1778491200000,
-      "tag": "0009_add_genres",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1778577600000,
-      "tag": "0010_rename_user_artist_ratings",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1778664000000,
-      "tag": "0011_unique_festival_name_date",
+      "when": 1778503568399,
+      "tag": "0001_mature_spot",
       "breakpoints": true
     }
   ]

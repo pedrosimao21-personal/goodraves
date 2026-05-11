@@ -29,6 +29,17 @@ async function backfillMissingImage(festivalId: string, slug: string): Promise<v
     .where(eq(festivals.id, festivalId));
 }
 
+/** Fetch only the og:image URL for a FestivalFans.nl event by slug. */
+export async function fetchFFEventImageUrl(slug: string): Promise<string | null> {
+  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
+
+  const html = await fetchFFEventHtml(slug);
+  if (!html) return null;
+
+  const parsed = parseFFEventPage(html);
+  return parsed.imageUrl;
+}
+
 /** Force-reimport a FestivalFans.nl event (deletes existing lineup first) */
 export async function reimportFFEvent(slug: string): Promise<string | null> {
   if (!slug) return null;

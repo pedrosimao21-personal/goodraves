@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, gte } from "drizzle-orm";
 import { festivals, festivalArtists, artists } from "@/db/schema";
 import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS } from "./festival-helpers";
 import { searchRAEventsRaw } from "@/services/ra/client";
@@ -17,6 +17,7 @@ export async function searchFestivalsDB(query: string) {
 
   const escaped = query.replace(/[%_\\]/g, "\\$&");
   const pattern = `%${escaped}%`;
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const results = await db
     .selectDistinctOn([festivals.id], {
@@ -36,7 +37,8 @@ export async function searchFestivalsDB(query: string) {
     .leftJoin(festivalArtists, eq(festivals.id, festivalArtists.festivalId))
     .leftJoin(artists, eq(festivalArtists.artistId, artists.id))
     .where(
-      sql`${festivals.name} ILIKE ${pattern} OR ${festivals.venue} ILIKE ${pattern} OR ${festivals.location} ILIKE ${pattern} OR ${artists.name} ILIKE ${pattern}`
+      sql`(${festivals.name} ILIKE ${pattern} OR ${festivals.venue} ILIKE ${pattern} OR ${festivals.location} ILIKE ${pattern} OR ${artists.name} ILIKE ${pattern})
+          AND ${festivals.date} >= ${todayStr}`
     )
     .orderBy(festivals.id, festivals.date)
     .limit(SEARCH_RESULTS_LIMIT);

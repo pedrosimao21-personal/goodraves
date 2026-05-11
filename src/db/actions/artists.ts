@@ -11,7 +11,7 @@ import {
   spotifyGetArtistTopTracks,
   spotifyGetRelatedArtists,
 } from "@/services/spotify/client";
-import { lastfmGetArtistInfo } from "@/services/lastfm/client";
+import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm/client";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
@@ -92,7 +92,7 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   const [row] = await db.select().from(artists).where(eq(artists.id, id)).limit(1);
   if (!row) return null;
 
-  const needsLastfm = isStaleLastfm(row.lastfmFetchedAt);
+  const needsLastfm = isStaleLastfm(row.lastfmFetchedAt) || !row.lastfmTopTracks;
   // Also refresh Spotify if albums have never been fetched (row was created by the
   // old getArtistsWithImages flow which didn't save albums), or if the top tracks
   // don't have Spotify's previewUrl format yet.
@@ -124,6 +124,10 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     updateFields.lastfmListeners = lastfmUpdate.listeners ? parseInt(lastfmUpdate.listeners, 10) || null : null;
     updateFields.lastfmPlaycount = lastfmUpdate.playcount ? parseInt(lastfmUpdate.playcount, 10) || null : null;
     updateFields.lastfmSimilar = JSON.stringify(lastfmUpdate.similar ?? []);
+    // Always persist Last.fm top tracks — they are reliable and don't require user auth
+    if (lastfmUpdate.topTracks?.length) {
+      updateFields.lastfmTopTracks = JSON.stringify(lastfmUpdate.topTracks);
+    }
     updateFields.lastfmFetchedAt = now;
   }
 
@@ -132,14 +136,25 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     updateFields.imageUrl = spotifyUpdate.image ?? null;
     updateFields.spotifyFollowers = spotifyUpdate.followers ?? null;
     updateFields.spotifyAlbums = JSON.stringify(spotifyUpdate.albums ?? []);
-    if (spotifyUpdate.topTracks) {
+    // Only overwrite top tracks with Spotify data if we actually got tracks back
+    if (spotifyUpdate.topTracks?.length) {
       updateFields.lastfmTopTracks = JSON.stringify(spotifyUpdate.topTracks);
     }
     updateFields.spotifyFetchedAt = now;
   }
 
   if (relatedArtistsUpdate !== null) {
-    updateFields.relatedArtists = JSON.stringify(relatedArtistsUpdate);
+    // Use Spotify related artists when available; if empty (e.g. 403), fall back to
+    // Last.fm similar artists mapped to the same shape so the component always has data.
+    const resolvedRelated = relatedArtistsUpdate.length > 0
+      ? relatedArtistsUpdate
+      : (lastfmUpdate?.similar ?? []).map((a: any) => ({
+          id: a.name, // use name as id for lastfm-sourced entries
+          name: a.name,
+          image: null as string | null,
+          followers: 0,
+        }));
+    updateFields.relatedArtists = JSON.stringify(resolvedRelated);
     updateFields.relatedArtistsFetchedAt = now;
   }
 
@@ -212,7 +227,10 @@ async function upsertArtistGenres(artistId: string, genreNames: string[]): Promi
 
 async function refreshLastfm(name: string) {
   try {
-    const info = await lastfmGetArtistInfo(name);
+    const [info, topTracks] = await Promise.all([
+      lastfmGetArtistInfo(name),
+      lastfmGetArtistTopTracks(name).catch(() => []),
+    ]);
 
     const similarNames = (info.similar ?? []).map((a: any) => a.name).filter(Boolean);
 
@@ -251,7 +269,7 @@ async function refreshLastfm(name: string) {
       url: a.url ?? null,
     }));
 
-    return { ...info, similar };
+    return { ...info, similar, topTracks };
   } catch (err) {
     console.error(`[artists] Last.fm refresh failed for "${name}":`, err instanceof Error ? err.message : err);
     return null;

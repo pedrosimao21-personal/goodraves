@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
 import { useAuthPrompt } from '@/context/AuthPromptContext'
-import RAImport from '@/components/RAImport'
 import AddCustomEvent from '@/components/AddCustomFestival'
 import EditFestivalModal from './EditFestivalModal'
 import FestivalRow from './FestivalRow'
@@ -21,7 +20,6 @@ export default function DashboardView() {
   const { promptAuth } = useAuthPrompt()
   const { data: session } = useSession()
   const router = useRouter()
-  const [showImport, setShowImport] = useState(false)
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -101,12 +99,6 @@ export default function DashboardView() {
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your personal festival history &amp; schedule</p>
         </div>
-
-        {showImport && (
-          <div style={{ marginBottom: 40 }}>
-            <RAImport />
-          </div>
-        )}
 
         <div className="stats-grid">
           <div className="stat-card">

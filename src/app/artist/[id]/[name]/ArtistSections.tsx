@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
+import { type RAUpcomingEvent } from '@/services/ra/client'
 import StarRating from '@/components/StarRating'
 import { ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
 import { formatFollowers, formatPlaycount } from './format-counts'
@@ -248,35 +249,131 @@ export function TopTracksList({ tracks, artistName }: { tracks: LastfmTrack[]; a
   )
 }
 
-export function UpcomingShowsList({ artistName }: { artistName: string }) {
+export function UpcomingShowsList({
+  artistName,
+  raArtistId,
+  events,
+}: {
+  artistName: string
+  raArtistId: string | null
+  events: RAUpcomingEvent[]
+}) {
   const raSearchUrl = `https://ra.co/search?q=${encodeURIComponent(artistName)}`
+  const raArtistUrl = raArtistId ? `https://ra.co/dj/${raArtistId}` : raSearchUrl
+
   return (
     <div style={{ marginBottom: 32 }}>
-      <h2 className="section-title" style={{ marginBottom: 12 }}>Upcoming Shows</h2>
-      <div style={{
-        padding: '14px 18px',
-        background: 'var(--bg-card)',
-        borderRadius: 12,
-        border: '1px dashed var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        flexWrap: 'wrap',
-      }}>
-        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🗓️</span>
-        <span style={{ flex: 1, fontSize: '0.88rem', color: 'var(--text-muted)', minWidth: 160 }}>
-          Find {artistName}&apos;s upcoming shows on Resident Advisor
-        </span>
-        <a
-          href={raSearchUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="btn btn-secondary btn-sm"
-          style={{ textDecoration: 'none', flexShrink: 0 }}
-        >
-          View on RA
-        </a>
-      </div>
+      <h2 className="section-title" style={{ marginBottom: 12 }}>
+        Upcoming Shows
+        <span className="spotify-badge-inline"><ResidentAdvisorIcon size={13} /></span>
+      </h2>
+
+      {events.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)' }}>
+          {events.map((event, idx) => {
+            const dateObj = new Date(event.date)
+            const monthShort = dateObj.toLocaleString('en-US', { month: 'short' })
+            const day = dateObj.getDate()
+            const isLast = idx === events.length - 1
+
+            return (
+              <a
+                key={event.id}
+                href={event.raUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: '12px 16px',
+                  background: 'var(--bg-card)',
+                  borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  transition: 'background 150ms ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-card)')}
+              >
+                {/* Date badge */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: 40,
+                  background: 'rgba(139, 92, 246, 0.12)',
+                  border: '1px solid rgba(139, 92, 246, 0.25)',
+                  borderRadius: 8,
+                  padding: '4px 6px',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--accent-purple)', fontWeight: 700, letterSpacing: '0.05em', lineHeight: 1 }}>
+                    {monthShort}
+                  </span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--text-primary)' }}>
+                    {day}
+                  </span>
+                </div>
+
+                {/* Event info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {event.title}
+                  </div>
+                  {(event.venue || event.city) && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {[event.venue, event.city].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
+                </div>
+
+                {/* RA arrow */}
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', flexShrink: 0 }}>→</span>
+              </a>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={{
+          padding: '14px 18px',
+          background: 'var(--bg-card)',
+          borderRadius: 12,
+          border: '1px dashed var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>🗓️</span>
+          <span style={{ flex: 1, fontSize: '0.88rem', color: 'var(--text-muted)', minWidth: 160 }}>
+            Find {artistName}&apos;s upcoming shows on Resident Advisor
+          </span>
+          <a
+            href={raSearchUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-secondary btn-sm"
+            style={{ textDecoration: 'none', flexShrink: 0 }}
+          >
+            View on RA
+          </a>
+        </div>
+      )}
+
+      {events.length > 0 && (
+        <div style={{ marginTop: 10, textAlign: 'right' }}>
+          <a
+            href={raArtistUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            View all on RA <ResidentAdvisorIcon size={12} />
+          </a>
+        </div>
+      )}
     </div>
   )
 }

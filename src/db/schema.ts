@@ -60,8 +60,12 @@ export const artists = pgTable("artists", {
   lastfmListeners: integer("lastfm_listeners"),
   lastfmPlaycount: integer("lastfm_playcount"),
   lastfmSimilar: text("lastfm_similar"),   // JSON { name, url, image }[]
-  lastfmTopTracks: text("lastfm_top_tracks"), // JSON { name, playcount, url, listeners }[]
+  lastfmTopTracks: text("lastfm_top_tracks"), // JSON { name, playcount, url, listeners, previewUrl? }[]
   lastfmFetchedAt: timestamp("lastfm_fetched_at", { withTimezone: true }),
+  // Resident Advisor
+  raArtistId: text("ra_artist_id"),
+  raUpcomingEvents: text("ra_upcoming_events"),   // JSON RAUpcomingEvent[]
+  raEventsFetchedAt: timestamp("ra_events_fetched_at", { withTimezone: true }),
 }, (t) => [
   index("artists_spotify_followers_idx").on(t.spotifyFollowers),
 ]);

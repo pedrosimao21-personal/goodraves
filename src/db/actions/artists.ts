@@ -10,12 +10,15 @@ import {
   spotifySearchArtistsBatch,
   spotifyGetArtistTopTracks,
   spotifyGetRelatedArtists,
+  spotifySearchTrackPreview,
 } from "@/services/spotify/client";
 import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm/client";
+import { fetchRArtistEvents, type RAUpcomingEvent } from "@/services/ra/client";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
+const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
@@ -32,6 +35,11 @@ function isStaleLastfm(fetchedAt: Date | string | null | undefined): boolean {
 function isStaleRelatedArtists(fetchedAt: Date | null | undefined): boolean {
   if (!fetchedAt) return true;
   return Date.now() - fetchedAt.getTime() > THIRTY_DAYS_MS;
+}
+
+function isStaleRAEvents(fetchedAt: Date | null | undefined): boolean {
+  if (!fetchedAt) return true;
+  return Date.now() - fetchedAt.getTime() > ONE_DAY_MS;
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -53,12 +61,15 @@ export type ArtistData = {
   lastfmPlaycount: number | null;
   lastfmSimilar: LastfmSimilar[];
   lastfmTopTracks: LastfmTrack[];
+  // Resident Advisor
+  raArtistId: string | null;
+  raUpcomingEvents: RAUpcomingEvent[];
 };
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string };
 type RelatedArtist = { id: string; name: string; image: string | null; followers: number };
 type LastfmSimilar = { name: string; url: string | null; image: string | null }; // image resolved from artists table at read time
-type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number };
+type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number; previewUrl?: string | null };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -83,6 +94,8 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     lastfmPlaycount: row.lastfmPlaycount ?? null,
     lastfmSimilar: parseJson<LastfmSimilar[]>(row.lastfmSimilar, []),
     lastfmTopTracks: parseJson<LastfmTrack[]>(row.lastfmTopTracks, []),
+    raArtistId: row.raArtistId ?? null,
+    raUpcomingEvents: parseJson<RAUpcomingEvent[]>(row.raUpcomingEvents, []),
   };
 }
 
@@ -99,20 +112,22 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   const hasSpotifyTracks = typeof row.lastfmTopTracks === 'string' && row.lastfmTopTracks.includes('previewUrl');
   const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null || !hasSpotifyTracks;
   const needsRelatedArtists = row.spotifyId !== null && isStaleRelatedArtists(row.relatedArtistsFetchedAt);
+  const needsRAEvents = row.raArtistId !== null && isStaleRAEvents(row.raEventsFetchedAt);
 
-  if (!needsLastfm && !needsSpotify && !needsRelatedArtists) {
+  if (!needsLastfm && !needsSpotify && !needsRelatedArtists && !needsRAEvents) {
     const data = await enrichWithSimilarImages(rowToArtistData(row));
     data.genres = await fetchArtistGenres(row.id);
     return data;
   }
 
-      const now = new Date();
+  const now = new Date();
 
   // Run all refreshes in parallel where needed
-  const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate] = await Promise.all([
+  const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate, raEventsUpdate] = await Promise.all([
     needsLastfm ? refreshLastfm(row.name) : Promise.resolve(null),
     needsSpotify ? refreshSpotify(row.name, row.spotifyId) : Promise.resolve(null),
     needsRelatedArtists ? refreshRelatedArtists(row.spotifyId!) : Promise.resolve(null),
+    needsRAEvents ? fetchRArtistEvents(row.raArtistId!).catch(() => null) : Promise.resolve(null),
   ]);
 
   const updateFields: Partial<typeof artists.$inferInsert> = {};
@@ -156,6 +171,11 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
         }));
     updateFields.relatedArtists = JSON.stringify(resolvedRelated);
     updateFields.relatedArtistsFetchedAt = now;
+  }
+
+  if (raEventsUpdate !== null) {
+    updateFields.raUpcomingEvents = JSON.stringify(raEventsUpdate);
+    updateFields.raEventsFetchedAt = now;
   }
 
   if (Object.keys(updateFields).length > 0) {
@@ -269,7 +289,23 @@ async function refreshLastfm(name: string) {
       url: a.url ?? null,
     }));
 
-    return { ...info, similar, topTracks };
+    // Enrich Last.fm top tracks with Spotify 30-second preview URLs.
+    // We process in batches of 3 to avoid hammering the Spotify search API.
+    const PREVIEW_BATCH_SIZE = 3;
+    const enrichedTopTracks: LastfmTrack[] = [];
+    for (let i = 0; i < topTracks.length; i += PREVIEW_BATCH_SIZE) {
+      const batch = topTracks.slice(i, i + PREVIEW_BATCH_SIZE);
+      const previews = await Promise.all(
+        batch.map((track: any) =>
+          spotifySearchTrackPreview(name, track.name).catch(() => null)
+        )
+      );
+      batch.forEach((track: any, idx: number) => {
+        enrichedTopTracks.push({ ...track, previewUrl: previews[idx] ?? null });
+      });
+    }
+
+    return { ...info, similar, topTracks: enrichedTopTracks };
   } catch (err) {
     console.error(`[artists] Last.fm refresh failed for "${name}":`, err instanceof Error ? err.message : err);
     return null;

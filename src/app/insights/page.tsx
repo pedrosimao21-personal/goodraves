@@ -255,7 +255,8 @@ export default function Insights() {
               📸 Save to Phone
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', padding: '32px 16px', borderRadius: 16, overflowX: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', padding: '32px 16px', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
             <RaverPassport
               ref={passportRef}
               events={attendedEvents}
@@ -263,6 +264,7 @@ export default function Insights() {
               topGenre={topGenresData[0]?.name}
               totalArtists={totalArtists}
             />
+            </div>
           </div>
         </div>
       </div>

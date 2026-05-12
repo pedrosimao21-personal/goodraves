@@ -1,11 +1,11 @@
 "use server";
 
 import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { festivals, festivalArtists } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { artists, festivals, festivalArtists } from "@/db/schema";
 import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate } from "./festival-helpers";
 import { fetchRAEventRaw } from "@/services/ra/client";
-import { parseRALineup } from "@/services/ra/parser";
+import { parseRALineup, lineupEntryNames } from "@/services/ra/parser";
 
 /** Fetch and store imageUrl for an RA event that was imported without one. */
 async function backfillMissingImage(festivalId: string, raId: string): Promise<void> {
@@ -87,7 +87,8 @@ export async function fetchRAEvent(
   const artistsFallback = (data.artists ?? [])
     .map((a) => a?.name)
     .filter(Boolean) as string[];
-  const lineup = parseRALineup(data.lineup, artistsFallback);
+  const lineupEntries = parseRALineup(data.lineup, artistsFallback);
+  const lineup = lineupEntryNames(lineupEntries);
 
   const festivalName = data.title ?? `RA Event ${id}`;
   const existingId = await findExistingFestivalByNameDate(festivalName, date);
@@ -113,6 +114,32 @@ export async function fetchRAEvent(
 
   if (lineup.length > 0) {
     const nameToId = await ensureArtistsAndGetIds(lineup);
+
+    // Persist RA artist IDs for any entries that have them and are now in the DB.
+    // Only update rows where ra_artist_id is currently null so we don't clobber
+    // manually-corrected data.
+    const entriesWithRaId = lineupEntries.filter(e => e.raArtistId !== null);
+    if (entriesWithRaId.length > 0) {
+      const artistNames = entriesWithRaId.map(e => e.name);
+      const existingRows = await db
+        .select({ id: artists.id, name: artists.name, raArtistId: artists.raArtistId })
+        .from(artists)
+        .where(inArray(artists.name, artistNames));
+
+      await Promise.allSettled(
+        existingRows
+          .filter(row => row.raArtistId === null)
+          .map(row => {
+            const entry = entriesWithRaId.find(e => e.name === row.name);
+            if (!entry) return Promise.resolve();
+            return db
+              .update(artists)
+              .set({ raArtistId: entry.raArtistId })
+              .where(eq(artists.id, row.id));
+          })
+      );
+    }
+
     await db
       .insert(festivalArtists)
       .values(

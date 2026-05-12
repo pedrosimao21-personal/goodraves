@@ -174,6 +174,28 @@ export async function spotifyGetArtistTopTracks(spotifyId: string) {
     throw err;
   }
 }
+/**
+ * Search Spotify for a specific track by artist + track name.
+ * Returns the 30-second preview URL if available, or null.
+ * Uses /search which works with client_credentials (no user auth needed).
+ */
+export async function spotifySearchTrackPreview(
+  artistName: string,
+  trackName: string
+): Promise<string | null> {
+  try {
+    const data = await apiFetch("/search", {
+      q: `artist:${artistName} track:${trackName}`,
+      type: "track",
+      limit: 1,
+      market: SPOTIFY_MARKET,
+    });
+    return data.tracks?.items?.[0]?.preview_url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function spotifyGetArtistAlbums(
   spotifyId: string,
   limit = DEFAULT_ALBUM_LIMIT

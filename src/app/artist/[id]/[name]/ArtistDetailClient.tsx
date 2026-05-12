@@ -186,7 +186,11 @@ export default function ArtistDetail() {
         )}
 
         {!loading && (
-          <UpcomingShowsList artistName={displayName} />
+          <UpcomingShowsList
+            artistName={displayName}
+            raArtistId={artist?.raArtistId ?? null}
+            events={artist?.raUpcomingEvents ?? []}
+          />
         )}
 
         {(artist?.relatedArtists?.length ?? 0) > 0 && !loading && (

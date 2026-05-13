@@ -27,20 +27,17 @@ async function call(params: Record<string, any>) {
   return data;
 }
 
-function normalizeGenres(genres: string[]) {
-  if (!genres) return [];
-  const BLACKLIST = new Set(["swedish", "dancehall", "rave"]);
-  const MAPPINGS: Record<string, string> = {
-    electronica: "electronic",
-    "acid techno": "acid",
-    "minimal techno": "minimal",
-  };
-
-  return genres
-    .map((g) => g.toLowerCase().trim())
-    .filter((g) => !BLACKLIST.has(g))
-    .map((g) => MAPPINGS[g] || g)
-    .filter((v, i, a) => a.indexOf(v) === i);
+function extractTagNames(tags: string[]): string[] {
+  if (!tags) return [];
+  const seen = new Set<string>();
+  return tags.reduce<string[]>((acc, tag) => {
+    const normalized = tag.toLowerCase().trim();
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      acc.push(normalized);
+    }
+    return acc;
+  }, []);
 }
 
 export async function lastfmGetArtistInfo(name: string) {
@@ -98,7 +95,7 @@ export async function lastfmGetArtistInfo(name: string) {
     image: imageUrl && imageUrl !== "" ? imageUrl : null,
     listeners: artist.stats?.listeners ?? null,
     playcount: artist.stats?.playcount ?? null,
-    tags: normalizeGenres(
+    tags: extractTagNames(
       (artist.tags?.tag ?? []).slice(0, MAX_GENRE_TAGS).map((t: any) => t.name)
     ),
     bio: cleanBio,

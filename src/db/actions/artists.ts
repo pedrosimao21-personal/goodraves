@@ -142,7 +142,7 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   if (lastfmUpdate) {
     updateFields.lastfmId = lastfmUpdate.mbid ?? null;
     updateFields.lastfmBio = lastfmUpdate.bio ?? null;
-    // Genres are now stored in the genres/artist_genres tables — see upsertArtistGenres below
+    // Genres are stored in the genres/artist_genres tables — see syncArtistGenres below
     updateFields.lastfmListeners = lastfmUpdate.listeners ? parseInt(lastfmUpdate.listeners, 10) || null : null;
     updateFields.lastfmPlaycount = lastfmUpdate.playcount ? parseInt(lastfmUpdate.playcount, 10) || null : null;
     updateFields.lastfmSimilar = JSON.stringify(lastfmUpdate.similar ?? []);
@@ -199,17 +199,19 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     });
   }
 
-  // Upsert genres from lastfm tags into the new tables
+  // Sync genres by cross-referencing lastfm tags against known genres
+  let matchedGenres: string[] | null = null;
   if (lastfmUpdate?.tags?.length) {
-    await upsertArtistGenres(id, lastfmUpdate.tags).catch((err) => {
-      console.error(`[artists] Failed to upsert genres for "${row.name}":`, err);
+    matchedGenres = await syncArtistGenres(id, lastfmUpdate.tags).catch((err) => {
+      console.error(`[artists] Failed to sync genres for "${row.name}":`, err);
+      return null;
     });
   }
 
   // Return merged result immediately without another DB round-trip
   const merged = { ...row, ...updateFields } as typeof artists.$inferSelect;
   const data = await enrichWithSimilarImages(rowToArtistData(merged));
-  data.genres = lastfmUpdate?.tags ?? await fetchArtistGenres(id);
+  data.genres = matchedGenres ?? await fetchArtistGenres(id);
   return data;
 }
 
@@ -239,25 +241,22 @@ async function fetchArtistGenres(artistId: string): Promise<string[]> {
   return rows.map(r => r.name);
 }
 
-async function upsertArtistGenres(artistId: string, genreNames: string[]): Promise<void> {
-  if (!genreNames.length) return;
+async function syncArtistGenres(artistId: string, tagNames: string[]): Promise<string[]> {
+  if (!tagNames.length) return [];
 
-  // Upsert each genre and collect IDs
-  const genreIds: string[] = [];
-  for (const name of genreNames) {
-    const [row] = await db
-      .insert(genres)
-      .values({ name })
-      .onConflictDoUpdate({ target: genres.name, set: { name } })
-      .returning({ id: genres.id });
-    genreIds.push(row.id);
-  }
+  const matchedGenres = await db
+    .select({ id: genres.id, name: genres.name })
+    .from(genres)
+    .where(inArray(genres.name, tagNames));
 
-  // Replace artist's genre associations
+  if (!matchedGenres.length) return [];
+
   await db.delete(artistGenres).where(eq(artistGenres.artistId, artistId));
   await db.insert(artistGenres).values(
-    genreIds.map(genreId => ({ artistId, genreId }))
+    matchedGenres.map(({ id: genreId }) => ({ artistId, genreId }))
   );
+
+  return matchedGenres.map(({ name }) => name);
 }
 
 async function refreshLastfm(name: string) {

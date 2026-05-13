@@ -8,7 +8,6 @@ import {
 } from 'recharts'
 import dynamic from 'next/dynamic'
 import RaverPassport from '@/components/RaverPassport'
-import { GENRE_MAP, GENRE_BLACKLIST } from './genre-map'
 
 const RaveMap = dynamic(() => import('@/components/RaveMap'), { ssr: false })
 
@@ -43,15 +42,7 @@ export default function Insights() {
       const genres = meta?.genres ?? []
       if (genres.length === 0) return
 
-      const mapped = new Set()
-      genres.slice(0, 4).forEach(raw => {
-        const lower = raw.toLowerCase().trim()
-        if (GENRE_BLACKLIST.has(lower)) return
-        const canonical = GENRE_MAP[lower] || raw
-        mapped.add(canonical)
-      })
-
-      mapped.forEach((genre: string) => {
+      genres.slice(0, 4).forEach(genre => {
         counts[genre] = (counts[genre] || 0) + count
       })
     })

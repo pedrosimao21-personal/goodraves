@@ -5,39 +5,13 @@
  * Handles all HTTP communication with ra.co/graphql.
  */
 
+export { COUNTRY_FLAGS, getCountryFlag } from "./country-flags";
+
 const RA_GRAPHQL_URL = "https://ra.co/graphql";
 const RA_USER_AGENT = "Mozilla/5.0";
 const RA_EVENTS_BASE_URL = "https://ra.co/events";
 const RA_ARTIST_BASE_URL = "https://ra.co/dj";
 const MAX_UPCOMING_EVENTS = 10;
-
-// ── Country Code to Flag Emoji Mapping ─────────────────────────────────────
-
-export const COUNTRY_FLAGS: Record<string, string> = {
-  AF: "🇦🇫", AL: "🇦🇱", DZ: "🇩🇿", AR: "🇦🇷", AM: "🇦🇲",
-  AU: "🇦🇺", AT: "🇦🇹", AZ: "🇦🇿", BE: "🇧🇪", BR: "🇧🇷",
-  BG: "🇧🇬", CA: "🇨🇦", CL: "🇨🇱", CN: "🇨🇳", CO: "🇨🇴",
-  HR: "🇭🇷", CZ: "🇨🇿", DK: "🇩🇰", EG: "🇪🇬", EE: "🇪🇪",
-  FI: "🇫🇮", FR: "🇫🇷", DE: "🇩🇪", GR: "🇬🇷", HU: "🇭🇺",
-  IS: "🇮🇸", IN: "🇮🇳", ID: "🇮🇩", IE: "🇮🇪", IL: "🇮🇱",
-  IT: "🇮🇹", JP: "🇯🇵", KR: "🇰🇷", LV: "🇱🇻", LT: "🇱🇹",
-  LU: "🇱🇺", MY: "🇲🇾", MX: "🇲🇽", MA: "🇲🇦", NL: "🇳🇱",
-  NZ: "🇳🇿", NO: "🇳🇴", PK: "🇵🇰", PE: "🇵🇪", PH: "🇵🇭",
-  PL: "🇵🇱", PT: "🇵🇹", RO: "🇷🇴", RU: "🇷🇺", SA: "🇸🇦",
-  RS: "🇷🇸", SG: "🇸🇬", SK: "🇸🇰", SI: "🇸🇮", ZA: "🇿🇦",
-  ES: "🇪🇸", SE: "🇸🇪", CH: "🇨🇭", TW: "🇹🇼", TH: "🇹🇭",
-  TR: "🇹🇷", UA: "🇺🇦", AE: "🇦🇪", GB: "🇬🇧", UK: "🇬🇧",
-  US: "🇺🇸", VE: "🇻🇪", VN: "🇻🇳",
-};
-
-/**
- * Get flag emoji for a country code, with fallback.
- */
-export function getCountryFlag(code: string | null): string {
-  if (!code) return "";
-  const upperCode = code.toUpperCase();
-  return COUNTRY_FLAGS[upperCode] ?? "";
-}
 
 const SEARCH_EVENTS_QUERY = `
   query SEARCH_EVENTS($title: MatchFilterInputDtoInput) {

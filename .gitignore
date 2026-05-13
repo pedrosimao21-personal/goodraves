@@ -29,7 +29,6 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Editor
-.vscode/*
 !.vscode/extensions.json
 .idea
 *.suo

@@ -5,9 +5,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   getGenreDiscoveryData,
-  DEFAULT_GENRES,
   type GenreDiscoveryData,
 } from '@/db/actions/genre-discovery'
+import { DEFAULT_GENRES } from '@/constants/genre'
 import { SpotifyIcon } from '@/components/icons'
 
 type Props = {

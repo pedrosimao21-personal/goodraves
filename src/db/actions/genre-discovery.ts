@@ -7,20 +7,6 @@ import {
   type TagTopTrack,
 } from "@/services/lastfm/client";
 
-// ── Genre Configuration ────────────────────────────────────────────────────
-
-/**
- * Default genres shown to all users on the Discover page.
- * These are popular electronic music genres that work well with Last.fm tags.
- */
-export const DEFAULT_GENRES = [
-  "techno",
-  "house",
-  "trance",
-  "drum and bass",
-  "ambient",
-] as const;
-
 /**
  * Maps display-friendly genre names to Last.fm tag names.
  * Last.fm tags are case-insensitive but some have specific formats.

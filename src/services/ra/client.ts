@@ -5,8 +5,6 @@
  * Handles all HTTP communication with ra.co/graphql.
  */
 
-export { COUNTRY_FLAGS, getCountryFlag } from "./country-flags";
-
 const RA_GRAPHQL_URL = "https://ra.co/graphql";
 const RA_USER_AGENT = "Mozilla/5.0";
 const RA_EVENTS_BASE_URL = "https://ra.co/events";

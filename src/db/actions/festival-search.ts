@@ -7,6 +7,8 @@ import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS } from "./festival-helpers";
 import { searchRAEventsRaw } from "@/services/ra/client";
 import { mapRAEventToSearchResult } from "@/services/ra/parser";
 import { searchFFEventsRaw, resolveFFSlug } from "@/services/festivalfans/client";
+import { searchPFEventsRaw } from "@/services/partyflock/client";
+import { parsePFSearchResults } from "@/services/partyflock/parser";
 
 // ── DB search ──────────────────────────────────────────
 const SEARCH_RESULTS_LIMIT = 100;
@@ -116,5 +118,41 @@ export async function searchFFEvents(query: string) {
   );
 
   ffSearchCache.set(cacheKey, { data: results, ts: Date.now() });
+  return results;
+}
+
+// ── Partyflock.nl search (with 5-minute cache) ────────
+const pfSearchCache = new Map<string, { data: any[]; ts: number }>();
+
+export async function searchPFEvents(query: string) {
+  if (!query || query.length > MAX_QUERY_LENGTH) return [];
+
+  const cacheKey = query.trim().toLowerCase();
+  const cached = pfSearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const html = await searchPFEventsRaw(query);
+  if (!html) {
+    pfSearchCache.set(cacheKey, { data: [], ts: Date.now() });
+    return [];
+  }
+
+  const parsed = parsePFSearchResults(html);
+  const results = parsed.map((ev) => ({
+    pfId: ev.pfId,
+    name: ev.name,
+    date: ev.date,
+    endDate: null as string | null,
+    venue: ev.venue,
+    location: ev.location,
+    imageUrl: ev.imageUrl,
+    lineup: [] as string[],
+    latitude: null as number | null,
+    longitude: null as number | null,
+  }));
+
+  pfSearchCache.set(cacheKey, { data: results, ts: Date.now() });
   return results;
 }

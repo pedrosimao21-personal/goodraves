@@ -15,6 +15,7 @@ import {
 import { requireAuth } from "./festival-helpers";
 import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
+import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -56,11 +57,15 @@ export async function getFestival(id: string) {
   if (lineup.length === 0) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
     const raMatch = id.match(/^ra-(\d+)$/);
+    const pfMatch = id.match(/^pf-(\d+)$/);
     if (ffMatch) {
       await fetchFFEvent(ffMatch[1]);
       lineup = await fetchLineup(id);
     } else if (raMatch) {
       await fetchRAEvent(raMatch[1]);
+      lineup = await fetchLineup(id);
+    } else if (pfMatch) {
+      await fetchPFEvent(pfMatch[1]);
       lineup = await fetchLineup(id);
     }
   }
@@ -69,12 +74,15 @@ export async function getFestival(id: string) {
   if (!festival.imageUrl) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
     const raMatch = id.match(/^ra-(\d+)$/);
+    const pfMatch = id.match(/^pf-(\d+)$/);
     let imageUrl: string | null = null;
 
     if (ffMatch) {
       imageUrl = await fetchFFEventImageUrl(ffMatch[1]);
     } else if (raMatch) {
       imageUrl = await fetchRAEventImageUrl(raMatch[1]);
+    } else if (pfMatch) {
+      imageUrl = await fetchPFEventImageUrl(pfMatch[1]);
     }
 
     if (imageUrl) {
@@ -99,6 +107,11 @@ async function tryAutoImport(id: string) {
   const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
   if (ffMatch) {
     return await importAndReturn(id, () => fetchFFEvent(ffMatch[1]));
+  }
+
+  const pfMatch = id.match(/^pf-(\d+)$/);
+  if (pfMatch) {
+    return await importAndReturn(id, () => fetchPFEvent(pfMatch[1]));
   }
 
   return null;

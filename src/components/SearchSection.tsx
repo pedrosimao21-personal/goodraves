@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl, fetchRAEventImageUrl } from '@/db/actions/festivals'
+import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl, fetchRAEventImageUrl, searchPFEvents, fetchPFEvent, fetchPFEventImageUrl } from '@/db/actions/festivals'
 
 function SearchIcon() {
   return (
@@ -22,6 +22,12 @@ function extractRAEventId(input: string): string | null {
 /** Extract a FestivalFans slug from a festivalfans.nl URL, or return null */
 function extractFFSlugLocal(input: string): string | null {
   const match = input.match(/festivalfans\.nl\/event\/([a-z0-9-]+)/i)
+  return match ? match[1] : null
+}
+
+/** Extract a Partyflock party ID from a partyflock.nl URL, or return null */
+function extractPFPartyIdLocal(input: string): string | null {
+  const match = input.match(/partyflock\.nl\/party\/(\d+)/)
   return match ? match[1] : null
 }
 
@@ -70,13 +76,28 @@ export default function SearchSection() {
         }
       }
 
+      // Check if the input is a Partyflock.nl event URL
+      const pfPartyId = extractPFPartyIdLocal(q)
+      if (pfPartyId) {
+        const festivalId = await fetchPFEvent(pfPartyId)
+        if (festivalId) {
+          router.push(`/festival/${festivalId}`)
+          return
+        } else {
+          setError(new Error('Could not fetch event from Partyflock.nl. The event may not exist or the site may be unavailable.'))
+          setSearched(true)
+          return
+        }
+      }
+
       const results: any[] = []
 
-      // Search DB, RA, and FestivalFans in parallel
-      const [dbResults, raResults, ffResults] = await Promise.all([
+      // Search DB, RA, FestivalFans, and Partyflock in parallel
+      const [dbResults, raResults, ffResults, pfResults] = await Promise.all([
         searchFestivalsDB(q).catch((err) => { console.warn('DB search failed:', err); return [] }),
         searchRAEvents(q).catch((err) => { console.warn('RA search failed:', err); return [] }),
         searchFFEvents(q).catch((err) => { console.warn('FF search failed:', err); return [] }),
+        searchPFEvents(q).catch((err) => { console.warn('PF search failed:', err); return [] }),
       ])
 
       // Add DB results first
@@ -135,6 +156,7 @@ export default function SearchSection() {
         if (!ff.date) continue
         if (dbFFSlugs.has(ff.ffSlug)) continue
         if (existingKeys.has(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)) continue
+        existingKeys.add(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)
         results.push({
           id: `ff-${ff.ffSlug}`,
           name: ff.name,
@@ -145,6 +167,32 @@ export default function SearchSection() {
           source: 'festivalfans',
           image: ff.imageUrl,
           _fromFF: true,
+        })
+      }
+
+      // Collect PF IDs already in DB results to deduplicate
+      const dbPFIds = new Set(
+        dbResults
+          .filter((f: any) => f.source === 'partyflock' && f.sourceId)
+          .map((f: any) => String(f.sourceId))
+      )
+
+      // Add PF results that aren't already in DB or exact duplicates (same name + date)
+      for (const pf of pfResults) {
+        if (!pf.date) continue
+        if (dbPFIds.has(pf.pfId)) continue
+        if (existingKeys.has(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)) continue
+        existingKeys.add(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)
+        results.push({
+          id: `pf-${pf.pfId}`,
+          name: pf.name,
+          date: pf.date,
+          venue: pf.venue ? { name: pf.venue, city: pf.location ?? '' } : undefined,
+          location: pf.location,
+          lineup: [],
+          source: 'partyflock',
+          image: pf.imageUrl,
+          _fromPF: true,
         })
       }
 
@@ -185,6 +233,20 @@ export default function SearchSection() {
           )
         }).catch(() => { /* image fetch failed, tile stays without image */ })
       }
+
+      // Lazily fetch images for PF results that don't have one
+      const pfWithoutImage = sorted.filter(
+        (e: any) => !e.image && e.id?.startsWith('pf-')
+      )
+      for (const pf of pfWithoutImage) {
+        const pfPartyId = pf.id.replace(/^pf-/, '')
+        fetchPFEventImageUrl(pfPartyId).then((imageUrl) => {
+          if (!imageUrl) return
+          setEvents((prev) =>
+            prev.map((e) => (e.id === pf.id ? { ...e, image: imageUrl } : e))
+          )
+        }).catch(() => { /* image fetch failed, tile stays without image */ })
+      }
     } catch (err) {
       setError(err as Error)
     } finally {
@@ -222,14 +284,14 @@ export default function SearchSection() {
               id="festival-search-input"
               className="search-input"
               type="text"
-              placeholder="Search festivals, DJs, venues, cities or paste an RA/FestivalFans URL…"
+              placeholder="Search festivals, DJs, venues, cities or paste an RA/FestivalFans/Partyflock URL…"
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               autoComplete="off"
             />
           </div>
           <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
+            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue) || extractPFPartyIdLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>
       </div>

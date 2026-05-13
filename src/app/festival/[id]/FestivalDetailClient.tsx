@@ -168,6 +168,9 @@ export default function FestivalDetail() {
   const isFF = id.startsWith('ff-')
   const ffSlug = isFF ? id.replace(/^ff-/, '') : null
   const ffExternalUrl = ffSlug ? `https://festivalfans.nl/event/${ffSlug}/` : null
+  const isPF = id.startsWith('pf-')
+  const pfPartyId = isPF ? id.replace(/^pf-/, '') : null
+  const pfExternalUrl = pfPartyId ? `https://partyflock.nl/party/${pfPartyId}` : null
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture
     ? (upcoming ? 'Going \u2713' : 'Mark as Going')
@@ -225,6 +228,11 @@ export default function FestivalDetail() {
             {ffExternalUrl && (
               <a href={ffExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
                 <Image src="/festivalfans-icon.png" alt="" width={14} height={14} /> View on FestivalFans ↗
+              </a>
+            )}
+            {pfExternalUrl && (
+              <a href={pfExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
+                <Image src="/partyflock-icon.png" alt="" width={14} height={14} /> View on Partyflock ↗
               </a>
             )}
           </div>

@@ -11,7 +11,7 @@
  */
 
 // Search
-export { searchFestivalsDB, searchRAEvents, searchFFEvents } from "./festival-search";
+export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents } from "./festival-search";
 
 // Data reads
 export { getFestival, getFullUserData } from "./festival-data";
@@ -40,6 +40,9 @@ export { reimportRAEvent, fetchRAEvent, fetchRAEventImageUrl } from "./festival-
 
 // FestivalFans import
 export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
+
+// Partyflock import
+export { reimportPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 
 // FestivalFans slug extraction (re-exported from service for backward compat)
 export { extractFFSlug } from "@/services/festivalfans/client";

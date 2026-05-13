@@ -35,6 +35,7 @@ function CheckIcon() {
 const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   ra: { label: 'RA', color: 'var(--text-muted)', bg: 'transparent' },
   festivalfans: { label: 'FestivalFans', color: 'var(--text-muted)', bg: 'transparent' },
+  partyflock: { label: 'Partyflock', color: 'var(--text-muted)', bg: 'transparent' },
   custom: { label: 'Custom', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' },
   external: { label: 'External', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(139,92,246,0.1))' },
 }
@@ -57,6 +58,14 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
     return (
       <span className="tag" style={badgeStyle}>
         <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} />
+      </span>
+    )
+  }
+
+  if (key === 'partyflock') {
+    return (
+      <span className="tag" style={badgeStyle}>
+        <Image src="/partyflock-icon.png" alt="Partyflock" width={14} height={14} />
       </span>
     )
   }
@@ -150,7 +159,7 @@ export default function FestivalCard({ event }: { event: any }) {
             🎪
           </div>
         )}
-        {(event._fromRA || event._fromFF) && (
+        {(event._fromRA || event._fromFF || event._fromPF) && (
           <div style={{ position: 'absolute', top: 8, right: 8 }}>
             <SourceBadge source={event.source} isFromDB={false} />
           </div>

@@ -12,74 +12,23 @@ export type FestivalPlaylistData = {
   tracksTotal: number;
 };
 
-const SIMILARITY_THRESHOLD = 0.75;
-const WORD_OVERLAP_RATIO = 0.7;
-const MIN_WORD_LENGTH = 2;
 const SEARCH_CANDIDATE_LIMIT = 5;
 
 /**
- * Compute normalized bigram Dice coefficient between two strings (0–1).
+ * Normalize a string for comparison: lowercase, remove special chars, trim.
  */
-function computeSimilarity(a: string, b: string): number {
-  const normalize = (s: string) =>
-    s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-
-  const na = normalize(a);
-  const nb = normalize(b);
-
-  if (na === nb) return 1;
-  if (na.length < 2 || nb.length < 2) return 0;
-
-  const buildBigrams = (s: string): Set<string> => {
-    const bigrams = new Set<string>();
-    for (let i = 0; i < s.length - 1; i++) bigrams.add(s.slice(i, i + 2));
-    return bigrams;
-  };
-
-  const bigramsA = buildBigrams(na);
-  const bigramsB = buildBigrams(nb);
-
-  let intersectionCount = 0;
-  bigramsA.forEach((bigram) => {
-    if (bigramsB.has(bigram)) intersectionCount++;
-  });
-
-  return (2 * intersectionCount) / (bigramsA.size + bigramsB.size);
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
 /**
- * Check that enough significant words from the festival name appear in the
- * playlist name. Prevents "Funk Tribu" matching "Funk Tribe Underground".
+ * Check if the playlist name contains the festival name (exact match).
+ * Simple and reliable - if the festival name appears in the playlist, it's a match.
  */
-function hasWordOverlap(playlistName: string, festivalName: string): boolean {
-  const normalize = (s: string) =>
-    s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-
-  const festivalWords = normalize(festivalName)
-    .split(/\s+/)
-    .filter((w) => w.length > MIN_WORD_LENGTH);
-
-  if (festivalWords.length === 0) return false;
-
-  const playlistNormalized = normalize(playlistName);
-  const matchCount = festivalWords.filter((w) =>
-    playlistNormalized.includes(w)
-  ).length;
-
-  return matchCount >= Math.ceil(festivalWords.length * WORD_OVERLAP_RATIO);
-}
-
-/**
- * Return true only when both similarity score and word overlap are confident.
- */
-function isConfidentMatch(
-  playlistName: string,
-  festivalName: string
-): boolean {
-  return (
-    computeSimilarity(playlistName, festivalName) >= SIMILARITY_THRESHOLD &&
-    hasWordOverlap(playlistName, festivalName)
-  );
+function isExactMatch(playlistName: string, festivalName: string): boolean {
+  const normalizedPlaylist = normalize(playlistName);
+  const normalizedFestival = normalize(festivalName);
+  return normalizedPlaylist.includes(normalizedFestival);
 }
 
 /**
@@ -96,21 +45,12 @@ function sanitizeFestivalName(name: string): string {
 }
 
 /**
- * Extract the most likely headliner from patterns like "Funk Tribu pres. TRIBE".
- */
-function extractHeadliner(festivalName: string): string | null {
-  const presMatch = festivalName.match(/^(.+?)\s+(?:pres\.?|presents)/i);
-  if (presMatch) return presMatch[1].trim();
-  return null;
-}
-
-/**
- * Find a Spotify playlist for a festival using a smart multi-step strategy:
+ * Find a Spotify playlist for a festival using a simple two-step strategy:
  *
- * 1. Search for the sanitized festival name — accept only confident matches
- *    (similarity ≥ 0.75 AND word overlap ≥ 70%).
- * 2. If no confident match, try "This is {headliner}" (passed or extracted).
- * 3. Return null if nothing confident is found — better no playlist than a wrong one.
+ * 1. Search for the sanitized festival name — accept if playlist name contains it.
+ * 2. If no match, fall back to "This is {headliner}" playlist.
+ *
+ * This simplified approach favors returning a playlist over being too strict.
  */
 export async function getFestivalPlaylist(
   festivalName: string,
@@ -121,31 +61,27 @@ export async function getFestivalPlaylist(
   try {
     const sanitizedName = sanitizeFestivalName(festivalName);
 
-    // Step 1: Search by sanitized festival name, require confident match
+    // Step 1: Search by sanitized festival name, accept if it contains the name
     const candidates = await spotifySearchPlaylist(
       sanitizedName,
       SEARCH_CANDIDATE_LIMIT
     );
 
-    const closeMatch = candidates.find((p) =>
-      isConfidentMatch(p.name, sanitizedName)
+    const exactMatch = candidates.find((p) =>
+      isExactMatch(p.name, sanitizedName)
     );
-    if (closeMatch) return closeMatch;
+    if (exactMatch) return exactMatch;
 
-    // Step 2: Try "This is {headliner}" — either passed explicitly or extracted
-    const resolvedHeadliner = headlinerName ?? extractHeadliner(festivalName);
-
-    if (resolvedHeadliner) {
-      const thisIsQuery = `This is ${resolvedHeadliner}`;
+    // Step 2: Always fall back to "This is {headliner}" if we have a headliner
+    if (headlinerName) {
+      const thisIsQuery = `This is ${headlinerName}`;
       const thisIsResults = await spotifySearchPlaylist(
         thisIsQuery,
         SEARCH_CANDIDATE_LIMIT
       );
 
-      const thisIsMatch = thisIsResults.find(
-        (p) =>
-          p.name.toLowerCase().startsWith("this is") &&
-          computeSimilarity(p.name, thisIsQuery) >= SIMILARITY_THRESHOLD
+      const thisIsMatch = thisIsResults.find((p) =>
+        p.name.toLowerCase().startsWith("this is")
       );
       if (thisIsMatch) return thisIsMatch;
     }

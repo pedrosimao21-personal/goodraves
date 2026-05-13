@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
-import { type RAUpcomingEvent } from '@/services/ra/client'
+import { type RAUpcomingEvent, getCountryFlag } from '@/services/ra/client'
 import StarRating from '@/components/StarRating'
 import { ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
 import { formatFollowers, formatPlaycount } from './format-counts'
@@ -54,6 +54,20 @@ export function ArtistHeader({
 
       <div className="artist-detail-info">
         <h1 className="artist-detail-name">{displayName}</h1>
+
+        {artist?.countryName && (
+          <div className="artist-country" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            marginTop: 4,
+            fontSize: '0.9rem',
+            color: 'var(--text-muted)',
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>{getCountryFlag(artist.countryCode)}</span>
+            <span>{artist.countryName}</span>
+          </div>
+        )}
 
         {mergedTags.length > 0 && (
           <div className="artist-detail-tags">

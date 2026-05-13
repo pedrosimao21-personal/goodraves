@@ -127,7 +127,7 @@ export default function Navbar() {
                     border: '1px solid var(--border)',
                     borderRadius: 12,
                     boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                    width: 160,
+                    width: 175,
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
@@ -139,6 +139,13 @@ export default function Navbar() {
                       style={{ padding: '12px 16px', color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', borderBottom: '1px solid var(--border)' }}
                     >
                       Go to Profile
+                    </Link>
+                    <Link 
+                      href="/insights" 
+                      onClick={() => setDropdownOpen(false)}
+                      style={{ padding: '12px 16px', color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
+                      <ChartIcon /> Your Insights
                     </Link>
                     <button 
                       onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: '/' }) }}

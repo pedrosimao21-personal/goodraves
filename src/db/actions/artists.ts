@@ -13,7 +13,7 @@ import {
   spotifySearchTrackPreview,
 } from "@/services/spotify/client";
 import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm/client";
-import { fetchRArtistEvents, type RAUpcomingEvent } from "@/services/ra/client";
+import { fetchRArtistEvents, fetchRArtistByName, type RAUpcomingEvent } from "@/services/ra/client";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
@@ -64,6 +64,9 @@ export type ArtistData = {
   // Resident Advisor
   raArtistId: string | null;
   raUpcomingEvents: RAUpcomingEvent[];
+  // Country (from RA)
+  countryCode: string | null;
+  countryName: string | null;
 };
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string };
@@ -96,6 +99,8 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     lastfmTopTracks: parseJson<LastfmTrack[]>(row.lastfmTopTracks, []),
     raArtistId: row.raArtistId ?? null,
     raUpcomingEvents: parseJson<RAUpcomingEvent[]>(row.raUpcomingEvents, []),
+    countryCode: row.countryCode ?? null,
+    countryName: row.countryName ?? null,
   };
 }
 
@@ -112,9 +117,10 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   const hasSpotifyTracks = typeof row.lastfmTopTracks === 'string' && row.lastfmTopTracks.includes('previewUrl');
   const needsSpotify = isStaleSpotify(row.spotifyFetchedAt) || row.spotifyAlbums === null || !hasSpotifyTracks;
   const needsRelatedArtists = row.spotifyId !== null && isStaleRelatedArtists(row.relatedArtistsFetchedAt);
-  const needsRAEvents = row.raArtistId !== null && isStaleRAEvents(row.raEventsFetchedAt);
+  // Fetch RA data if we don't have it yet OR if events are stale
+  const needsRAData = !row.raArtistId || isStaleRAEvents(row.raEventsFetchedAt);
 
-  if (!needsLastfm && !needsSpotify && !needsRelatedArtists && !needsRAEvents) {
+  if (!needsLastfm && !needsSpotify && !needsRelatedArtists && !needsRAData) {
     const data = await enrichWithSimilarImages(rowToArtistData(row));
     data.genres = await fetchArtistGenres(row.id);
     return data;
@@ -123,11 +129,12 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   const now = new Date();
 
   // Run all refreshes in parallel where needed
-  const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate, raEventsUpdate] = await Promise.all([
+  const [lastfmUpdate, spotifyUpdate, relatedArtistsUpdate, raDataUpdate] = await Promise.all([
     needsLastfm ? refreshLastfm(row.name) : Promise.resolve(null),
     needsSpotify ? refreshSpotify(row.name, row.spotifyId) : Promise.resolve(null),
     needsRelatedArtists ? refreshRelatedArtists(row.spotifyId!) : Promise.resolve(null),
-    needsRAEvents ? fetchRArtistEvents(row.raArtistId!).catch(() => null) : Promise.resolve(null),
+    // Use the new unified RA lookup that returns ID, country, AND events
+    needsRAData ? fetchRArtistByName(row.name).catch(() => null) : Promise.resolve(null),
   ]);
 
   const updateFields: Partial<typeof artists.$inferInsert> = {};
@@ -173,8 +180,16 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     updateFields.relatedArtistsFetchedAt = now;
   }
 
-  if (raEventsUpdate !== null) {
-    updateFields.raUpcomingEvents = JSON.stringify(raEventsUpdate);
+  // Update RA data (ID, country, events) from the unified lookup
+  if (raDataUpdate !== null) {
+    if (raDataUpdate.raArtistId) {
+      updateFields.raArtistId = raDataUpdate.raArtistId;
+    }
+    if (raDataUpdate.countryCode) {
+      updateFields.countryCode = raDataUpdate.countryCode;
+      updateFields.countryName = raDataUpdate.countryName;
+    }
+    updateFields.raUpcomingEvents = JSON.stringify(raDataUpdate.events);
     updateFields.raEventsFetchedAt = now;
   }
 

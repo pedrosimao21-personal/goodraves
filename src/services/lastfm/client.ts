@@ -128,3 +128,75 @@ export async function lastfmGetArtistTopTracks(name: string, limit = DEFAULT_TOP
     }))
     .sort((a: any, b: any) => b.playcount - a.playcount);
 }
+
+// ── Tag-based Discovery Functions ──────────────────────────────────────────
+
+export type TagTopArtist = {
+  name: string;
+  url: string | null;
+  image: string | null;
+};
+
+export type TagTopTrack = {
+  name: string;
+  artist: string;
+  url: string | null;
+  image: string | null;
+};
+
+/**
+ * Get the top artists tagged with a specific genre/tag.
+ * Uses the tag.gettopartists Last.fm endpoint.
+ */
+export async function lastfmGetTagTopArtists(
+  tag: string,
+  limit = 6
+): Promise<TagTopArtist[]> {
+  try {
+    const data = await call({
+      method: "tag.gettopartists",
+      tag,
+      limit,
+    });
+
+    return (data.topartists?.artist ?? []).map((a: any) => ({
+      name: a.name,
+      url: a.url ?? null,
+      image:
+        a.image?.find((i: any) => i.size === "large")?.["#text"] ||
+        a.image?.find((i: any) => i.size === "medium")?.["#text"] ||
+        null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get the top tracks tagged with a specific genre/tag.
+ * Uses the tag.gettoptracks Last.fm endpoint.
+ */
+export async function lastfmGetTagTopTracks(
+  tag: string,
+  limit = 6
+): Promise<TagTopTrack[]> {
+  try {
+    const data = await call({
+      method: "tag.gettoptracks",
+      tag,
+      limit,
+    });
+
+    return (data.toptracks?.track ?? []).map((t: any) => ({
+      name: t.name,
+      artist: t.artist?.name ?? "",
+      url: t.url ?? null,
+      image:
+        t.image?.find((i: any) => i.size === "medium")?.["#text"] ||
+        t.image?.find((i: any) => i.size === "small")?.["#text"] ||
+        null,
+    }));
+  } catch {
+    return [];
+  }
+}

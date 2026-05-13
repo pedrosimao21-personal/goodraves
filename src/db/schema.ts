@@ -66,6 +66,9 @@ export const artists = pgTable("artists", {
   raArtistId: text("ra_artist_id"),
   raUpcomingEvents: text("ra_upcoming_events"),   // JSON RAUpcomingEvent[]
   raEventsFetchedAt: timestamp("ra_events_fetched_at", { withTimezone: true }),
+  // Country (from RA)
+  countryCode: text("country_code"),    // ISO code, e.g. "BE", "DE", "UK"
+  countryName: text("country_name"),    // Full name, e.g. "Belgium", "Germany"
 }, (t) => [
   index("artists_spotify_followers_idx").on(t.spotifyFollowers),
 ]);

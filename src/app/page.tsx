@@ -6,6 +6,7 @@ import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getTrendingFestivals, type TrendingFestival } from '@/db/actions/trending-festivals'
 import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
+import GenreDiscoverySection from '@/components/GenreDiscoverySection'
 
 async function fetchTrendingFestivals(): Promise<{
   festivals: TrendingFestival[]
@@ -50,6 +51,10 @@ export default async function Home() {
         {festivals.length > 0 && (
           <TrendingFestivalsSection festivals={festivals} userCity={userCity} />
         )}
+
+        <Suspense fallback={<div className="skeleton" style={{ height: 300, borderRadius: 12 }} />}>
+          <GenreDiscoverySection />
+        </Suspense>
       </div>
     </div>
   )

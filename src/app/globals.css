@@ -2566,3 +2566,207 @@ img {
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* =============================================
+   GENRE DISCOVERY SECTION
+   ============================================= */
+.genre-discovery-section {
+  margin-top: 48px;
+  margin-bottom: 32px;
+}
+
+.genre-discovery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.genre-discovery-select {
+  padding: 8px 32px 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a89fcc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.genre-discovery-select:hover {
+  border-color: var(--border-hover);
+  background-color: var(--bg-card-hover);
+}
+
+.genre-discovery-select:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+.genre-discovery-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.genre-discovery-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.genre-discovery-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.genre-discovery-artists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+.genre-discovery-artist-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.genre-discovery-artist-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.genre-discovery-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.genre-discovery-avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.genre-discovery-artist-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.genre-discovery-tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.genre-discovery-track-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.genre-discovery-track-row:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.genre-discovery-track-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.genre-discovery-track-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.genre-discovery-track-artist {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.genre-discovery-empty {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+}
+
+.genre-discovery-loading {
+  min-height: 200px;
+}
+
+.genre-discovery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .genre-discovery-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .genre-discovery-select {
+    width: 100%;
+  }
+  
+  .genre-discovery-artists-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

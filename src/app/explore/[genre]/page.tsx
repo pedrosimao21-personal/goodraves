@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { getExploreData, getExploreSuggestedTags, EXPLORE_GENRE_OPTIONS } from '@/db/actions/explore'
+import { getExploreData, getExploreSuggestedTags } from '@/db/actions/explore'
+import { EXPLORE_GENRE_OPTIONS } from '@/constants/explore-genres'
 import ExplorePageClient from '@/components/ExplorePageClient'
 
 interface Props {

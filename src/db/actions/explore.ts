@@ -16,36 +16,13 @@ import {
   type TagTopAlbum,
   type TopTag,
 } from "@/services/lastfm/client";
+import { EXPLORE_GENRE_OPTIONS } from "@/constants/explore-genres";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const TOP_ARTISTS_LIMIT = 12;
 const TOP_TRACKS_LIMIT = 10;
 const TOP_ALBUMS_LIMIT = 12;
-
-/**
- * Electronic/dance music genres available in the Explore page.
- * Covers the main genres used in the festival/rave scene.
- */
-export const EXPLORE_GENRE_OPTIONS: { value: string; label: string }[] = [
-  { value: "techno", label: "Techno" },
-  { value: "house", label: "House" },
-  { value: "trance", label: "Trance" },
-  { value: "drum and bass", label: "Drum & Bass" },
-  { value: "ambient", label: "Ambient" },
-  { value: "melodic techno", label: "Melodic Techno" },
-  { value: "deep house", label: "Deep House" },
-  { value: "tech house", label: "Tech House" },
-  { value: "minimal", label: "Minimal" },
-  { value: "hardstyle", label: "Hardstyle" },
-  { value: "psytrance", label: "Psytrance" },
-  { value: "dubstep", label: "Dubstep" },
-  { value: "electro", label: "Electro" },
-  { value: "disco", label: "Disco" },
-  { value: "progressive house", label: "Progressive House" },
-  { value: "industrial", label: "Industrial" },
-  { value: "breakbeat", label: "Breakbeat" },
-];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

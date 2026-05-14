@@ -40,6 +40,11 @@ const TopDjsIcon = () => (
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>
 )
+const ExploreIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+  </svg>
+)
 const ChartIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -48,6 +53,7 @@ const ChartIcon = () => (
 
 const NAV_ITEMS = [
   { to: '/', label: 'Discover', icon: <DiscoverIcon />, end: true },
+  { to: '/explore', label: 'Explore', icon: <ExploreIcon />, end: false },
   { to: '/dashboard', label: 'My Festivals', icon: <MyFestivalsIcon />, end: false },
   { to: '/timeline', label: 'Timeline', icon: <TimelineIcon />, end: false },
   { to: '/top-djs', label: 'Top DJs', icon: <TopDjsIcon />, end: false },

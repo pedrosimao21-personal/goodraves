@@ -128,6 +128,113 @@ export async function lastfmGetArtistTopTracks(name: string, limit = DEFAULT_TOP
 
 // ── Tag-based Discovery Functions ──────────────────────────────────────────
 
+export type TagInfo = {
+  name: string;
+  url: string | null;
+  reach: number;
+  taggings: number;
+  wiki: string | null;
+};
+
+export type TagTopAlbum = {
+  name: string;
+  artist: string;
+  url: string | null;
+  image: string | null;
+};
+
+export type TopTag = {
+  name: string;
+  count: number;
+  url: string | null;
+};
+
+/**
+ * Get metadata for a tag including description/wiki and usage statistics.
+ * Uses the tag.getinfo Last.fm endpoint.
+ */
+export async function lastfmGetTagInfo(
+  tag: string,
+  lang = "en"
+): Promise<TagInfo | null> {
+  try {
+    const data = await call({ method: "tag.getinfo", tag, lang });
+    const t = data.tag;
+    if (!t) return null;
+
+    const rawWiki: string = t.wiki?.content ?? t.wiki?.summary ?? "";
+    const wiki = rawWiki
+      .replace(/<a href="[^"]*">Read more on Last\.fm<\/a>/gi, "")
+      .replace(/User-contributed text is available[^.]*\./gi, "")
+      .trim() || null;
+
+    return {
+      name: t.name ?? tag,
+      url: t.url ?? null,
+      reach: parseInt(t.reach, 10) || 0,
+      taggings: parseInt(t.taggings, 10) || 0,
+      wiki,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get the top albums tagged with a specific genre/tag.
+ * Uses the tag.gettopalbums Last.fm endpoint.
+ */
+export async function lastfmGetTagTopAlbums(
+  tag: string,
+  limit = 12
+): Promise<TagTopAlbum[]> {
+  try {
+    const data = await call({ method: "tag.gettopalbums", tag, limit });
+    return (data.topalbums?.album ?? []).map((a: any) => ({
+      name: a.name,
+      artist: a.artist?.name ?? "",
+      url: a.url ?? null,
+      image:
+        a.image?.find((i: any) => i.size === "large")?.["#text"] ||
+        a.image?.find((i: any) => i.size === "medium")?.["#text"] ||
+        null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get the top global tags on Last.fm sorted by popularity.
+ * Uses the tag.getTopTags Last.fm endpoint.
+ */
+export async function lastfmGetTopTags(): Promise<TopTag[]> {
+  try {
+    const data = await call({ method: "tag.getTopTags" });
+    return (data.toptags?.tag ?? []).map((t: any) => ({
+      name: t.name,
+      count: parseInt(t.count, 10) || 0,
+      url: t.url ? `https://www.last.fm/tag/${encodeURIComponent(t.name)}` : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get tags similar to the given tag.
+ * Uses the tag.getSimilar Last.fm endpoint.
+ * Note: this endpoint often returns empty results for many tags.
+ */
+export async function lastfmGetSimilarTags(tag: string): Promise<string[]> {
+  try {
+    const data = await call({ method: "tag.getsimilar", tag });
+    return (data.similartags?.tag ?? []).map((t: any) => t.name as string);
+  } catch {
+    return [];
+  }
+}
+
 export type TagTopArtist = {
   name: string;
   url: string | null;

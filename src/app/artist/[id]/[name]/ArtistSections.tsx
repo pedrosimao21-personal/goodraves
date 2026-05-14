@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
 import { type RAUpcomingEvent } from '@/services/ra/client'
@@ -14,7 +13,6 @@ import { MAX_NOTES_LENGTH } from '@/lib/constants'
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string }
 type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number; previewUrl?: string | null }
-type RelatedArtist = { id: string; name: string; image: string | null; followers: number }
 
 export function ArtistHeader({
   displayImage,
@@ -57,15 +55,8 @@ export function ArtistHeader({
         <h1 className="artist-detail-name">{displayName}</h1>
 
         {artist?.countryName && (
-          <div className="artist-country" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            marginTop: 4,
-            fontSize: '0.9rem',
-            color: 'var(--text-muted)',
-          }}>
-            <span style={{ fontSize: '1.1rem' }}>{getCountryFlag(artist.countryCode)}</span>
+          <div className="artist-country">
+            <span className="emoji">{getCountryFlag(artist.countryCode)}</span>
             <span>{artist.countryName}</span>
           </div>
         )}
@@ -393,61 +384,4 @@ export function UpcomingShowsList({
   )
 }
 
-export function SpotifyRelatedArtists({
-  artists,
-  currentArtistName,
-}: {
-  artists: RelatedArtist[]
-  currentArtistName: string
-}) {
-  if (!artists.length) return null
-  return (
-    <div style={{ marginBottom: 40 }}>
-      <h2 className="section-title" style={{ marginBottom: 16 }}>
-        If you like {currentArtistName}
-        <span className="spotify-badge-inline"><SpotifyIcon size={13} /></span>
-      </h2>
-      <div className="related-artists-grid">
-        {artists.map(artist => (
-          <Link
-            key={artist.id}
-            href={`https://open.spotify.com/artist/${artist.id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="related-artist-card"
-            style={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            <div className="related-artist-img-wrap">
-              {artist.image ? (
-                <Image
-                  src={artist.image}
-                  alt={artist.name}
-                  width={72}
-                  height={72}
-                  quality={80}
-                  sizes="72px"
-                  style={{ objectFit: 'cover', borderRadius: '50%' }}
-                />
-              ) : (
-                <div style={{
-                  width: 72, height: 72, borderRadius: '50%',
-                  background: 'var(--gradient-card)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.6rem',
-                }}>🎤</div>
-              )}
-            </div>
-            <span className="related-artist-name" style={{ fontSize: '0.82rem', textAlign: 'center', marginTop: 6, fontWeight: 500 }}>
-              {artist.name}
-            </span>
-            {artist.followers > 0 && (
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                {formatFollowers(artist.followers)}
-              </span>
-            )}
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}
+

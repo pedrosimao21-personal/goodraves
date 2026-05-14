@@ -6,7 +6,7 @@ import { getArtistData, getOrCreateArtistByName, type ArtistData } from '@/db/ac
 import { useUserData } from '@/context/UserDataContext'
 import { BackIcon } from '@/components/icons'
 import { SimilarArtistCard } from './SimilarArtistCard'
-import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList, SpotifyRelatedArtists } from './ArtistSections'
+import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList } from './ArtistSections'
 
 const MAX_TAGS = 8
 
@@ -190,13 +190,6 @@ export default function ArtistDetail() {
             artistName={displayName}
             raArtistId={artist?.raArtistId ?? null}
             events={artist?.raUpcomingEvents ?? []}
-          />
-        )}
-
-        {(artist?.relatedArtists?.length ?? 0) > 0 && !loading && (
-          <SpotifyRelatedArtists
-            artists={artist!.relatedArtists}
-            currentArtistName={displayName}
           />
         )}
 

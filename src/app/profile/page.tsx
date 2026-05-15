@@ -40,17 +40,8 @@ export default function ProfilePage() {
   const [isSavingLocation, setIsSavingLocation] = useState(false)
   const [isSavingGenres, setIsSavingGenres] = useState(false)
 
-  const [nearbyShows, setNearbyShows] = useState<any[]>([])
-  const [nearbyLoading, setNearbyLoading] = useState(false)
   const [tailoredShows, setTailoredShows] = useState<any[]>([])
   const [tailoredLoading, setTailoredLoading] = useState(false)
-
-  const loadNearbyShows = useCallback((city: string) => {
-    setNearbyLoading(true)
-    searchFestivalsDB(city)
-      .then(res => { setNearbyShows(res.slice(0, 5)); setNearbyLoading(false) })
-      .catch(() => setNearbyLoading(false))
-  }, [])
 
   const loadTailoredShows = useCallback((genres: string) => {
     const firstGenre = genres.split(',')[0].trim()
@@ -81,11 +72,9 @@ export default function ProfilePage() {
           localStorage.removeItem('user_location')
           setLocationInput(localCity)
           setLocationSaved(localCity)
-          if (localCity) loadNearbyShows(localCity)
         } else {
           setLocationInput(city)
           setLocationSaved(city)
-          if (city) loadNearbyShows(city)
         }
 
         if (!genres && localGenres) {
@@ -109,17 +98,15 @@ export default function ProfilePage() {
         setLocationSaved(city)
         setGenreInput(genres)
         setGenresSaved(genres)
-        if (city) loadNearbyShows(city)
         if (genres) loadTailoredShows(genres)
       })
-  }, [status, loadNearbyShows, loadTailoredShows])
+  }, [status, loadTailoredShows])
 
   const saveLocation = async () => {
     setIsSavingLocation(true)
     try {
       await updateUserProfile({ city: locationInput })
       setLocationSaved(locationInput)
-      if (locationInput) loadNearbyShows(locationInput)
     } catch {
       // Optimistically update even if save fails
       setLocationSaved(locationInput)
@@ -181,7 +168,7 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', marginBottom: 8, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Location <span style={{ fontWeight: 400 }}>(for Nearby Shows)</span>
+                  Location <span style={{ fontWeight: 400 }}>(used on the Explore page for Nearby Shows)</span>
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -242,29 +229,6 @@ export default function ProfilePage() {
               </p>
             </div>
           </Link>
-        </div>
-
-        <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Nearby Shows</h2>
-        <div style={{ marginBottom: 32 }}>
-          {nearbyLoading ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>Searching for shows near {locationSaved}...</div>
-          ) : nearbyShows.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {nearbyShows.map(fest => <FestivalRow key={fest.id} fest={fest} />)}
-            </div>
-          ) : locationSaved ? (
-            <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              No upcoming shows found near <b>{locationSaved}</b> in our database.
-            </div>
-          ) : (
-            <div style={{ padding: 32, background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border)', textAlign: 'center' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>📍</div>
-              <h3 style={{ margin: '0 0 8px 0' }}>Shows near your location</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: 400, margin: '0 auto 16px auto' }}>
-                Save your city above to find upcoming raves and festivals near you.
-              </p>
-            </div>
-          )}
         </div>
 
         <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Tailored for You</h2>

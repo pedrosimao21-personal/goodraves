@@ -10,6 +10,7 @@ import {
   lastfmGetTagTopAlbums,
   lastfmGetTopTags,
   lastfmGetSimilarTags,
+  lastfmGetArtistStats,
   type TagInfo,
   type TagTopArtist,
   type TagTopTrack,
@@ -23,12 +24,15 @@ import { EXPLORE_GENRE_OPTIONS } from "@/constants/explore-genres";
 const TOP_ARTISTS_LIMIT = 12;
 const TOP_TRACKS_LIMIT = 10;
 const TOP_ALBUMS_LIMIT = 12;
+const LISTENER_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type ArtistWithLink = TagTopArtist & {
   /** Goodraves DB id — present when the artist exists in our database */
   goodravesId: string | null;
+  /** Last.fm listener count — used for popularity ranking */
+  listeners: number;
 };
 
 export type ExploreData = {
@@ -40,6 +44,32 @@ export type ExploreData = {
   albums: TagTopAlbum[];
   similarTags: string[];
 };
+
+// ── In-memory listener cache ───────────────────────────────────────────────
+
+type ListenerCacheEntry = {
+  listeners: number;
+  expiresAt: number;
+};
+
+const listenerCache = new Map<string, ListenerCacheEntry>();
+
+function getCachedListeners(artistName: string): number | null {
+  const entry = listenerCache.get(artistName.toLowerCase());
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    listenerCache.delete(artistName.toLowerCase());
+    return null;
+  }
+  return entry.listeners;
+}
+
+function setCachedListeners(artistName: string, listeners: number): void {
+  listenerCache.set(artistName.toLowerCase(), {
+    listeners,
+    expiresAt: Date.now() + LISTENER_CACHE_TTL_MS,
+  });
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -89,12 +119,48 @@ async function lookupArtistIds(
   }
 }
 
+/**
+ * Fetch listener counts for all artists in parallel.
+ * Uses in-memory cache to avoid redundant API calls within a 5-minute window.
+ * Artists with no cached data are fetched concurrently.
+ */
+async function enrichArtistsWithListeners(
+  rawArtists: TagTopArtist[]
+): Promise<Map<string, number>> {
+  const listenersByName = new Map<string, number>();
+
+  const uncachedArtists = rawArtists.filter((artist) => {
+    const cached = getCachedListeners(artist.name);
+    if (cached !== null) {
+      listenersByName.set(artist.name.toLowerCase(), cached);
+      return false;
+    }
+    return true;
+  });
+
+  if (uncachedArtists.length > 0) {
+    const statsResults = await Promise.all(
+      uncachedArtists.map((artist) => lastfmGetArtistStats(artist.name))
+    );
+
+    for (let i = 0; i < uncachedArtists.length; i++) {
+      const artist = uncachedArtists[i];
+      const stats = statsResults[i];
+      const listeners = stats?.listeners ?? 0;
+      listenersByName.set(artist.name.toLowerCase(), listeners);
+      setCachedListeners(artist.name, listeners);
+    }
+  }
+
+  return listenersByName;
+}
+
 // ── Public API ─────────────────────────────────────────────────────────────
 
 /**
  * Fetch all data needed to render the Explore page for a given genre.
- * Runs all Last.fm requests in parallel, then enriches artists with
- * Goodraves DB ids in a single batched query.
+ * Runs all Last.fm requests in parallel, enriches artists with listener
+ * counts (sorted by popularity), and resolves Goodraves DB ids.
  */
 export async function getExploreData(genre: string): Promise<ExploreData> {
   const normalizedGenre = genre.toLowerCase().trim();
@@ -108,13 +174,18 @@ export async function getExploreData(genre: string): Promise<ExploreData> {
     lastfmGetSimilarTags(normalizedGenre),
   ]);
 
-  const artistNames = rawArtists.map((a) => a.name);
-  const idByName = await lookupArtistIds(artistNames);
+  const [idByName, listenersByName] = await Promise.all([
+    lookupArtistIds(rawArtists.map((a) => a.name)),
+    enrichArtistsWithListeners(rawArtists),
+  ]);
 
-  const enrichedArtists: ArtistWithLink[] = rawArtists.map((artist) => ({
-    ...artist,
-    goodravesId: idByName.get(artist.name.toLowerCase()) ?? null,
-  }));
+  const enrichedArtists: ArtistWithLink[] = rawArtists
+    .map((artist) => ({
+      ...artist,
+      goodravesId: idByName.get(artist.name.toLowerCase()) ?? null,
+      listeners: listenersByName.get(artist.name.toLowerCase()) ?? 0,
+    }))
+    .sort((a, b) => b.listeners - a.listeners);
 
   return {
     genre: normalizedGenre,

@@ -190,7 +190,7 @@ export async function lastfmGetTagTopAlbums(
 ): Promise<TagTopAlbum[]> {
   try {
     const data = await call({ method: "tag.gettopalbums", tag, limit });
-    return (data.topalbums?.album ?? []).map((a: any) => ({
+    return (data.albums?.album ?? []).map((a: any) => ({
       name: a.name,
       artist: a.artist?.name ?? "",
       url: a.url ?? null,
@@ -239,7 +239,32 @@ export type TagTopArtist = {
   name: string;
   url: string | null;
   image: string | null;
+  listeners?: number;
 };
+
+/**
+ * Get listener and playcount stats for a single artist.
+ * Used to enrich tag-based artist lists with popularity data.
+ */
+export async function lastfmGetArtistStats(
+  name: string
+): Promise<{ listeners: number; playcount: number } | null> {
+  try {
+    const data = await call({
+      method: "artist.getinfo",
+      artist: name,
+      autocorrect: 1,
+    });
+    const stats = data.artist?.stats;
+    if (!stats) return null;
+    return {
+      listeners: parseInt(stats.listeners, 10) || 0,
+      playcount: parseInt(stats.playcount, 10) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export type TagTopTrack = {
   name: string;
@@ -291,7 +316,7 @@ export async function lastfmGetTagTopTracks(
       limit,
     });
 
-    return (data.toptracks?.track ?? []).map((t: any) => ({
+    return (data.tracks?.track ?? []).map((t: any) => ({
       name: t.name,
       artist: t.artist?.name ?? "",
       url: t.url ?? null,

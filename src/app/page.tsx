@@ -1,40 +1,7 @@
 import { Suspense } from 'react'
 import SearchSection from '@/components/SearchSection'
-import { auth } from '@/../auth'
-import { db } from '@/db'
-import { users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
-import { getTrendingFestivals, type TrendingFestival } from '@/db/actions/trending-festivals'
-import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
-import GenreDiscoverySection from '@/components/GenreDiscoverySection'
 
-async function fetchTrendingFestivals(): Promise<{
-  festivals: TrendingFestival[]
-  userCity: string | null
-}> {
-  try {
-    const session = await auth()
-    let userCity: string | null = null
-
-    if (session?.user?.id) {
-      const [row] = await db
-        .select({ city: users.city })
-        .from(users)
-        .where(eq(users.id, session.user.id))
-        .limit(1)
-      userCity = row?.city ?? null
-    }
-
-    const festivals = await getTrendingFestivals(userCity, null, 6)
-    return { festivals, userCity }
-  } catch {
-    return { festivals: [], userCity: null }
-  }
-}
-
-export default async function Home() {
-  const { festivals, userCity } = await fetchTrendingFestivals()
-
+export default function Home() {
   return (
     <div className="page">
       <div className="hero">
@@ -46,14 +13,6 @@ export default async function Home() {
       <div className="container">
         <Suspense fallback={<div className="skeleton skeleton-card" style={{ height: 200 }} />}>
           <SearchSection />
-        </Suspense>
-
-        {festivals.length > 0 && (
-          <TrendingFestivalsSection festivals={festivals} userCity={userCity} />
-        )}
-
-        <Suspense fallback={<div className="skeleton" style={{ height: 300, borderRadius: 12 }} />}>
-          <GenreDiscoverySection />
         </Suspense>
       </div>
     </div>

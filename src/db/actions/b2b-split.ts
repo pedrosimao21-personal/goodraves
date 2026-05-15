@@ -9,7 +9,7 @@ import {
   festivalB2bSetMembers,
   userFestivalArtistRatings,
 } from "@/db/schema";
-import { requireAuth, validateRating } from "./festival-helpers";
+import { requireAuth, requireAdmin, validateRating } from "./festival-helpers";
 import { revalidatePath } from "next/cache";
 
 const MIN_MEMBER_COUNT = 2;
@@ -31,8 +31,7 @@ export async function splitB2bArtist(
   originalArtistId: string,
   memberNames: string[]
 ): Promise<B2bSetWithMembers> {
-  await requireAuth();
-
+  await requireAdmin();
   const trimmedNames = memberNames.map((n) => n.trim()).filter(Boolean);
   if (trimmedNames.length < MIN_MEMBER_COUNT) {
     throw new Error(`At least ${MIN_MEMBER_COUNT} artist names are required`);

@@ -10,7 +10,7 @@ import {
   userArtistGlobal,
   artistGenres,
 } from "@/db/schema";
-import { requireAuth } from "./festival-helpers";
+import { requireAdmin } from "./festival-helpers";
 import { revalidatePath } from "next/cache";
 
 // ── Types ─────────────────────────────────────────────────
@@ -28,7 +28,7 @@ export async function renameArtist(
   oldArtistId: string,
   newName: string
 ): Promise<RenameResult> {
-  await requireAuth();
+  await requireAdmin();
 
   const trimmed = newName.trim();
   if (trimmed.length === 0) {

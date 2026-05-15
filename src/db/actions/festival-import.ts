@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
 import {
   requireAuth,
+  requireAdmin,
   ensureArtistsAndGetIds,
   findExistingFestivalByNameDate,
   MAX_FESTIVAL_NAME_LENGTH,
@@ -91,7 +92,7 @@ export async function batchImportFestivals(
     lineup?: string[];
   }>
 ) {
-  await requireAuth();
+  await requireAdmin();
 
   for (let i = 0; i < events.length; i += BATCH_CHUNK_SIZE) {
     const chunk = events.slice(i, i + BATCH_CHUNK_SIZE);

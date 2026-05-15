@@ -53,6 +53,7 @@ export interface UserDataContextType {
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
   loaded: boolean
+  isAdmin: boolean
   // Mutations
   toggleFestival: (eventId: string, meta?: any) => Promise<void>
   toggleSawArtist: (eventId: string, artistId: string, artistMeta?: any) => Promise<void>

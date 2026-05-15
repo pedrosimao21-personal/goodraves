@@ -22,7 +22,7 @@ const ArtistCard = memo(function ArtistCard({
   spotifyData?: any
   isPast?: boolean
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist } = useUserData()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, isAdmin } = useUserData()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
   const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
@@ -97,14 +97,16 @@ const ArtistCard = memo(function ArtistCard({
           </div>
         )}
 
-        {/* Options button — visible on card hover only */}
-        <button
-          className="artist-card-options-btn"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuState('options') }}
-          title="Options"
-        >
-          &#8943;
-        </button>
+        {/* Options button — visible on card hover only, admin-only */}
+        {isAdmin && (
+          <button
+            className="artist-card-options-btn"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuState('options') }}
+            title="Options"
+          >
+            &#8943;
+          </button>
+        )}
       </div>
 
       {menuState === 'options' && (

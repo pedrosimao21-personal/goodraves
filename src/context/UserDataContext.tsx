@@ -22,6 +22,7 @@ import {
   getB2bSetsForFestival,
 } from '@/db/actions/festivals'
 import { renameArtist as renameArtistAction } from '@/db/actions/artist-rename'
+import { ADMIN_USERNAMES } from '@/lib/constants'
 
 import { isFestivalPast } from '@/lib/festival-date'
 import type { InitialUserData } from '@/db/actions/get-initial-data'
@@ -38,6 +39,8 @@ interface UserDataProviderProps {
 export function UserDataProvider({ children, initialData }: UserDataProviderProps) {
   const { data: session, status } = useSession()
   const userId = (session?.user as any)?.id as string | undefined
+  const username = (session?.user as any)?.name as string | undefined
+  const isAdmin = Boolean(username && ADMIN_USERNAMES.includes(username))
   const { promptAuth } = useAuthPrompt()
   const hasInitialData = initialData != null
   const [state, setState] = useState<UserDataState>(() =>
@@ -265,6 +268,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   const addCustomFestival = useCallback(async (meta: any, lineup: any[] = []) => {
     if (!userId) { promptAuth(); return '' }
+    if (!isAdmin) { return '' }
     const id = 'custom-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7)
     const enrichedMeta = { ...meta, lineup: lineup.map((a: any) => a.name) }
 
@@ -306,11 +310,11 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   }, [userId])
 
   const updateFestivalMeta = useCallback((id: string, meta: any) => {
+    if (!userId || !isAdmin) return
     setState(prev => {
       const base = prev.festivalMeta[id] ?? {}
       return { ...prev, festivalMeta: { ...prev.festivalMeta, [id]: { ...base, ...meta } } }
     })
-    if (!userId) return
     const venueObj = typeof meta.venue === 'object' ? meta.venue : null
     const venueName = venueObj?.name ?? (typeof meta.venue === 'string' ? meta.venue : null)
     const city = venueObj?.city ?? (typeof meta.location === 'string' ? meta.location : null)
@@ -334,6 +338,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const contextValue = useMemo(() => ({
     ...state,
     loaded,
+    isAdmin,
     toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     ...readers,
@@ -341,7 +346,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
     splitB2bArtist, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
-    state, loaded,
+    state, loaded, isAdmin,
     toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     readers,

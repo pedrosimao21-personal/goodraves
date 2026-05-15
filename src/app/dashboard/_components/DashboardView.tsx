@@ -25,7 +25,7 @@ function getTabFromHash(): ActiveTab {
 export default function DashboardView() {
   const {
     attendedFestivals, upcomingFestivals, seenArtists, festivalRatings,
-    toggleFestival, clearFestivals, getFestivalMeta, loaded,
+    toggleFestival, clearFestivals, getFestivalMeta, loaded, isAdmin,
   } = useUserData()
   const { promptAuth } = useAuthPrompt()
   const { data: session } = useSession()
@@ -148,7 +148,7 @@ export default function DashboardView() {
           >
             Timeline
           </button>
-          {activeTab !== 'timeline' && (
+          {activeTab !== 'timeline' && isAdmin && (
             <div style={{ marginLeft: 'auto' }}>
               <button
                 className="btn btn-secondary btn-sm"
@@ -210,7 +210,7 @@ export default function DashboardView() {
                   eventId={id}
                   onRemove={removeHandler}
                   isUpcomingTab={activeTab === 'upcoming'}
-                  onEdit={setEditingId}
+                  onEdit={isAdmin ? setEditingId : undefined}
                 />
               ))}
             </div>

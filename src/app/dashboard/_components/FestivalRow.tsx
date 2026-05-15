@@ -16,7 +16,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   eventId: string
   onRemove: (id: string) => void
   isUpcomingTab: boolean
-  onEdit: (id: string) => void
+  onEdit?: (id: string) => void
 }) => {
   const { getSeenCount, getFestivalMeta } = useUserData()
 
@@ -34,7 +34,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   const handleEdit = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    onEdit(eventId)
+    onEdit?.(eventId)
   }, [eventId, onEdit])
 
   return (
@@ -84,14 +84,16 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         </div>
       )}
 
-      <button
-        className="btn-ghost"
-        onClick={handleEdit}
-        title="Edit festival details"
-        style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
-      >
-        &#9998;
-      </button>
+      {onEdit && (
+        <button
+          className="btn-ghost"
+          onClick={handleEdit}
+          title="Edit festival details"
+          style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
+        >
+          &#9998;
+        </button>
+      )}
 
       <button
         className="btn-ghost"

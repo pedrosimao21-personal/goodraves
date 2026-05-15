@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers } from "@/db/schema";
 import { auth } from "../../../auth";
-import { MIN_RATING, MAX_RATING } from "@/lib/constants";
+import { MIN_RATING, MAX_RATING, ADMIN_USERNAMES } from "@/lib/constants";
 import { type B2bLineupEntry } from "@/services/lineup-types";
 
 // Re-export shared constants so existing server-side imports keep working
@@ -21,6 +21,20 @@ export async function requireAuth(): Promise<string> {
   const userId = (session?.user as any)?.id as string | undefined;
   if (!userId) {
     throw new Error("Unauthorized");
+  }
+  return userId;
+}
+
+/** Verify the session and return the authenticated userId. Throws if not an admin user. */
+export async function requireAdmin(): Promise<string> {
+  const session = await auth();
+  const userId = (session?.user as any)?.id as string | undefined;
+  const username = (session?.user as any)?.name as string | undefined;
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+  if (!username || !ADMIN_USERNAMES.includes(username)) {
+    throw new Error("Forbidden");
   }
   return userId;
 }

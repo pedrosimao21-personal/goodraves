@@ -1,10 +1,8 @@
 'use client'
 
 import { memo, useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
-import StarRating from './StarRating'
 import type { B2bSetData } from '@/context/user-data-state'
 
 const STARS = [1, 2, 3, 4, 5]
@@ -17,11 +15,10 @@ interface B2bSetCardProps {
 }
 
 const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPast }: B2bSetCardProps) {
-  const { getB2bSetRating, rateB2bSet } = useUserData()
-  const currentRating = getB2bSetRating(b2bSet.id)
-  const displayLabel = b2bSet.members.map(m => m.artistName).join(' b2b ')
+  const { getPerformanceRating, rateB2bSet } = useUserData()
+  const firstMember = b2bSet.members[0]
+  const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
   const [isRatingVisible, setIsRatingVisible] = useState(false)
-  const [showMembers, setShowMembers] = useState(false)
   const [hover, setHover] = useState(0)
   const hasRating = currentRating > 0
 
@@ -119,52 +116,22 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
       {isPast && (
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {hasRating || isRatingVisible ? (
-            <>
-              <div className="star-rating" role="group" aria-label="B2B set rating">
-                {STARS.map(star => (
-                  <span
-                    key={star}
-                    className={`star ${(hover || currentRating) >= star ? 'filled' : ''}`}
-                    style={{ fontSize: '1.3rem' }}
-                    onClick={() => handleSetRating(star)}
-                    onMouseEnter={() => setHover(star)}
-                    onMouseLeave={() => setHover(0)}
-                    role="button"
-                    aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setShowMembers(!showMembers)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--text-muted)', fontSize: '0.75rem',
-                  padding: '4px 0', marginTop: 4,
-                  textDecoration: 'underline',
-                }}
-              >
-                {showMembers ? 'Hide individual ratings' : 'Rate individually'}
-              </button>
-
-              {showMembers && (
-                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {b2bSet.members.map(member => (
-                    <div key={member.artistId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Link
-                        href={`/artist/${member.artistId}/${encodeURIComponent(member.artistName)}`}
-                        style={{ fontSize: '0.82rem', color: 'var(--text-primary)', textDecoration: 'none', minWidth: 80 }}
-                      >
-                        {member.artistName}
-                      </Link>
-                      <StarRating artistId={member.artistId} eventId={eventId} readonly={false} size="sm" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+            <div className="star-rating" role="group" aria-label="B2B set rating">
+              {STARS.map(star => (
+                <span
+                  key={star}
+                  className={`star ${(hover || currentRating) >= star ? 'filled' : ''}`}
+                  style={{ fontSize: '1.3rem' }}
+                  onClick={() => handleSetRating(star)}
+                  onMouseEnter={() => setHover(star)}
+                  onMouseLeave={() => setHover(0)}
+                  role="button"
+                  aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
           ) : (
             <button
               className="mark-seen-btn"

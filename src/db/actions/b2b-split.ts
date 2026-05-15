@@ -8,7 +8,6 @@ import {
   festivalB2bSets,
   festivalB2bSetMembers,
   userFestivalArtistRatings,
-  userFestivalB2bSetRatings,
 } from "@/db/schema";
 import { requireAuth, validateRating } from "./festival-helpers";
 import { revalidatePath } from "next/cache";
@@ -88,8 +87,8 @@ export async function splitB2bArtist(
     .values(lineupInserts)
     .onConflictDoNothing();
 
-  // Migrate existing performance ratings from the compound artist to a B2B set rating
-  await migrateRatingsToB2bSet(festivalId, originalArtistId, b2bSet.id);
+  // Migrate existing performance ratings from the compound artist to each member
+  await migrateRatingsToMembers(festivalId, originalArtistId, memberArtists);
 
   // Remove the compound artist from the festival lineup
   await db
@@ -118,31 +117,63 @@ export async function splitB2bArtist(
   };
 }
 
-// ── Rate a B2B set ────────────────────────────────────────
+// ── Rate a B2B set (propagates to all members) ───────────
 
 export async function rateB2bSet(b2bSetId: string, rating: number) {
   const userId = await requireAuth();
 
+  // Look up the B2B set's festival and member artist IDs
+  const [b2bSet] = await db
+    .select({ festivalId: festivalB2bSets.festivalId })
+    .from(festivalB2bSets)
+    .where(eq(festivalB2bSets.id, b2bSetId))
+    .limit(1);
+
+  if (!b2bSet) {
+    throw new Error("B2B set not found");
+  }
+
+  const members = await db
+    .select({ artistId: festivalB2bSetMembers.artistId })
+    .from(festivalB2bSetMembers)
+    .where(eq(festivalB2bSetMembers.b2bSetId, b2bSetId));
+
+  const memberArtistIds = members.map((m) => m.artistId);
+
   if (rating === 0) {
     await db
-      .delete(userFestivalB2bSetRatings)
+      .delete(userFestivalArtistRatings)
       .where(
         and(
-          eq(userFestivalB2bSetRatings.userId, userId),
-          eq(userFestivalB2bSetRatings.b2bSetId, b2bSetId)
+          eq(userFestivalArtistRatings.userId, userId),
+          eq(userFestivalArtistRatings.festivalId, b2bSet.festivalId),
+          inArray(userFestivalArtistRatings.artistId, memberArtistIds)
         )
       );
     return;
   }
 
   const validRating = validateRating(rating);
-  await db
-    .insert(userFestivalB2bSetRatings)
-    .values({ userId, b2bSetId, rating: validRating })
-    .onConflictDoUpdate({
-      target: [userFestivalB2bSetRatings.userId, userFestivalB2bSetRatings.b2bSetId],
-      set: { rating: validRating },
-    });
+  const ratingInserts = memberArtistIds.map((artistId) => ({
+    userId,
+    festivalId: b2bSet.festivalId,
+    artistId,
+    rating: validRating,
+  }));
+
+  for (const insert of ratingInserts) {
+    await db
+      .insert(userFestivalArtistRatings)
+      .values(insert)
+      .onConflictDoUpdate({
+        target: [
+          userFestivalArtistRatings.userId,
+          userFestivalArtistRatings.festivalId,
+          userFestivalArtistRatings.artistId,
+        ],
+        set: { rating: validRating },
+      });
+  }
 }
 
 // ── Get B2B sets for a festival ───────────────────────────
@@ -182,26 +213,6 @@ export async function getB2bSetsForFestival(
     originalArtistName: s.originalArtistName,
     members: (membersBySet.get(s.id) ?? []).sort((a, b) => a.position - b.position),
   }));
-}
-
-// ── Get B2B set ratings for the current user ──────────────
-
-export async function getUserB2bSetRatings(): Promise<Record<string, number>> {
-  const userId = await requireAuth();
-
-  const rows = await db
-    .select({
-      b2bSetId: userFestivalB2bSetRatings.b2bSetId,
-      rating: userFestivalB2bSetRatings.rating,
-    })
-    .from(userFestivalB2bSetRatings)
-    .where(eq(userFestivalB2bSetRatings.userId, userId));
-
-  const ratings: Record<string, number> = {};
-  for (const row of rows) {
-    if (row.rating) ratings[row.b2bSetId] = row.rating;
-  }
-  return ratings;
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -254,13 +265,13 @@ async function ensureMemberArtists(
 }
 
 /**
- * Move performance ratings from the compound artist to a B2B set rating.
- * Each user who rated the compound artist gets that rating on the set.
+ * Move performance ratings from the compound artist to each B2B member.
+ * Each user who rated the compound artist gets that rating on every member.
  */
-async function migrateRatingsToB2bSet(
+async function migrateRatingsToMembers(
   festivalId: string,
   originalArtistId: string,
-  b2bSetId: string
+  memberArtists: { id: string; name: string }[]
 ) {
   const existingRatings = await db
     .select({
@@ -279,15 +290,18 @@ async function migrateRatingsToB2bSet(
 
   const ratingInserts = existingRatings
     .filter((r) => r.rating !== null)
-    .map((r) => ({
-      userId: r.userId,
-      b2bSetId,
-      rating: r.rating,
-    }));
+    .flatMap((r) =>
+      memberArtists.map((member) => ({
+        userId: r.userId,
+        festivalId,
+        artistId: member.id,
+        rating: r.rating,
+      }))
+    );
 
   if (ratingInserts.length > 0) {
     await db
-      .insert(userFestivalB2bSetRatings)
+      .insert(userFestivalArtistRatings)
       .values(ratingInserts)
       .onConflictDoNothing();
   }

@@ -191,20 +191,6 @@ export const festivalB2bSetMembers = pgTable(
   ]
 );
 
-export const userFestivalB2bSetRatings = pgTable(
-  "user_festival_b2b_set_ratings",
-  {
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    b2bSetId: uuid("b2b_set_id")
-      .notNull()
-      .references(() => festivalB2bSets.id, { onDelete: "cascade" }),
-    rating: integer("rating"),
-  },
-  (t) => [primaryKey({ columns: [t.userId, t.b2bSetId] })]
-);
-
 // ── User Artist Global (overall artist ratings & notes) ─
 export const userArtistGlobal = pgTable(
   "user_artist_global",

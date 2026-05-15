@@ -36,7 +36,6 @@ export interface UserDataState {
   festivalNotes: Record<string, string>
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
-  b2bSetRatings: Record<string, number>
 }
 
 export interface UserDataContextType {
@@ -53,7 +52,6 @@ export interface UserDataContextType {
   festivalNotes: Record<string, string>
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
-  b2bSetRatings: Record<string, number>
   loaded: boolean
   // Mutations
   toggleFestival: (eventId: string, meta?: any) => Promise<void>
@@ -81,7 +79,6 @@ export interface UserDataContextType {
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
   getAverageArtistRating: (artistId: string) => number
   getB2bSets: (festivalId: string) => B2bSetData[]
-  getB2bSetRating: (b2bSetId: string) => number
   // Actions
   exportData: () => void
   importData: (data: any) => void
@@ -120,7 +117,6 @@ export const DEFAULT_STATE: UserDataState = {
   festivalNotes: {},
   raEvents: {},
   b2bSets: {},
-  b2bSetRatings: {},
 }
 
 /** Transform raw DB data into local state shape */
@@ -193,6 +189,5 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     festivalNotes,
     raEvents: {},
     b2bSets: {},
-    b2bSetRatings: {},
   }
 }

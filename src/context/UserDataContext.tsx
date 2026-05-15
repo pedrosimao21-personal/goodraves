@@ -20,7 +20,6 @@ import {
   splitB2bArtist as splitB2bArtistAction,
   rateB2bSet as rateB2bSetAction,
   getB2bSetsForFestival,
-  getUserB2bSetRatings,
 } from '@/db/actions/festivals'
 
 import { isFestivalPast } from '@/lib/festival-date'
@@ -170,21 +169,44 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   const rateB2bSetFn = useCallback(async (b2bSetId: string, rating: number) => {
     if (!userId) { promptAuth(); return }
-    setState(prev => ({ ...prev, b2bSetRatings: { ...prev.b2bSetRatings, [b2bSetId]: rating } }))
+    // Optimistically update performance ratings for all members of this B2B set
+    setState(prev => {
+      const allSets = Object.values(prev.b2bSets).flat()
+      const b2bSet = allSets.find(s => s.id === b2bSetId)
+      if (!b2bSet) return prev
+
+      const updatedPerformanceRatings = { ...prev.performanceRatings }
+      const updatedSeen = { ...prev.seenArtists }
+      const currentSeen = updatedSeen[b2bSet.festivalId] ?? []
+      let newSeen = [...currentSeen]
+
+      for (const member of b2bSet.members) {
+        const key = `${b2bSet.festivalId}::${member.artistId}`
+        updatedPerformanceRatings[key] = rating
+
+        if (rating > 0 && !newSeen.includes(member.artistId)) {
+          newSeen.push(member.artistId)
+        } else if (rating === 0) {
+          newSeen = newSeen.filter(id => id !== member.artistId)
+        }
+      }
+
+      return {
+        ...prev,
+        performanceRatings: updatedPerformanceRatings,
+        seenArtists: { ...updatedSeen, [b2bSet.festivalId]: newSeen },
+      }
+    })
     await rateB2bSetAction(b2bSetId, rating)
   }, [userId, promptAuth])
 
   const loadB2bSets = useCallback(async (festivalId: string) => {
-    const [sets, ratings] = await Promise.all([
-      getB2bSetsForFestival(festivalId),
-      userId ? getUserB2bSetRatings().catch(() => ({})) : Promise.resolve({}),
-    ])
+    const sets = await getB2bSetsForFestival(festivalId)
     setState(prev => ({
       ...prev,
       b2bSets: { ...prev.b2bSets, [festivalId]: sets },
-      b2bSetRatings: { ...prev.b2bSetRatings, ...ratings },
     }))
-  }, [userId])
+  }, [])
 
   const batchImportRA = useCallback(async (events: Record<string, any>) => {
     const eventArray = Object.entries(events).map(([id, e]: [string, any]) => ({

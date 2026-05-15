@@ -57,10 +57,6 @@ export function useUserDataReaders(state: UserDataState) {
     state.b2bSets[festivalId] ?? [],
   [state.b2bSets])
 
-  const getB2bSetRating = useCallback((b2bSetId: string): number =>
-    state.b2bSetRatings[b2bSetId] ?? 0,
-  [state.b2bSetRatings])
-
   const exportData = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -75,6 +71,6 @@ export function useUserDataReaders(state: UserDataState) {
     isAttended, isUpcoming, didSeeArtist, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
-    getB2bSets, getB2bSetRating,
+    getB2bSets,
   }
 }

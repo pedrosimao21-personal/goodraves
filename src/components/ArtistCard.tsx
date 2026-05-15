@@ -5,7 +5,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
 import StarRating from './StarRating'
+import ArtistOptionsMenu from './ArtistOptionsMenu'
+import ArtistRenameModal from './ArtistRenameModal'
 import B2bSplitModal from './B2bSplitModal'
+
+type MenuState = 'closed' | 'options' | 'rename' | 'split'
 
 const ArtistCard = memo(function ArtistCard({
   artist,
@@ -18,36 +22,46 @@ const ArtistCard = memo(function ArtistCard({
   spotifyData?: any
   isPast?: boolean
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist } = useUserData()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist } = useUserData()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
   const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
-  const [showSplitModal, setShowSplitModal] = useState(false)
+  const [menuState, setMenuState] = useState<MenuState>('closed')
+  const [nameOverride, setNameOverride] = useState<string | null>(null)
   const hasRating = performanceRating > 0
 
+  const displayName = nameOverride ?? artist.name
   const displayImage = artist.image || spotifyData?.image || null
 
   // Use the real DB id from spotifyData if available, otherwise fall back to artist.id
   const dbId = spotifyData?.id || artist.id
-  const artistHref = `/artist/${dbId}/${encodeURIComponent(artist.name)}`
+  const artistHref = `/artist/${dbId}/${encodeURIComponent(displayName)}`
 
   const handleSplit = async (memberNames: string[]) => {
     await splitB2bArtist(eventId, artist.id, memberNames)
-    setShowSplitModal(false)
+    setMenuState('closed')
   }
+
+  const handleRename = async (newName: string) => {
+    await renameArtist(eventId, artist.id, newName)
+    setNameOverride(newName)
+    setMenuState('closed')
+  }
+
+  const closeMenu = () => setMenuState('closed')
 
   return (
     <>
       <div className="artist-card fade-in" id={`artist-${artist.id}`} style={{ position: 'relative' }}>
         {/* Stretched link covers the entire card; interactive elements sit above it via position:relative */}
-        <Link href={artistHref} aria-label={artist.name} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+        <Link href={artistHref} aria-label={displayName} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
 
         <div style={{ position: 'relative', zIndex: 1, display: 'contents' }}>
           {displayImage ? (
             <Image
               className="artist-avatar"
               src={displayImage}
-              alt={artist.name}
+              alt={displayName}
               width={48}
               height={48}
               quality={90}
@@ -58,7 +72,7 @@ const ArtistCard = memo(function ArtistCard({
             <div className="artist-avatar-placeholder">🎤</div>
           )}
           <div className="artist-name">
-            {artist.name}
+            {displayName}
             {averageRating > 0 && (
               <span className="artist-avg-rating" title={`Your average rating: ${averageRating.toFixed(1)}`}>
                 <span className="artist-avg-rating-star">★</span> {averageRating.toFixed(1)}
@@ -75,7 +89,7 @@ const ArtistCard = memo(function ArtistCard({
               <button
                 className="mark-seen-btn"
                 onClick={() => setIsStarRatingVisible(true)}
-                aria-label={`Mark ${artist.name} as seen`}
+                aria-label={`Mark ${displayName} as seen`}
               >
                 Mark as seen
               </button>
@@ -83,21 +97,37 @@ const ArtistCard = memo(function ArtistCard({
           </div>
         )}
 
-        {/* Split B2B button — visible on card hover only */}
+        {/* Options button — visible on card hover only */}
         <button
           className="artist-card-options-btn"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSplitModal(true) }}
-          title="Split B2B artist"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuState('options') }}
+          title="Options"
         >
           &#8943;
         </button>
       </div>
 
-      {showSplitModal && (
+      {menuState === 'options' && (
+        <ArtistOptionsMenu
+          onEditName={() => setMenuState('rename')}
+          onSplitB2b={() => setMenuState('split')}
+          onClose={closeMenu}
+        />
+      )}
+
+      {menuState === 'rename' && (
+        <ArtistRenameModal
+          artistName={displayName}
+          onSave={handleRename}
+          onClose={closeMenu}
+        />
+      )}
+
+      {menuState === 'split' && (
         <B2bSplitModal
-          artistName={artist.name}
+          artistName={displayName}
           onSave={handleSplit}
-          onClose={() => setShowSplitModal(false)}
+          onClose={closeMenu}
         />
       )}
     </>

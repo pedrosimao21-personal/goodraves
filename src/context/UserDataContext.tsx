@@ -21,6 +21,7 @@ import {
   rateB2bSet as rateB2bSetAction,
   getB2bSetsForFestival,
 } from '@/db/actions/festivals'
+import { renameArtist as renameArtistAction } from '@/db/actions/artist-rename'
 
 import { isFestivalPast } from '@/lib/festival-date'
 import type { InitialUserData } from '@/db/actions/get-initial-data'
@@ -208,6 +209,28 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     }))
   }, [])
 
+  const renameArtist = useCallback(async (festivalId: string, artistId: string, newName: string) => {
+    if (!userId) { promptAuth(); return }
+    const result = await renameArtistAction(festivalId, artistId, newName)
+    setState(prev => {
+      const updatedMeta = { ...prev.festivalMeta }
+      const festival = updatedMeta[festivalId]
+      if (festival?.lineup) {
+        // Find the old artist name in the lineup and replace it
+        const oldIndex = festival.lineup.findIndex(
+          (name: string) => prev.artistMeta[artistId]?.name?.toLowerCase() === name.toLowerCase()
+            || name.toLowerCase() === artistId.toLowerCase()
+        )
+        if (oldIndex >= 0) {
+          const updatedLineup = [...festival.lineup]
+          updatedLineup[oldIndex] = result.name
+          updatedMeta[festivalId] = { ...festival, lineup: updatedLineup }
+        }
+      }
+      return { ...prev, festivalMeta: updatedMeta }
+    })
+  }, [userId, promptAuth])
+
   const batchImportRA = useCallback(async (events: Record<string, any>) => {
     const eventArray = Object.entries(events).map(([id, e]: [string, any]) => ({
       id,
@@ -316,7 +339,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     ...readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
-    splitB2bArtist, rateB2bSet: rateB2bSetFn, loadB2bSets,
+    splitB2bArtist, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
     state, loaded,
     toggleFestival, toggleSawArtist,
@@ -324,7 +347,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
-    splitB2bArtist, rateB2bSetFn, loadB2bSets,
+    splitB2bArtist, rateB2bSetFn, loadB2bSets, renameArtist,
   ])
 
   return (

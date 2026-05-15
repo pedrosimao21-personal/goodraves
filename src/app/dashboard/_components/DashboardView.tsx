@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
@@ -8,44 +8,41 @@ import { useAuthPrompt } from '@/context/AuthPromptContext'
 import AddCustomEvent from '@/components/AddCustomFestival'
 import EditFestivalModal from './EditFestivalModal'
 import FestivalRow from './FestivalRow'
+import TimelineView from './TimelineView'
 
 const CLEAR_LIST_COLOR = '#ff4444'
 const UPCOMING_BG_COLOR = '#3b82f6'
 
+type ActiveTab = 'attended' | 'upcoming' | 'timeline'
+
+function getTabFromHash(): ActiveTab {
+  if (typeof window === 'undefined') return 'attended'
+  if (window.location.hash === '#upcoming') return 'upcoming'
+  if (window.location.hash === '#timeline') return 'timeline'
+  return 'attended'
+}
+
 export default function DashboardView() {
   const {
     attendedFestivals, upcomingFestivals, seenArtists, festivalRatings,
-    toggleFestival, importData, clearFestivals, getFestivalMeta, loaded,
+    toggleFestival, clearFestivals, getFestivalMeta, loaded,
   } = useUserData()
   const { promptAuth } = useAuthPrompt()
   const { data: session } = useSession()
   const router = useRouter()
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const getTabFromHash = () => (typeof window !== 'undefined' && window.location.hash === '#upcoming') ? 'upcoming' : 'attended'
-  const [activeTab, setActiveTab] = useState<'attended' | 'upcoming'>(getTabFromHash)
+  const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
 
+  // Persist timeline filter selections when switching tabs
+  const [timelineYear, setTimelineYear] = useState<number | null>(null)
+  const [timelineMonth, setTimelineMonth] = useState<string>('All')
 
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string)
-        if (data && typeof data === 'object') {
-          importData(data)
-          alert('Profile successfully restored!')
-        }
-      } catch {
-        alert('Invalid backup file.')
-      }
-      e.target.value = ''
-    }
-    reader.readAsText(file)
+  const switchToTab = (tab: ActiveTab) => {
+    const hash = tab === 'attended' ? '' : `#${tab}`
+    history.replaceState(null, '', `${window.location.pathname}${hash}`)
+    setActiveTab(tab)
   }
 
   const totalSeen = (Object.values(seenArtists) as string[][]).reduce((sum, arr) => sum + arr.length, 0)
@@ -128,42 +125,62 @@ export default function DashboardView() {
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => { history.replaceState(null, '', window.location.pathname); setActiveTab('attended') }}
+            onClick={() => switchToTab('attended')}
             style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Past ({attendedFestivals.length})
           </button>
           <button
             className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => { history.replaceState(null, '', `${window.location.pathname}#upcoming`); setActiveTab('upcoming') }}
-            style={activeTab === 'upcoming' ? { background: UPCOMING_BG_COLOR, color: '#fff', borderColor: UPCOMING_BG_COLOR } : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            onClick={() => switchToTab('upcoming')}
+            style={
+              activeTab === 'upcoming'
+                ? { background: UPCOMING_BG_COLOR, color: '#fff', borderColor: UPCOMING_BG_COLOR }
+                : { border: '1px solid var(--border)', color: 'var(--text-primary)' }
+            }
           >
             Upcoming ({upcomingFestivals.length})
           </button>
-          <div style={{ marginLeft: 'auto' }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                if (!session?.user) { promptAuth(); return }
-                setShowAddCustom(!showAddCustom)
-              }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-            >
-              {showAddCustom ? 'Close' : '+ Add Event'}
-            </button>
-          </div>
+          <button
+            className={`btn ${activeTab === 'timeline' ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => switchToTab('timeline')}
+            style={activeTab === 'timeline' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          >
+            Calendar View
+          </button>
+          {activeTab !== 'timeline' && (
+            <div style={{ marginLeft: 'auto' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  if (!session?.user) { promptAuth(); return }
+                  setShowAddCustom(!showAddCustom)
+                }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                {showAddCustom ? 'Close' : '+ Add Event'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {showAddCustom && (
+        {showAddCustom && activeTab !== 'timeline' && (
           <div style={{ marginBottom: 24 }}>
             <AddCustomEvent onClose={() => setShowAddCustom(false)} />
           </div>
         )}
 
-        {displayList.length === 0 ? (
+        {activeTab === 'timeline' ? (
+          <TimelineView
+            initialYear={timelineYear}
+            initialMonth={timelineMonth}
+            onYearChange={setTimelineYear}
+            onMonthChange={setTimelineMonth}
+          />
+        ) : displayList.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">&#127915;</div>
-            <h3>No {activeTab} festivals yet</h3>
+            <h3>No {activeTab === 'attended' ? 'past' : 'upcoming'} festivals yet</h3>
             <p>Head to the Discover page to find festivals and mark them to your schedule.</p>
             <button className="btn btn-primary" onClick={() => router.push('/')} id="go-discover-btn">
               Discover Festivals

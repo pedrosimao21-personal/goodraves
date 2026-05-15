@@ -2,7 +2,7 @@
  * Parse festivalfans.nl event page HTML to extract structured data.
  */
 
-import { type LineupEntry } from "@/services/lineup-types";
+import { type LineupEntry, B2B_CONNECTOR_PATTERN } from "@/services/lineup-types";
 
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
@@ -94,9 +94,6 @@ function extractSchemaOrgGeo(html: string): { latitude: number | null; longitude
     return { latitude: null, longitude: null };
   }
 }
-
-/** Regex matching b2b connectors between artist links on FestivalFans. */
-const B2B_CONNECTOR_PATTERN = /^\s*(?:x|&(?:amp;)?|vs\.?|b2b)\s*$/i;
 
 /** Extract artist name from a FestivalFans artist link tag. */
 function extractArtistFromLink(tag: string): string | null {

@@ -4,74 +4,162 @@
  */
 
 import { type RAEventRaw } from "./client";
+import {
+  type LineupEntry,
+  B2B_CONNECTOR_PATTERN,
+  flattenLineupNames,
+} from "@/services/lineup-types";
 
-/** A single artist entry parsed from an RA lineup string. */
-export type RALineupEntry = {
+/** RA artist ID mapping: artist name → RA numeric artist ID (or null). */
+export type RALineupResult = {
+  entries: LineupEntry[];
+  raArtistIds: Record<string, string | null>;
+};
+
+/** A single artist extracted from an `<artist>` tag or plain text within a line. */
+type RawArtist = {
   name: string;
-  /** Numeric RA artist ID extracted from `<artist id="X">` tags, or null for plain-text entries. */
   raArtistId: string | null;
 };
 
 /**
+ * Extract all artist tags and plain-text artist names from a single lineup line.
+ * Returns raw artists in order of appearance, plus the text segments between them
+ * for B2B connector detection.
+ */
+function extractArtistsFromLine(line: string): {
+  artists: RawArtist[];
+  connectors: string[];
+} {
+  const tagPattern = /<artist\s+id="(\d+)"[^>]*>(.*?)<\/artist>/g;
+  const foundArtists: RawArtist[] = [];
+  const connectors: string[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagPattern.exec(line)) !== null) {
+    const textBefore = line.slice(lastIndex, match.index).replace(/<[^>]+>/g, "").trim();
+
+    if (foundArtists.length > 0) {
+      connectors.push(textBefore);
+    } else if (textBefore && !/^hosted by/i.test(textBefore)) {
+      // Plain-text artist before the first tag — treat as a standalone artist
+      foundArtists.push({ name: textBefore, raArtistId: null });
+      connectors.push("");
+    }
+
+    const name = match[2].trim();
+    if (name) {
+      foundArtists.push({ name, raArtistId: match[1] });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  const remaining = line.slice(lastIndex).replace(/<[^>]+>/g, "").trim();
+  if (remaining && !/^hosted by/i.test(remaining)) {
+    if (foundArtists.length > 0) {
+      connectors.push(remaining);
+      foundArtists.push({ name: remaining, raArtistId: null });
+    } else {
+      foundArtists.push({ name: remaining, raArtistId: null });
+    }
+  }
+
+  return { artists: foundArtists, connectors };
+}
+
+/**
+ * Determine whether the connectors between artists on a line indicate a B2B set.
+ * All connectors must match the B2B pattern for the line to qualify.
+ */
+function isB2bLine(connectors: string[]): boolean {
+  if (connectors.length === 0) return false;
+  return connectors.every((c) => B2B_CONNECTOR_PATTERN.test(c));
+}
+
+/**
+ * Build a display name for a B2B set, preserving the original connectors.
+ * E.g. "Artist A b2b Artist B" or "Artist A & Artist B".
+ */
+function buildB2bOriginalName(
+  artistNames: string[],
+  connectors: string[]
+): string {
+  let result = artistNames[0];
+  for (let i = 0; i < connectors.length; i++) {
+    const connector = connectors[i].trim() || "b2b";
+    const nextName = artistNames[i + 1];
+    if (nextName) {
+      result += ` ${connector} ${nextName}`;
+    }
+  }
+  return result;
+}
+
+/**
  * Parse RA's `lineup` text field which contains both linked artists
  * (wrapped in `<artist id="...">Name</artist>`) and plain-text artist names.
- * Returns deduplicated entries with optional RA artist IDs.
+ * Detects B2B sets by checking connectors between consecutive artists on the same line.
+ * Returns shared `LineupEntry` types plus a separate RA artist ID mapping.
  */
 export function parseRALineup(
   lineupText: string | null | undefined,
   fallbackArtists?: string[]
-): RALineupEntry[] {
+): RALineupResult {
   if (!lineupText) {
-    return (fallbackArtists ?? []).map(name => ({ name, raArtistId: null }));
+    const entries: LineupEntry[] = (fallbackArtists ?? []).map((name) => ({
+      type: "solo" as const,
+      name,
+    }));
+    return { entries, raArtistIds: {} };
   }
 
   const seen = new Set<string>();
-  const entries: RALineupEntry[] = [];
+  const entries: LineupEntry[] = [];
+  const raArtistIds: Record<string, string | null> = {};
+  const hasArtistTags = /<artist\s+id="/.test(lineupText);
 
   for (const rawLine of lineupText.split("\n")) {
     const line = rawLine.trim();
     if (!line) continue;
 
-    // Extract artist tags with IDs: <artist id="123">Name</artist>
-    const tagPattern = /<artist\s+id="(\d+)"[^>]*>(.*?)<\/artist>/g;
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
+    const { artists: lineArtists, connectors } = extractArtistsFromLine(line);
+    if (lineArtists.length === 0) continue;
 
-    while ((match = tagPattern.exec(line)) !== null) {
-      // Handle any plain text before this tag
-      const textBefore = line.slice(lastIndex, match.index).trim();
-      if (textBefore && !/^hosted by/i.test(textBefore)) {
-        const cleaned = textBefore.replace(/<[^>]+>/g, '').trim();
-        if (cleaned && !seen.has(cleaned)) {
-          seen.add(cleaned);
-          entries.push({ name: cleaned, raArtistId: null });
+    // When the lineup uses <artist> tags, plain-text-only lines are
+    // stage/room headers (e.g. "Club", "Colorfloor") and must be skipped.
+    const isPlainTextOnly = lineArtists.every((a) => a.raArtistId === null);
+    if (hasArtistTags && isPlainTextOnly) continue;
+
+    if (lineArtists.length >= 2 && isB2bLine(connectors)) {
+      const members: string[] = [];
+      for (const artist of lineArtists) {
+        if (!seen.has(artist.name)) {
+          seen.add(artist.name);
+          raArtistIds[artist.name] = artist.raArtistId;
         }
+        members.push(artist.name);
       }
 
-      const raArtistId = match[1];
-      const name = match[2].trim();
-      if (name && !seen.has(name)) {
-        seen.add(name);
-        entries.push({ name, raArtistId });
+      const originalName = buildB2bOriginalName(members, connectors);
+      entries.push({ type: "b2b", originalName, members });
+    } else {
+      for (const artist of lineArtists) {
+        if (seen.has(artist.name)) continue;
+        seen.add(artist.name);
+        raArtistIds[artist.name] = artist.raArtistId;
+        entries.push({ type: "solo", name: artist.name });
       }
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Handle remaining plain text after the last tag (or whole line if no tags)
-    const remaining = line.slice(lastIndex).replace(/<[^>]+>/g, '').trim();
-    if (remaining && !/^hosted by/i.test(remaining) && !seen.has(remaining)) {
-      seen.add(remaining);
-      entries.push({ name: remaining, raArtistId: null });
     }
   }
 
-  return entries;
+  return { entries, raArtistIds };
 }
 
-/** Extract just the artist names from lineup entries (convenience helper). */
-export function lineupEntryNames(entries: RALineupEntry[]): string[] {
-  return entries.map(e => e.name);
+/** Extract just the artist names from a lineup result (convenience helper). */
+export function lineupEntryNames(result: RALineupResult): string[] {
+  return flattenLineupNames(result.entries);
 }
 
 /** Mapped RA search result ready for display or DB persistence */

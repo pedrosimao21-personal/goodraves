@@ -39,3 +39,9 @@ export function flattenLineupNames(entries: LineupEntry[]): string[] {
 export function filterB2bEntries(entries: LineupEntry[]): B2bLineupEntry[] {
   return entries.filter((e): e is B2bLineupEntry => e.type === "b2b");
 }
+
+/**
+ * Regex matching common B2B connectors between artist names/links.
+ * Matches: "b2b", "B2B", "x", "&", "&amp;", "vs", "vs."
+ */
+export const B2B_CONNECTOR_PATTERN = /^\s*(?:x|&(?:amp;)?|vs\.?|b2b)\s*$/i;

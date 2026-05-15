@@ -3,9 +3,10 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate } from "./festival-helpers";
+import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { parsePFEventPage } from "@/services/partyflock/parser";
+import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 
 /** Fetch and store imageUrl for a festival that was imported without one. */
 async function backfillMissingImage(festivalId: string, partyId: string): Promise<void> {
@@ -44,6 +45,8 @@ export async function fetchPFEventImageUrl(partyId: string): Promise<string | nu
 export async function reimportPFEvent(partyId: string): Promise<string | null> {
   if (!partyId) return null;
   const festivalId = `pf-${partyId}`;
+
+  await deleteB2bSets(festivalId);
 
   await db
     .delete(festivalArtists)
@@ -128,15 +131,21 @@ export async function fetchPFEvent(
   }
 
   if (parsed.lineup.length > 0) {
-    const nameToId = await ensureArtistsAndGetIds(parsed.lineup);
+    const allNames = flattenLineupNames(parsed.lineup);
+    const nameToId = await ensureArtistsAndGetIds(allNames);
     await db
       .insert(festivalArtists)
       .values(
-        parsed.lineup
+        allNames
           .filter((artistName) => nameToId[artistName])
           .map((artistName) => ({ festivalId, artistId: nameToId[artistName] }))
       )
       .onConflictDoNothing();
+
+    const b2bEntries = filterB2bEntries(parsed.lineup);
+    if (b2bEntries.length > 0) {
+      await createB2bSets(festivalId, b2bEntries, nameToId);
+    }
   }
 
   return festivalId;

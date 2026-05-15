@@ -2,6 +2,8 @@
  * Parse partyflock.nl HTML pages to extract structured event data.
  */
 
+import { type LineupEntry } from "@/services/lineup-types";
+
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
   mei: "05", juni: "06", juli: "07", augustus: "08",
@@ -9,6 +11,21 @@ const DUTCH_MONTHS: Record<string, string> = {
 };
 
 const DUTCH_MONTH_NAMES = Object.keys(DUTCH_MONTHS).join("|");
+
+/** Decode HTML numeric entities (&#123; and &#x1a;) and common named entities. */
+function decodeHtmlEntities(text: string): string {
+  const NAMED_ENTITIES: Record<string, string> = {
+    amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+    nbsp: "\u00A0", ndash: "\u2013", mdash: "\u2014",
+  };
+
+  return text.replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(\w+));/g, (match, dec, hex, named) => {
+    if (dec) return String.fromCodePoint(parseInt(dec, 10));
+    if (hex) return String.fromCodePoint(parseInt(hex, 16));
+    if (named && NAMED_ENTITIES[named]) return NAMED_ENTITIES[named];
+    return match;
+  });
+}
 
 /** Parse a Dutch date string like "zaterdag 4 februari 2023 om 22:00" to YYYY-MM-DD. */
 function parseDutchDate(dateStr: string): string | null {
@@ -77,15 +94,81 @@ export interface ParsedPFEvent {
   venue: string | null;
   location: string | null;
   imageUrl: string | null;
-  lineup: string[];
+  lineup: LineupEntry[];
   latitude: number | null;
   longitude: number | null;
+}
+
+/**
+ * Parse the Partyflock lineup table into groups of artist names per timeslot.
+ *
+ * Each timeslot starts with a `<div>` containing `class="light times"`.
+ * B2B partners appear in subsequent `<div>` elements that either have
+ * `class="invisible times"` or contain no time span at all — just the performer.
+ *
+ * Stage headers (`<th>`) break the grouping so artists from different stages
+ * (including stages without timetables) are not merged into b2b sets.
+ */
+function parsePFTimeslotGroups(tableHtml: string): string[][] {
+  const groups: string[][] = [];
+  // Match both <th> (stage headers) and <div> (artist slots) sequentially
+  const tokenRegex = /<th>[\s\S]*?<\/th>|<div>([\s\S]*?)<\/div>/g;
+  let tokenMatch;
+  let currentGroup: string[] = [];
+  let isNoTimetableStage = false;
+
+  while ((tokenMatch = tokenRegex.exec(tableHtml)) !== null) {
+    const fullMatch = tokenMatch[0];
+
+    // Stage header resets the current group
+    if (fullMatch.startsWith("<th>")) {
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+        currentGroup = [];
+      }
+      isNoTimetableStage = false;
+      continue;
+    }
+
+    const divContent = tokenMatch[1];
+    if (!divContent) continue;
+
+    const nameMatch = divContent.match(/<span itemprop="name">([^<]+)<\/span>/);
+    if (!nameMatch) continue;
+
+    const artistName = decodeHtmlEntities(nameMatch[1].trim());
+    const hasTimeslot = divContent.includes('class="light times"');
+
+    // First artist in a stage without a timeslot means the entire stage
+    // has no timetable — every artist is a separate solo act.
+    if (currentGroup.length === 0 && !hasTimeslot) {
+      isNoTimetableStage = true;
+    }
+
+    const startsNewGroup = hasTimeslot || isNoTimetableStage;
+
+    if (startsNewGroup) {
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+      }
+      currentGroup = [artistName];
+    } else {
+      // No time span in a timetabled stage — b2b continuation
+      currentGroup.push(artistName);
+    }
+  }
+
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups;
 }
 
 /** Parse a partyflock.nl event detail page to extract structured data. */
 export function parsePFEventPage(html: string): ParsedPFEvent {
   const h1Match = html.match(/<h1[^>]*itemprop="name"[^>]*>(?:<a[^>]*>)?([^<]+)/);
-  const name = h1Match ? h1Match[1].trim() : null;
+  const name = h1Match ? decodeHtmlEntities(h1Match[1].trim()) : null;
 
   const startDateMatch = html.match(/<time[^>]*itemprop="startDate"[^>]*datetime="([^"]+)"/);
   let date: string | null = null;
@@ -125,18 +208,24 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
   const latitude = latMatch ? parseFloat(latMatch[1]) || null : null;
   const longitude = lngMatch ? parseFloat(lngMatch[1]) || null : null;
 
-  const lineup: string[] = [];
-  const seenNames = new Set<string>();
-  const artistRegex = /<span itemprop="name">([^<]+)<\/span>/g;
-
+  const lineup: LineupEntry[] = [];
+  const seenEntries = new Set<string>();
   const lineupSection = html.match(/<table class="lineup[^"]*">([\s\S]*?)<\/table>/);
+
   if (lineupSection) {
-    let artistMatch;
-    while ((artistMatch = artistRegex.exec(lineupSection[1])) !== null) {
-      const artistName = artistMatch[1].trim();
-      if (!seenNames.has(artistName)) {
-        seenNames.add(artistName);
-        lineup.push(artistName);
+    const timeslotGroups = parsePFTimeslotGroups(lineupSection[1]);
+    for (const group of timeslotGroups) {
+      if (group.length === 0) continue;
+
+      const dedupeKey = group.join(" | ");
+      if (seenEntries.has(dedupeKey)) continue;
+      seenEntries.add(dedupeKey);
+
+      if (group.length === 1) {
+        lineup.push({ type: "solo", name: group[0] });
+      } else {
+        const originalName = group.join(" & ");
+        lineup.push({ type: "b2b", originalName, members: group });
       }
     }
   }

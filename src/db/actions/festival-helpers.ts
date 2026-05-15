@@ -1,8 +1,9 @@
 import { db } from "@/db";
-import { and, eq, inArray } from "drizzle-orm";
-import { artists, festivals, festivalArtists } from "@/db/schema";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers } from "@/db/schema";
 import { auth } from "../../../auth";
 import { MIN_RATING, MAX_RATING } from "@/lib/constants";
+import { type B2bLineupEntry } from "@/services/lineup-types";
 
 // Re-export shared constants so existing server-side imports keep working
 export {
@@ -44,13 +45,22 @@ export async function ensureArtistsAndGetIds(names: string[]): Promise<Record<st
     .values(names.map((name) => ({ name })))
     .onConflictDoNothing();
 
+  const lowerNames = names.map((n) => n.toLowerCase());
   const rows = await db
     .select({ id: artists.id, name: artists.name })
     .from(artists)
-    .where(inArray(artists.name, names));
+    .where(inArray(sql`lower(${artists.name})`, lowerNames));
 
   const map: Record<string, string> = {};
   for (const row of rows) {
+    // Map by the input name (case-preserving) so callers can look up
+    // using the exact string they provided, even when the DB stores
+    // a different casing.
+    const inputName = names.find((n) => n.toLowerCase() === row.name.toLowerCase());
+    if (inputName) {
+      map[inputName] = row.id;
+    }
+    // Also map by the stored name for direct lookups
     map[row.name] = row.id;
   }
   return map;
@@ -87,4 +97,41 @@ export async function findExistingFestivalByNameDate(
     .limit(1);
 
   return existing?.id ?? null;
+}
+
+/**
+ * Create B2B set records for a festival from parsed b2b lineup entries.
+ * Each entry creates a `festivalB2bSets` row and corresponding member rows.
+ */
+export async function createB2bSets(
+  festivalId: string,
+  b2bEntries: B2bLineupEntry[],
+  nameToId: Record<string, string>
+): Promise<void> {
+  for (const entry of b2bEntries) {
+    const memberIds = entry.members
+      .map((name) => nameToId[name])
+      .filter(Boolean);
+
+    if (memberIds.length < 2) continue;
+
+    const [b2bSet] = await db
+      .insert(festivalB2bSets)
+      .values({ festivalId, originalArtistName: entry.originalName })
+      .returning({ id: festivalB2bSets.id });
+
+    const memberInserts = memberIds.map((artistId, idx) => ({
+      b2bSetId: b2bSet.id,
+      artistId,
+      position: idx,
+    }));
+    await db.insert(festivalB2bSetMembers).values(memberInserts);
+  }
+}
+
+/** Delete all B2B sets (and cascading members) for a festival. */
+export async function deleteB2bSets(festivalId: string): Promise<void> {
+  await db
+    .delete(festivalB2bSets)
+    .where(eq(festivalB2bSets.festivalId, festivalId));
 }

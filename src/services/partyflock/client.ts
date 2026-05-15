@@ -31,12 +31,10 @@ export async function searchPFEventsRaw(
   }
 }
 
-/** Fetch the raw HTML of a partyflock.nl event page by party ID. */
-export async function fetchPFEventHtml(
-  partyId: string
-): Promise<string | null> {
+/** Fetch the raw HTML of a partyflock.nl page by path (e.g. "/party/123"). */
+async function fetchPFPageHtml(path: string): Promise<string | null> {
   try {
-    const res = await fetch(`${PF_BASE_URL}/party/${partyId}`, {
+    const res = await fetch(`${PF_BASE_URL}${path}`, {
       headers: {
         "User-Agent": PF_USER_AGENT,
         Accept: "text/html",
@@ -44,7 +42,7 @@ export async function fetchPFEventHtml(
     });
     if (!res.ok) {
       throw new Error(
-        `partyflock.nl returned ${res.status} for party ${partyId}`
+        `partyflock.nl returned ${res.status} for ${path}`
       );
     }
 
@@ -53,15 +51,38 @@ export async function fetchPFEventHtml(
     return decoder.decode(buffer);
   } catch (err) {
     console.error(
-      `[partyflock/client] Failed to fetch event ${partyId}:`,
+      `[partyflock/client] Failed to fetch ${path}:`,
       err
     );
     return null;
   }
 }
 
+/** Fetch the raw HTML of a partyflock.nl event page by party ID. */
+export async function fetchPFEventHtml(
+  partyId: string
+): Promise<string | null> {
+  return fetchPFPageHtml(`/party/${partyId}`);
+}
+
+/** Fetch event HTML by slug (e.g. "the-crave-festival-nl") and extract the party ID. */
+export async function resolvePFEventSlug(
+  slug: string
+): Promise<string | null> {
+  const html = await fetchPFPageHtml(`/event/${slug}`);
+  if (!html) return null;
+
+  const idMatch = html.match(/data-element="party"\s+data-id="(\d+)"/);
+  return idMatch ? idMatch[1] : null;
+}
+
 /** Extract a Partyflock party ID from a partyflock.nl URL. */
 export async function extractPFPartyId(input: string): Promise<string | null> {
-  const match = input.match(/partyflock\.nl\/party\/(\d+)/);
-  return match ? match[1] : null;
+  const partyMatch = input.match(/partyflock\.nl\/party\/(\d+)/);
+  if (partyMatch) return partyMatch[1];
+
+  const eventMatch = input.match(/partyflock\.nl\/event\/([a-z0-9-]+)/i);
+  if (eventMatch) return resolvePFEventSlug(eventMatch[1]);
+
+  return null;
 }

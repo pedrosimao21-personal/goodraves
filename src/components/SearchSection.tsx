@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
 import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl, fetchRAEventImageUrl, searchPFEvents, fetchPFEvent, fetchPFEventImageUrl } from '@/db/actions/festivals'
+import { resolvePFEventSlug } from '@/services/partyflock/client'
 
 function SearchIcon() {
   return (
@@ -28,6 +29,12 @@ function extractFFSlugLocal(input: string): string | null {
 /** Extract a Partyflock party ID from a partyflock.nl URL, or return null */
 function extractPFPartyIdLocal(input: string): string | null {
   const match = input.match(/partyflock\.nl\/party\/(\d+)/)
+  return match ? match[1] : null
+}
+
+/** Extract a Partyflock event slug from a /event/ URL, or return null */
+function extractPFEventSlugLocal(input: string): string | null {
+  const match = input.match(/partyflock\.nl\/event\/([a-z0-9-]+)/i)
   return match ? match[1] : null
 }
 
@@ -76,8 +83,14 @@ export default function SearchSection() {
         }
       }
 
-      // Check if the input is a Partyflock.nl event URL
-      const pfPartyId = extractPFPartyIdLocal(q)
+      // Check if the input is a Partyflock.nl event URL (/party/ID or /event/slug)
+      let pfPartyId = extractPFPartyIdLocal(q)
+      if (!pfPartyId) {
+        const pfSlug = extractPFEventSlugLocal(q)
+        if (pfSlug) {
+          pfPartyId = await resolvePFEventSlug(pfSlug)
+        }
+      }
       if (pfPartyId) {
         const festivalId = await fetchPFEvent(pfPartyId)
         if (festivalId) {
@@ -291,7 +304,7 @@ export default function SearchSection() {
             />
           </div>
           <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue) || extractPFPartyIdLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
+            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue) || extractPFPartyIdLocal(inputValue) || extractPFEventSlugLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>
       </div>

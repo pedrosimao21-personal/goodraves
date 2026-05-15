@@ -126,22 +126,30 @@ export default function TimelineView({
 
       <div className="filters" style={{ marginBottom: 32 }}>
         <span className="filter-label">Month:</span>
-        <div
-          className="filter-chips hide-scrollbar"
-          style={{ overflowX: 'auto', flexWrap: 'nowrap' }}
-          role="group"
+        <select
+          value={selectedMonth}
+          onChange={e => handleMonthChange(e.target.value)}
           aria-label="Filter by month"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-full)',
+            color: selectedMonth !== 'All' ? 'var(--accent-purple-light)' : 'var(--text-secondary)',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            fontFamily: 'inherit',
+            padding: '6px 14px',
+            cursor: 'pointer',
+            outline: 'none',
+            minHeight: 36,
+          }}
         >
           {MONTHS.map(month => (
-            <button
-              key={month}
-              className={`chip ${selectedMonth === month ? 'active' : ''}`}
-              onClick={() => handleMonthChange(month)}
-            >
-              {month === 'All' ? 'All months' : month.slice(0, 3)}
-            </button>
+            <option key={month} value={month}>
+              {month === 'All' ? 'All months' : month}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {filteredFestivals.length === 0 ? (

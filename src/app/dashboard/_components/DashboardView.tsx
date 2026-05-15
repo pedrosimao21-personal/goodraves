@@ -146,7 +146,7 @@ export default function DashboardView() {
             onClick={() => switchToTab('timeline')}
             style={activeTab === 'timeline' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
-            Calendar View
+            Timeline
           </button>
           {activeTab !== 'timeline' && (
             <div style={{ marginLeft: 'auto' }}>

@@ -263,13 +263,14 @@ export default function FestivalDetail() {
               {(() => {
                 const b2bSets = getB2bSets(id)
                 const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
+                const b2bOriginalNames = new Set(b2bSets.map(s => s.originalArtistName.toLowerCase()))
                 return (
                   <>
                     {b2bSets.map(b2bSet => (
                       <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
                     ))}
                     {event.attractions
-                      .filter((artist: any) => !b2bMemberIds.has(artist.id))
+                      .filter((artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase()))
                       .map((artist: any) => (
                         <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} isPast={!isFuture} />
                       ))

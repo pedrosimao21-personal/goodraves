@@ -163,6 +163,48 @@ export const artistGenres = pgTable(
   ]
 );
 
+// ── B2B Sets (grouped artists from split B2B imports) ──
+export const festivalB2bSets = pgTable("festival_b2b_sets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  festivalId: text("festival_id")
+    .notNull()
+    .references(() => festivals.id, { onDelete: "cascade" }),
+  originalArtistName: text("original_artist_name").notNull(),
+}, (t) => [
+  index("festival_b2b_sets_festival_id_idx").on(t.festivalId),
+]);
+
+export const festivalB2bSetMembers = pgTable(
+  "festival_b2b_set_members",
+  {
+    b2bSetId: uuid("b2b_set_id")
+      .notNull()
+      .references(() => festivalB2bSets.id, { onDelete: "cascade" }),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.b2bSetId, t.artistId] }),
+    index("festival_b2b_set_members_artist_id_idx").on(t.artistId),
+  ]
+);
+
+export const userFestivalB2bSetRatings = pgTable(
+  "user_festival_b2b_set_ratings",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    b2bSetId: uuid("b2b_set_id")
+      .notNull()
+      .references(() => festivalB2bSets.id, { onDelete: "cascade" }),
+    rating: integer("rating"),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.b2bSetId] })]
+);
+
 // ── User Artist Global (overall artist ratings & notes) ─
 export const userArtistGlobal = pgTable(
   "user_artist_global",

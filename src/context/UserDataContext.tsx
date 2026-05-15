@@ -17,6 +17,10 @@ import {
   setGlobalArtistRating,
   setGlobalArtistNotes,
   setFestivalNotes as setFestivalNotesAction,
+  splitB2bArtist as splitB2bArtistAction,
+  rateB2bSet as rateB2bSetAction,
+  getB2bSetsForFestival,
+  getUserB2bSetRatings,
 } from '@/db/actions/festivals'
 
 import { isFestivalPast } from '@/lib/festival-date'
@@ -152,6 +156,36 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     await setFestivalNotesAction(eventId, notes)
   }, [userId, promptAuth])
 
+  const splitB2bArtist = useCallback(async (festivalId: string, artistId: string, memberNames: string[]) => {
+    if (!userId) { promptAuth(); return }
+    const result = await splitB2bArtistAction(festivalId, artistId, memberNames)
+    setState(prev => {
+      const existingSets = prev.b2bSets[festivalId] ?? []
+      return {
+        ...prev,
+        b2bSets: { ...prev.b2bSets, [festivalId]: [...existingSets, result] },
+      }
+    })
+  }, [userId, promptAuth])
+
+  const rateB2bSetFn = useCallback(async (b2bSetId: string, rating: number) => {
+    if (!userId) { promptAuth(); return }
+    setState(prev => ({ ...prev, b2bSetRatings: { ...prev.b2bSetRatings, [b2bSetId]: rating } }))
+    await rateB2bSetAction(b2bSetId, rating)
+  }, [userId, promptAuth])
+
+  const loadB2bSets = useCallback(async (festivalId: string) => {
+    const [sets, ratings] = await Promise.all([
+      getB2bSetsForFestival(festivalId),
+      userId ? getUserB2bSetRatings().catch(() => ({})) : Promise.resolve({}),
+    ])
+    setState(prev => ({
+      ...prev,
+      b2bSets: { ...prev.b2bSets, [festivalId]: sets },
+      b2bSetRatings: { ...prev.b2bSetRatings, ...ratings },
+    }))
+  }, [userId])
+
   const batchImportRA = useCallback(async (events: Record<string, any>) => {
     const eventArray = Object.entries(events).map(([id, e]: [string, any]) => ({
       id,
@@ -260,6 +294,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     ...readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
+    splitB2bArtist, rateB2bSet: rateB2bSetFn, loadB2bSets,
   }), [
     state, loaded,
     toggleFestival, toggleSawArtist,
@@ -267,6 +302,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
+    splitB2bArtist, rateB2bSetFn, loadB2bSets,
   ])
 
   return (

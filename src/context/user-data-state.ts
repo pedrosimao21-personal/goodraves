@@ -16,6 +16,13 @@ export interface FestivalMeta {
   [key: string]: any
 }
 
+export interface B2bSetData {
+  id: string
+  festivalId: string
+  originalArtistName: string
+  members: { artistId: string; artistName: string; position: number }[]
+}
+
 export interface UserDataState {
   attendedFestivals: string[]
   upcomingFestivals: string[]
@@ -28,6 +35,8 @@ export interface UserDataState {
   artistNotes: Record<string, string>
   festivalNotes: Record<string, string>
   raEvents: Record<string, any>
+  b2bSets: Record<string, B2bSetData[]>
+  b2bSetRatings: Record<string, number>
 }
 
 export interface UserDataContextType {
@@ -43,6 +52,8 @@ export interface UserDataContextType {
   artistNotes: Record<string, string>
   festivalNotes: Record<string, string>
   raEvents: Record<string, any>
+  b2bSets: Record<string, B2bSetData[]>
+  b2bSetRatings: Record<string, number>
   loaded: boolean
   // Mutations
   toggleFestival: (eventId: string, meta?: any) => Promise<void>
@@ -52,6 +63,9 @@ export interface UserDataContextType {
   setFestivalRating: (eventId: string, rating: number) => Promise<void>
   setNotes: (artistId: string, notes: string) => Promise<void>
   setFestivalNotes: (eventId: string, notes: string) => Promise<void>
+  splitB2bArtist: (festivalId: string, artistId: string, memberNames: string[]) => Promise<void>
+  rateB2bSet: (b2bSetId: string, rating: number) => Promise<void>
+  loadB2bSets: (festivalId: string) => Promise<void>
   // Reads
   isAttended: (eventId: string) => boolean
   isUpcoming: (eventId: string) => boolean
@@ -66,6 +80,8 @@ export interface UserDataContextType {
   getArtistMeta: (artistId: string) => any
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
   getAverageArtistRating: (artistId: string) => number
+  getB2bSets: (festivalId: string) => B2bSetData[]
+  getB2bSetRating: (b2bSetId: string) => number
   // Actions
   exportData: () => void
   importData: (data: any) => void
@@ -103,6 +119,8 @@ export const DEFAULT_STATE: UserDataState = {
   artistNotes: {},
   festivalNotes: {},
   raEvents: {},
+  b2bSets: {},
+  b2bSetRatings: {},
 }
 
 /** Transform raw DB data into local state shape */
@@ -174,5 +192,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     artistNotes,
     festivalNotes,
     raEvents: {},
+    b2bSets: {},
+    b2bSetRatings: {},
   }
 }

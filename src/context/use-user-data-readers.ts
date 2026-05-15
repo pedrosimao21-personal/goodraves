@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import type { UserDataState } from './user-data-state'
+import type { UserDataState, B2bSetData } from './user-data-state'
 
 /** Derived read-only accessors for user data state */
 export function useUserDataReaders(state: UserDataState) {
@@ -53,6 +53,14 @@ export function useUserDataReaders(state: UserDataState) {
     return ratings.reduce((sum, r) => sum + r, 0) / ratings.length
   }, [state.performanceRatings])
 
+  const getB2bSets = useCallback((festivalId: string): B2bSetData[] =>
+    state.b2bSets[festivalId] ?? [],
+  [state.b2bSets])
+
+  const getB2bSetRating = useCallback((b2bSetId: string): number =>
+    state.b2bSetRatings[b2bSetId] ?? 0,
+  [state.b2bSetRatings])
+
   const exportData = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -67,5 +75,6 @@ export function useUserDataReaders(state: UserDataState) {
     isAttended, isUpcoming, didSeeArtist, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
+    getB2bSets, getB2bSetRating,
   }
 }

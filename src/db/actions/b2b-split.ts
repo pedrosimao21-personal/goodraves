@@ -1,0 +1,328 @@
+"use server";
+
+import { db } from "@/db";
+import { eq, and, sql, inArray } from "drizzle-orm";
+import {
+  artists,
+  festivalArtists,
+  festivalB2bSets,
+  festivalB2bSetMembers,
+  userFestivalArtistRatings,
+  userFestivalB2bSetRatings,
+} from "@/db/schema";
+import { requireAuth, validateRating } from "./festival-helpers";
+import { revalidatePath } from "next/cache";
+
+const MIN_MEMBER_COUNT = 2;
+const MAX_MEMBER_COUNT = 10;
+
+// ── Types ─────────────────────────────────────────────────
+
+export type B2bSetWithMembers = {
+  id: string;
+  festivalId: string;
+  originalArtistName: string;
+  members: { artistId: string; artistName: string; position: number }[];
+};
+
+// ── Split a B2B artist into individual members ────────────
+
+export async function splitB2bArtist(
+  festivalId: string,
+  originalArtistId: string,
+  memberNames: string[]
+): Promise<B2bSetWithMembers> {
+  await requireAuth();
+
+  const trimmedNames = memberNames.map((n) => n.trim()).filter(Boolean);
+  if (trimmedNames.length < MIN_MEMBER_COUNT) {
+    throw new Error(`At least ${MIN_MEMBER_COUNT} artist names are required`);
+  }
+  if (trimmedNames.length > MAX_MEMBER_COUNT) {
+    throw new Error(`At most ${MAX_MEMBER_COUNT} artist names are allowed`);
+  }
+
+  const uniqueNames = [...new Set(trimmedNames.map((n) => n.toLowerCase()))];
+  if (uniqueNames.length !== trimmedNames.length) {
+    throw new Error("Duplicate artist names are not allowed");
+  }
+
+  // Look up the original compound artist
+  const [originalArtist] = await db
+    .select({ id: artists.id, name: artists.name })
+    .from(artists)
+    .where(eq(artists.id, originalArtistId))
+    .limit(1);
+
+  if (!originalArtist) {
+    throw new Error("Original artist not found");
+  }
+
+  // Ensure all member artists exist (case-insensitive), create if missing
+  const memberArtists = await ensureMemberArtists(trimmedNames);
+
+  // Create the B2B set
+  const [b2bSet] = await db
+    .insert(festivalB2bSets)
+    .values({
+      festivalId,
+      originalArtistName: originalArtist.name,
+    })
+    .returning({ id: festivalB2bSets.id });
+
+  // Insert member rows with position ordering
+  const memberInserts = memberArtists.map((member, idx) => ({
+    b2bSetId: b2bSet.id,
+    artistId: member.id,
+    position: idx,
+  }));
+  await db.insert(festivalB2bSetMembers).values(memberInserts);
+
+  // Add individual artists to the festival lineup (skip if already present)
+  const lineupInserts = memberArtists.map((member) => ({
+    festivalId,
+    artistId: member.id,
+  }));
+  await db
+    .insert(festivalArtists)
+    .values(lineupInserts)
+    .onConflictDoNothing();
+
+  // Migrate existing performance ratings from the compound artist to a B2B set rating
+  await migrateRatingsToB2bSet(festivalId, originalArtistId, b2bSet.id);
+
+  // Remove the compound artist from the festival lineup
+  await db
+    .delete(festivalArtists)
+    .where(
+      and(
+        eq(festivalArtists.festivalId, festivalId),
+        eq(festivalArtists.artistId, originalArtistId)
+      )
+    );
+
+  // Delete the compound artist if no other festivals reference it
+  await deleteOrphanedArtist(originalArtistId);
+
+  revalidatePath(`/festival/${festivalId}`);
+
+  return {
+    id: b2bSet.id,
+    festivalId,
+    originalArtistName: originalArtist.name,
+    members: memberArtists.map((m, idx) => ({
+      artistId: m.id,
+      artistName: m.name,
+      position: idx,
+    })),
+  };
+}
+
+// ── Rate a B2B set ────────────────────────────────────────
+
+export async function rateB2bSet(b2bSetId: string, rating: number) {
+  const userId = await requireAuth();
+
+  if (rating === 0) {
+    await db
+      .delete(userFestivalB2bSetRatings)
+      .where(
+        and(
+          eq(userFestivalB2bSetRatings.userId, userId),
+          eq(userFestivalB2bSetRatings.b2bSetId, b2bSetId)
+        )
+      );
+    return;
+  }
+
+  const validRating = validateRating(rating);
+  await db
+    .insert(userFestivalB2bSetRatings)
+    .values({ userId, b2bSetId, rating: validRating })
+    .onConflictDoUpdate({
+      target: [userFestivalB2bSetRatings.userId, userFestivalB2bSetRatings.b2bSetId],
+      set: { rating: validRating },
+    });
+}
+
+// ── Get B2B sets for a festival ───────────────────────────
+
+export async function getB2bSetsForFestival(
+  festivalId: string
+): Promise<B2bSetWithMembers[]> {
+  const sets = await db
+    .select()
+    .from(festivalB2bSets)
+    .where(eq(festivalB2bSets.festivalId, festivalId));
+
+  if (sets.length === 0) return [];
+
+  const setIds = sets.map((s) => s.id);
+  const members = await db
+    .select({
+      b2bSetId: festivalB2bSetMembers.b2bSetId,
+      artistId: festivalB2bSetMembers.artistId,
+      artistName: artists.name,
+      position: festivalB2bSetMembers.position,
+    })
+    .from(festivalB2bSetMembers)
+    .innerJoin(artists, eq(festivalB2bSetMembers.artistId, artists.id))
+    .where(inArray(festivalB2bSetMembers.b2bSetId, setIds));
+
+  const membersBySet = new Map<string, B2bSetWithMembers["members"]>();
+  for (const m of members) {
+    const list = membersBySet.get(m.b2bSetId) ?? [];
+    list.push({ artistId: m.artistId, artistName: m.artistName, position: m.position });
+    membersBySet.set(m.b2bSetId, list);
+  }
+
+  return sets.map((s) => ({
+    id: s.id,
+    festivalId: s.festivalId,
+    originalArtistName: s.originalArtistName,
+    members: (membersBySet.get(s.id) ?? []).sort((a, b) => a.position - b.position),
+  }));
+}
+
+// ── Get B2B set ratings for the current user ──────────────
+
+export async function getUserB2bSetRatings(): Promise<Record<string, number>> {
+  const userId = await requireAuth();
+
+  const rows = await db
+    .select({
+      b2bSetId: userFestivalB2bSetRatings.b2bSetId,
+      rating: userFestivalB2bSetRatings.rating,
+    })
+    .from(userFestivalB2bSetRatings)
+    .where(eq(userFestivalB2bSetRatings.userId, userId));
+
+  const ratings: Record<string, number> = {};
+  for (const row of rows) {
+    if (row.rating) ratings[row.b2bSetId] = row.rating;
+  }
+  return ratings;
+}
+
+// ── Helpers ───────────────────────────────────────────────
+
+/**
+ * Look up or create artists by name (case-insensitive).
+ * Returns { id, name } for each, preserving input order.
+ */
+async function ensureMemberArtists(
+  names: string[]
+): Promise<{ id: string; name: string }[]> {
+  const results: { id: string; name: string }[] = [];
+
+  for (const name of names) {
+    // Case-insensitive lookup
+    const [existing] = await db
+      .select({ id: artists.id, name: artists.name })
+      .from(artists)
+      .where(sql`lower(${artists.name}) = lower(${name})`)
+      .limit(1);
+
+    if (existing) {
+      results.push(existing);
+      continue;
+    }
+
+    // Create the artist
+    const [created] = await db
+      .insert(artists)
+      .values({ name })
+      .onConflictDoNothing()
+      .returning({ id: artists.id, name: artists.name });
+
+    if (created) {
+      results.push(created);
+      continue;
+    }
+
+    // Race condition fallback
+    const [raced] = await db
+      .select({ id: artists.id, name: artists.name })
+      .from(artists)
+      .where(sql`lower(${artists.name}) = lower(${name})`)
+      .limit(1);
+
+    results.push(raced);
+  }
+
+  return results;
+}
+
+/**
+ * Move performance ratings from the compound artist to a B2B set rating.
+ * Each user who rated the compound artist gets that rating on the set.
+ */
+async function migrateRatingsToB2bSet(
+  festivalId: string,
+  originalArtistId: string,
+  b2bSetId: string
+) {
+  const existingRatings = await db
+    .select({
+      userId: userFestivalArtistRatings.userId,
+      rating: userFestivalArtistRatings.rating,
+    })
+    .from(userFestivalArtistRatings)
+    .where(
+      and(
+        eq(userFestivalArtistRatings.festivalId, festivalId),
+        eq(userFestivalArtistRatings.artistId, originalArtistId)
+      )
+    );
+
+  if (existingRatings.length === 0) return;
+
+  const ratingInserts = existingRatings
+    .filter((r) => r.rating !== null)
+    .map((r) => ({
+      userId: r.userId,
+      b2bSetId,
+      rating: r.rating,
+    }));
+
+  if (ratingInserts.length > 0) {
+    await db
+      .insert(userFestivalB2bSetRatings)
+      .values(ratingInserts)
+      .onConflictDoNothing();
+  }
+
+  // Remove the old compound artist ratings for this festival
+  await db
+    .delete(userFestivalArtistRatings)
+    .where(
+      and(
+        eq(userFestivalArtistRatings.festivalId, festivalId),
+        eq(userFestivalArtistRatings.artistId, originalArtistId)
+      )
+    );
+}
+
+/**
+ * Delete an artist from the artists table if no festival_artists rows reference it.
+ */
+async function deleteOrphanedArtist(artistId: string) {
+  const [stillReferenced] = await db
+    .select({ artistId: festivalArtists.artistId })
+    .from(festivalArtists)
+    .where(eq(festivalArtists.artistId, artistId))
+    .limit(1);
+
+  if (stillReferenced) return;
+
+  // Also check if the artist is a member of any B2B set
+  const [inB2bSet] = await db
+    .select({ artistId: festivalB2bSetMembers.artistId })
+    .from(festivalB2bSetMembers)
+    .where(eq(festivalB2bSetMembers.artistId, artistId))
+    .limit(1);
+
+  if (inB2bSet) return;
+
+  await db.delete(artists).where(eq(artists.id, artistId));
+}

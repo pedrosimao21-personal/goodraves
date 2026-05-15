@@ -662,6 +662,32 @@ img {
   box-shadow: var(--shadow-card);
 }
 
+.artist-card-options-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 7px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+
+.artist-card:hover .artist-card-options-btn {
+  opacity: 0.6;
+  pointer-events: auto;
+}
+
+.artist-card-options-btn:hover {
+  opacity: 1 !important;
+}
+
 .artist-avatar {
   width: 80px;
   height: 80px;

@@ -7,6 +7,7 @@ import { useUserData } from '@/context/UserDataContext'
 import { getFestival } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
+import B2bSetCard from '@/components/B2bSetCard'
 import FestivalNotes from './FestivalNotes'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
 import { formatDate } from '@/lib/format-date'
@@ -59,7 +60,7 @@ export default function FestivalDetail() {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
-  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets } = useUserData()
 
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -133,6 +134,10 @@ export default function FestivalDetail() {
 
     return () => { cancelled = true }
   }, [event])
+
+  useEffect(() => {
+    loadB2bSets(id)
+  }, [id, loadB2bSets])
 
   const isFuture = event?.date && new Date(event.date + 'T00:00:00') > new Date()
   const attended = isAttended(id)
@@ -255,9 +260,23 @@ export default function FestivalDetail() {
               <span className="section-count">{event.attractions.length} artist{event.attractions.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="grid-artists">
-              {event.attractions.map((artist: any) => (
-                <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} isPast={!isFuture} />
-              ))}
+              {(() => {
+                const b2bSets = getB2bSets(id)
+                const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
+                return (
+                  <>
+                    {b2bSets.map(b2bSet => (
+                      <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
+                    ))}
+                    {event.attractions
+                      .filter((artist: any) => !b2bMemberIds.has(artist.id))
+                      .map((artist: any) => (
+                        <ArtistCard key={artist.id} artist={artist} eventId={id} spotifyData={spotifyData[artist.name]} isPast={!isFuture} />
+                      ))
+                    }
+                  </>
+                )
+              })()}
             </div>
           </>
         ) : (

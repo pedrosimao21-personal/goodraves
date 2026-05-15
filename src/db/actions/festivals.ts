@@ -41,6 +41,9 @@ export { reimportRAEvent, fetchRAEvent, fetchRAEventImageUrl } from "./festival-
 // FestivalFans import
 export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 
+// B2B split
+export { splitB2bArtist, rateB2bSet, getB2bSetsForFestival, getUserB2bSetRatings } from "./b2b-split";
+
 // Partyflock import
 export { reimportPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 

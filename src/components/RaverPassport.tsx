@@ -60,7 +60,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       </div>
 
       {/* Stats Body */}
-      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, marginTop: 0, flex: 1 }}>
+      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 0 }}>
         
         {/* Total Shows */}
         <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
@@ -97,6 +97,9 @@ const RaverPassport = forwardRef<HTMLDivElement, {
         </div>
 
       </div>
+
+      {/* Spacer — pushes footer to bottom */}
+      <div style={{ flex: 1 }} />
 
       {/* Footer / Barcode decoration */}
       <div style={{ zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

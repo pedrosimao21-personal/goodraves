@@ -72,12 +72,10 @@ export default function Insights() {
       .slice(0, 5)
   }, [attendedEvents])
 
-  const topArtistName = useMemo(() => {
+  const topArtists = useMemo(() => {
     const counts = getArtistSeenCounts()
     const sorted = Object.entries(counts).sort((a: any, b: any) => b[1].count - a[1].count)
-    if (sorted.length === 0) return null
-    const topId = sorted[0][0]
-    return artistMeta[topId]?.name || topId.replace(/-/g, ' ')
+    return sorted.slice(0, 3).map(([id]) => artistMeta[id]?.name || id.replace(/-/g, ' '))
   }, [getArtistSeenCounts, artistMeta])
 
   const totalArtists = useMemo(() => Object.keys(getArtistSeenCounts()).length, [getArtistSeenCounts])
@@ -251,7 +249,7 @@ export default function Insights() {
             <RaverPassport
               ref={passportRef}
               events={attendedEvents}
-              topArtistName={topArtistName}
+              topArtists={topArtists}
               topGenre={topGenresData[0]?.name}
               totalArtists={totalArtists}
             />

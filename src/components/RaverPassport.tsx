@@ -4,12 +4,12 @@ import React, { forwardRef } from 'react'
 
 const RaverPassport = forwardRef<HTMLDivElement, {
   events: any[]
-  topArtistName: string
+  topArtists: string[]
   topGenre: string
   totalArtists: number
-}>(({ events, topArtistName, topGenre, totalArtists }, ref) => {
-  
-  // Calculate top cities
+}>(({ events, topArtists, topGenre, totalArtists }, ref) => {
+
+  // Calculate top city
   const cityCounts: Record<string, number> = {}
   events.forEach(e => {
     const city = e.venue?.city || 'Unknown'
@@ -17,11 +17,10 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       cityCounts[city] = (cityCounts[city] || 0) + 1
     }
   })
-  
-  const topCities = Object.entries(cityCounts)
+
+  const topCity = Object.entries(cityCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(entry => entry[0])
+    .map(entry => entry[0])[0] ?? null
 
   // Get current year
   const currentYear = new Date().getFullYear();
@@ -61,7 +60,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       </div>
 
       {/* Stats Body */}
-      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, marginTop: 0 }}>
+      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, marginTop: 0, flex: 1 }}>
         
         {/* Total Shows */}
         <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
@@ -70,28 +69,30 @@ const RaverPassport = forwardRef<HTMLDivElement, {
           <div style={{ fontSize: '0.85rem', color: '#aaa', marginTop: 4 }}>Across {totalArtists} unique artists</div>
         </div>
 
-        {/* Top Artist & Genre */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
-            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: 4 }}>#1 Artist</div>
-            <div style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{topArtistName || 'None'}</div>
-          </div>
+        {/* Top Genre & Home Base */}
+        <div style={{ display: 'grid', gridTemplateColumns: topCity ? '1fr 1fr' : '1fr', gap: 16 }}>
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
             <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: 4 }}>Top Genre</div>
             <div style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#ec4899' }}>{topGenre || 'None'}</div>
           </div>
+          {topCity && (
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
+              <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: 4 }}>Home Base</div>
+              <div style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{topCity}</div>
+            </div>
+          )}
         </div>
 
-        {/* Top Cities */}
+        {/* Top DJs */}
         <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
-          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: 8 }}>Top Hubs</div>
+          <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#888', marginBottom: 8 }}>Top DJs</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {topCities.length > 0 ? topCities.map((city, idx) => (
-              <div key={city} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {topArtists.length > 0 ? topArtists.map((artist, idx) => (
+              <div key={artist} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: '#8b5cf6', fontWeight: 800, fontSize: '1.1rem' }}>{idx + 1}</span>
-                <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>{city}</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{artist}</span>
               </div>
-            )) : <div style={{ color: '#ccc' }}>No cities found</div>}
+            )) : <div style={{ color: '#ccc' }}>No artists found</div>}
           </div>
         </div>
 

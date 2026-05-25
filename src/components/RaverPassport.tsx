@@ -48,7 +48,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       <div style={{ position: 'absolute', bottom: -50, left: -50, width: 250, height: 250, background: 'radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(40px)' }}></div>
       
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 'auto', zIndex: 1, marginTop: 16 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24, zIndex: 1, marginTop: 16 }}>
         <div style={{ fontSize: '0.8rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c4b5fd', marginBottom: 4 }}>
           Goodraves Official
         </div>
@@ -61,7 +61,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       </div>
 
       {/* Stats Body */}
-      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 24, marginBottom: 'auto', marginTop: 32 }}>
+      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24, marginTop: 0 }}>
         
         {/* Total Shows */}
         <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: '16px', backdropFilter: 'blur(10px)' }}>
@@ -98,7 +98,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
       </div>
 
       {/* Footer / Barcode decoration */}
-      <div style={{ zIndex: 1, marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div style={{ fontSize: '0.7rem', color: '#666', letterSpacing: '0.1em' }}>
           TRACKED VIA GOODRAVES
         </div>

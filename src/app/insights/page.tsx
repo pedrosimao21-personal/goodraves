@@ -81,12 +81,13 @@ export default function Insights() {
   const totalArtists = useMemo(() => Object.keys(getArtistSeenCounts()).length, [getArtistSeenCounts])
 
   const passportRef = useRef(null)
+  const passportCaptureRef = useRef(null)
 
   const handleDownloadPassport = async () => {
-    if (!passportRef.current) return
+    if (!passportCaptureRef.current) return
     try {
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(passportRef.current, { backgroundColor: '#000', scale: 3, useCORS: true, logging: false })
+      const canvas = await html2canvas(passportCaptureRef.current, { backgroundColor: '#000', scale: 3, useCORS: true, logging: false })
       const url = canvas.toDataURL('image/png')
       const a = document.createElement('a')
       a.href = url
@@ -256,6 +257,17 @@ export default function Insights() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Hidden unscaled passport used exclusively for html2canvas capture */}
+          <div style={{ position: 'fixed', top: 0, left: '-9999px', pointerEvents: 'none', zIndex: -1 }}>
+            <RaverPassport
+              ref={passportCaptureRef}
+              events={attendedEvents}
+              topArtists={topArtists}
+              topGenre={topGenresData[0]?.name}
+              totalArtists={totalArtists}
+            />
           </div>
         </div>
       </div>

@@ -314,6 +314,259 @@ img {
 }
 
 /* =============================================
+   SEARCH FILTERS
+   ============================================= */
+.search-filters {
+  max-width: 640px;
+  margin: -24px auto 32px;
+}
+
+.search-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Filter Dropdown Trigger ── */
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  min-height: 36px;
+  /* Ensure tappable area on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filter-dropdown-trigger:hover,
+.filter-dropdown-trigger:focus-visible {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  background: var(--bg-glass-hover);
+}
+
+.filter-dropdown-trigger.is-active {
+  border-color: var(--accent-purple);
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--accent-purple-light);
+}
+
+.filter-dropdown-trigger svg {
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.filter-dropdown-trigger.is-open svg.chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Filter Dropdown Menu ── */
+.filter-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 200;
+  min-width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 6px;
+  /* GPU-composited reveal animation */
+  animation: filterMenuReveal 150ms ease both;
+  transform-origin: top left;
+}
+
+@keyframes filterMenuReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Filter Menu Options ── */
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  /* Ensure comfortable touch target */
+  min-height: 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filter-option:hover {
+  background: var(--bg-glass-hover);
+}
+
+.filter-option input[type='checkbox'],
+.filter-option input[type='radio'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.filter-option input[type='radio'] {
+  border-radius: 50%;
+}
+
+.filter-option input[type='checkbox']:checked,
+.filter-option input[type='radio']:checked {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+}
+
+.filter-option input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1.5px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid white;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.filter-option input[type='radio']:checked::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: white;
+  border-radius: 50%;
+}
+
+.filter-option-label {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.filter-option input:checked ~ .filter-option-label {
+  color: var(--text-primary);
+}
+
+.filter-option-count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-glass);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* ── Active Filter Chips ── */
+.filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 12px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  color: var(--accent-purple-light);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filter-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  color: var(--accent-purple-light);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filter-chip-remove:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+/* ── Filter Summary Bar ── */
+.filter-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-summary-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.filter-summary-count strong {
+  color: var(--text-secondary);
+}
+
+.filter-clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-purple-light);
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.filter-clear-btn:hover {
+  color: var(--text-primary);
+}
+
+/* =============================================
    BUTTONS
    ============================================= */
 .btn {
@@ -1978,6 +2231,24 @@ img {
   .search-input {
     padding: 16px 16px 16px 48px;
     font-size: 1rem;
+  }
+
+  /* ── Filters ── */
+  .search-filters {
+    margin-top: -16px;
+    margin-bottom: 24px;
+  }
+
+  .filter-dropdown-menu {
+    /* On small screens let the menu go edge-to-edge if needed */
+    min-width: 180px;
+    max-width: calc(100vw - 48px);
+  }
+
+  .filter-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 
   .btn {

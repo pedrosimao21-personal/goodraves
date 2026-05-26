@@ -1,10 +1,29 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import { searchFestivalsDB, searchRAEvents, fetchRAEvent, searchFFEvents, fetchFFEvent, fetchFFEventImageUrl, fetchRAEventImageUrl, searchPFEvents, fetchPFEvent, fetchPFEventImageUrl } from '@/db/actions/festivals'
+import SearchFilters from '@/components/SearchFilters'
+import {
+  searchFestivalsDB,
+  searchRAEvents,
+  fetchRAEvent,
+  searchFFEvents,
+  fetchFFEvent,
+  fetchFFEventImageUrl,
+  fetchRAEventImageUrl,
+  searchPFEvents,
+  fetchPFEvent,
+  fetchPFEventImageUrl,
+} from '@/db/actions/festivals'
 import { resolvePFEventSlug } from '@/services/partyflock/client'
+import { type SearchFilters as SearchFiltersType, EMPTY_FILTERS } from '@/lib/search-filters'
+import {
+  extractFilterOptions,
+  applyFilters,
+  parseFiltersFromParams,
+  buildFilterParams,
+} from '@/lib/filter-utils'
 
 function SearchIcon() {
   return (
@@ -38,6 +57,15 @@ function extractPFEventSlugLocal(input: string): string | null {
   return match ? match[1] : null
 }
 
+function isUrlInput(input: string): boolean {
+  return !!(
+    extractRAEventId(input) ||
+    extractFFSlugLocal(input) ||
+    extractPFPartyIdLocal(input) ||
+    extractPFEventSlugLocal(input)
+  )
+}
+
 export default function SearchSection() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -48,12 +76,46 @@ export default function SearchSection() {
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const [pageInfo, setPageInfo] = useState<any>(null)
+
+  // Filters
+  const [filters, setFilters] = useState<SearchFiltersType>(() =>
+    parseFiltersFromParams(searchParams)
+  )
+  const [openDropdown, setOpenDropdown] = useState<'date' | 'country' | null>(null)
+
+  // Derived — computed only when events or filters change
+  const filterOptions = useMemo(() => extractFilterOptions(events), [events])
+  const filteredEvents = useMemo(() => applyFilters(events, filters), [events, filters])
+
+  // Sync filter changes back to the URL without pushing a new history entry
+  useEffect(() => {
+    const baseParams = new URLSearchParams()
+    if (initialQuery) baseParams.set('q', initialQuery)
+    const params = buildFilterParams(baseParams, filters)
+    router.replace(`/?${params.toString()}`, { scroll: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters])
+
+  const handleFilterChange = useCallback((next: SearchFiltersType) => {
+    setFilters(next)
+    setOpenDropdown(null)
+  }, [])
+
+  const handleDropdownToggle = useCallback((key: 'date' | 'country') => {
+    setOpenDropdown((prev) => (prev === key ? null : key))
+  }, [])
+
+  const handleDropdownClose = useCallback(() => {
+    setOpenDropdown(null)
+  }, [])
 
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) return
     setLoading(true)
     setError(null)
+    // Reset filters when a new search is triggered
+    setFilters(EMPTY_FILTERS)
+    setOpenDropdown(null)
     try {
       // Check if the input is an RA event URL
       const raEventId = extractRAEventId(q)
@@ -212,10 +274,9 @@ export default function SearchSection() {
       const sorted = results.sort((a, b) => {
         if (!a.date) return 1
         if (!b.date) return -1
-        return b.date.localeCompare(a.date)
+        return a.date.localeCompare(b.date)
       })
 
-      setPageInfo({ totalElements: sorted.length })
       setEvents(sorted)
       setSearched(true)
 
@@ -252,8 +313,8 @@ export default function SearchSection() {
         (e: any) => !e.image && e.id?.startsWith('pf-')
       )
       for (const pf of pfWithoutImage) {
-        const pfPartyId = pf.id.replace(/^pf-/, '')
-        fetchPFEventImageUrl(pfPartyId).then((imageUrl) => {
+        const pfId = pf.id.replace(/^pf-/, '')
+        fetchPFEventImageUrl(pfId).then((imageUrl) => {
           if (!imageUrl) return
           setEvents((prev) =>
             prev.map((e) => (e.id === pf.id ? { ...e, image: imageUrl } : e))
@@ -287,6 +348,8 @@ export default function SearchSection() {
     router.push(`/?${params.toString()}`)
   }
 
+  const showFilters = searched && !loading && events.length > 0
+
   return (
     <>
       <div className="search-wrap">
@@ -304,10 +367,23 @@ export default function SearchSection() {
             />
           </div>
           <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? ((extractRAEventId(inputValue) || extractFFSlugLocal(inputValue) || extractPFPartyIdLocal(inputValue) || extractPFEventSlugLocal(inputValue)) ? 'Fetching event…' : 'Searching…') : 'Search'}
+            {loading ? (isUrlInput(inputValue) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>
       </div>
+
+      {showFilters && (
+        <SearchFilters
+          filterOptions={filterOptions}
+          activeFilters={filters}
+          onFilterChange={handleFilterChange}
+          totalCount={events.length}
+          filteredCount={filteredEvents.length}
+          openDropdown={openDropdown}
+          onDropdownToggle={handleDropdownToggle}
+          onDropdownClose={handleDropdownClose}
+        />
+      )}
 
       {error && (
         <div className="error-state">
@@ -325,11 +401,15 @@ export default function SearchSection() {
         </div>
       )}
 
-      {!loading && searched && events.length === 0 && !error && (
+      {!loading && searched && filteredEvents.length === 0 && !error && (
         <div className="empty-state">
           <div className="empty-state-icon">🔍</div>
           <h3>No events found</h3>
-          <p>Try a different search — artist name, venue, city or festival.</p>
+          <p>
+            {events.length > 0
+              ? 'No events match the active filters. Try adjusting or clearing them.'
+              : 'Try a different search — artist name, venue, city or festival.'}
+          </p>
         </div>
       )}
 
@@ -341,19 +421,17 @@ export default function SearchSection() {
         </div>
       )}
 
-      {events.length > 0 && (
+      {filteredEvents.length > 0 && (
         <>
           <div className="section-header">
             <h2 className="section-title">Results</h2>
-            {pageInfo && (
-              <span className="section-count">
-                {events.length} events found
-              </span>
-            )}
+            <span className="section-count">
+              {filteredEvents.length} events found
+            </span>
           </div>
 
           <div className="grid">
-            {events.map((event: any) => (
+            {filteredEvents.map((event: any) => (
               <FestivalCard key={event.id} event={event} />
             ))}
           </div>

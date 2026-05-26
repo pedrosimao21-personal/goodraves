@@ -5,7 +5,6 @@ import {
   type SearchFilters,
   type FilterOptions,
   type FilterOption,
-  type DateRangeOption,
   hasActiveFilters,
   EMPTY_FILTERS,
 } from '@/lib/search-filters'
@@ -50,42 +49,46 @@ function CloseIcon() {
   )
 }
 
-// ── Hooks ──────────────────────────────────────────────
+// ── Click-outside hook ─────────────────────────────────
+// Uses 'mousedown' on capture phase so we can check containment
+// before the click propagates. Crucially, if the user clicks
+// *inside* the ref'd element the handler does nothing, so option
+// buttons inside the dropdown always fire their own onClick first.
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
-    function handlePointerDown(event: PointerEvent) {
+    function handleMouseDown(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         onClose()
       }
     }
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => document.removeEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('mousedown', handleMouseDown, true)
+    return () => document.removeEventListener('mousedown', handleMouseDown, true)
   }, [ref, onClose])
 }
 
-// ── Date Dropdown ──────────────────────────────────────
+// ── Year Dropdown ──────────────────────────────────────
 
-interface DateDropdownProps {
+interface YearDropdownProps {
   options: FilterOption[]
-  selected: DateRangeOption | null
+  selected: string | null
   isOpen: boolean
   onToggle: () => void
   onClose: () => void
-  onSelect: (value: DateRangeOption | null) => void
+  onSelect: (value: string | null) => void
 }
 
-function DateDropdown({ options, selected, isOpen, onToggle, onClose, onSelect }: DateDropdownProps) {
+function YearDropdown({ options, selected, isOpen, onToggle, onClose, onSelect }: YearDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   useClickOutside(containerRef, onClose)
 
-  const handleSelect = useCallback((value: DateRangeOption) => {
-    // Clicking an already-selected option deselects it
+  const handleOptionClick = useCallback((value: string) => {
+    // Clicking the already-selected year deselects it
     onSelect(selected === value ? null : value)
     onClose()
   }, [selected, onSelect, onClose])
 
-  const selectedLabel = options.find((o) => o.value === selected)?.label ?? null
+  const triggerLabel = selected ? `Year: ${selected}` : 'Year'
 
   return (
     <div className="filter-dropdown" ref={containerRef}>
@@ -96,134 +99,28 @@ function DateDropdown({ options, selected, isOpen, onToggle, onClose, onSelect }
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        {selectedLabel ? `Date: ${selectedLabel}` : 'Date'}
-        <ChevronIcon />
-      </button>
-
-      {isOpen && (
-        <div className="filter-dropdown-menu" role="listbox" aria-label="Date range filter">
-          {options.map((option) => (
-            <label key={option.value} className="filter-option">
-              <input
-                type="radio"
-                name="date-range"
-                checked={selected === option.value}
-                onChange={() => handleSelect(option.value as DateRangeOption)}
-              />
-              <span className="filter-option-label">{option.label}</span>
-              <span className="filter-option-count">{option.count}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Country Dropdown ───────────────────────────────────
-
-interface CountryDropdownProps {
-  options: FilterOption[]
-  selected: string[]
-  isOpen: boolean
-  onToggle: () => void
-  onClose: () => void
-  onToggleCountry: (country: string) => void
-}
-
-function CountryDropdown({
-  options,
-  selected,
-  isOpen,
-  onToggle,
-  onClose,
-  onToggleCountry,
-}: CountryDropdownProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  useClickOutside(containerRef, onClose)
-
-  const selectedSet = new Set(selected)
-  const triggerLabel =
-    selected.length === 0
-      ? 'Country'
-      : selected.length === 1
-        ? `Country: ${selected[0]}`
-        : `Country: ${selected.length} selected`
-
-  return (
-    <div className="filter-dropdown" ref={containerRef}>
-      <button
-        type="button"
-        className={`filter-dropdown-trigger${selected.length > 0 ? ' is-active' : ''}${isOpen ? ' is-open' : ''}`}
-        onClick={onToggle}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-        aria-multiselectable="true"
-      >
         {triggerLabel}
         <ChevronIcon />
       </button>
 
       {isOpen && (
-        <div className="filter-dropdown-menu" role="listbox" aria-label="Country filter" aria-multiselectable="true">
+        <div className="filter-dropdown-menu" role="listbox" aria-label="Year filter">
           {options.map((option) => (
-            <label key={option.value} className="filter-option">
-              <input
-                type="checkbox"
-                checked={selectedSet.has(option.value)}
-                onChange={() => onToggleCountry(option.value)}
-              />
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={selected === option.value}
+              className={`filter-option${selected === option.value ? ' is-selected' : ''}`}
+              onClick={() => handleOptionClick(option.value)}
+            >
+              <span className="filter-option-indicator" aria-hidden="true" />
               <span className="filter-option-label">{option.label}</span>
               <span className="filter-option-count">{option.count}</span>
-            </label>
+            </button>
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Active Filter Chips ────────────────────────────────
-
-interface FilterChipsProps {
-  filters: SearchFilters
-  dateLabel: string | null
-  onRemoveDateRange: () => void
-  onRemoveCountry: (country: string) => void
-}
-
-function FilterChips({ filters, dateLabel, onRemoveDateRange, onRemoveCountry }: FilterChipsProps) {
-  const hasChips = filters.dateRange !== null || filters.countries.length > 0
-  if (!hasChips) return null
-
-  return (
-    <div className="filter-chips" aria-label="Active filters">
-      {filters.dateRange !== null && dateLabel && (
-        <span className="filter-chip">
-          {dateLabel}
-          <button
-            type="button"
-            className="filter-chip-remove"
-            onClick={onRemoveDateRange}
-            aria-label={`Remove date filter: ${dateLabel}`}
-          >
-            <CloseIcon />
-          </button>
-        </span>
-      )}
-      {filters.countries.map((country) => (
-        <span key={country} className="filter-chip">
-          {country}
-          <button
-            type="button"
-            className="filter-chip-remove"
-            onClick={() => onRemoveCountry(country)}
-            aria-label={`Remove country filter: ${country}`}
-          >
-            <CloseIcon />
-          </button>
-        </span>
-      ))}
     </div>
   )
 }
@@ -236,8 +133,8 @@ interface SearchFiltersProps {
   onFilterChange: (filters: SearchFilters) => void
   totalCount: number
   filteredCount: number
-  openDropdown: 'date' | 'country' | null
-  onDropdownToggle: (key: 'date' | 'country') => void
+  openDropdown: 'year' | null
+  onDropdownToggle: (key: 'year') => void
   onDropdownClose: () => void
 }
 
@@ -252,75 +149,45 @@ export default function SearchFilters({
   onDropdownClose,
 }: SearchFiltersProps) {
   const isFiltered = hasActiveFilters(activeFilters)
-  const showDateFilter = filterOptions.dateRanges.length > 0
-  const showCountryFilter = filterOptions.countries.length > 0
 
-  if (!showDateFilter && !showCountryFilter) return null
+  if (filterOptions.years.length === 0) return null
 
-  const handleDateSelect = useCallback(
-    (value: DateRangeOption | null) => {
-      onFilterChange({ ...activeFilters, dateRange: value })
+  const handleYearSelect = useCallback(
+    (value: string | null) => {
+      onFilterChange({ ...activeFilters, year: value })
     },
     [activeFilters, onFilterChange],
   )
 
-  const handleToggleCountry = useCallback(
-    (country: string) => {
-      const isSelected = activeFilters.countries.includes(country)
-      const countries = isSelected
-        ? activeFilters.countries.filter((c) => c !== country)
-        : [...activeFilters.countries, country]
-      onFilterChange({ ...activeFilters, countries })
-    },
-    [activeFilters, onFilterChange],
-  )
-
-  const handleRemoveDateRange = useCallback(() => {
-    onFilterChange({ ...activeFilters, dateRange: null })
+  const handleRemoveYear = useCallback(() => {
+    onFilterChange({ ...activeFilters, year: null })
   }, [activeFilters, onFilterChange])
-
-  const handleRemoveCountry = useCallback(
-    (country: string) => {
-      onFilterChange({
-        ...activeFilters,
-        countries: activeFilters.countries.filter((c) => c !== country),
-      })
-    },
-    [activeFilters, onFilterChange],
-  )
-
-  const activeDateLabel =
-    filterOptions.dateRanges.find((o) => o.value === activeFilters.dateRange)?.label ?? null
 
   return (
     <div className="search-filters">
       <div className="search-filters-row">
-        {showDateFilter && (
-          <DateDropdown
-            options={filterOptions.dateRanges}
-            selected={activeFilters.dateRange}
-            isOpen={openDropdown === 'date'}
-            onToggle={() => onDropdownToggle('date')}
-            onClose={onDropdownClose}
-            onSelect={handleDateSelect}
-          />
-        )}
-        {showCountryFilter && (
-          <CountryDropdown
-            options={filterOptions.countries}
-            selected={activeFilters.countries}
-            isOpen={openDropdown === 'country'}
-            onToggle={() => onDropdownToggle('country')}
-            onClose={onDropdownClose}
-            onToggleCountry={handleToggleCountry}
-          />
-        )}
-        <FilterChips
-          filters={activeFilters}
-          dateLabel={activeDateLabel}
-          onRemoveDateRange={handleRemoveDateRange}
-          onRemoveCountry={handleRemoveCountry}
+        <YearDropdown
+          options={filterOptions.years}
+          selected={activeFilters.year}
+          isOpen={openDropdown === 'year'}
+          onToggle={() => onDropdownToggle('year')}
+          onClose={onDropdownClose}
+          onSelect={handleYearSelect}
         />
+
+        {activeFilters.year && (
+          <span className="filter-chip">
+            {activeFilters.year}
+            <button
+              type="button"
+              className="filter-chip-remove"
+              onClick={handleRemoveYear}
+              aria-label={`Remove year filter: ${activeFilters.year}`}
+            >
+              <CloseIcon />
+            </button>
+          </span>
+        )}
       </div>
 
       {isFiltered && (

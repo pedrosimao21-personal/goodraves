@@ -81,7 +81,7 @@ export default function SearchSection() {
   const [filters, setFilters] = useState<SearchFiltersType>(() =>
     parseFiltersFromParams(searchParams)
   )
-  const [openDropdown, setOpenDropdown] = useState<'date' | 'country' | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<'year' | null>(null)
 
   // Derived — computed only when events or filters change
   const filterOptions = useMemo(() => extractFilterOptions(events), [events])
@@ -101,7 +101,7 @@ export default function SearchSection() {
     setOpenDropdown(null)
   }, [])
 
-  const handleDropdownToggle = useCallback((key: 'date' | 'country') => {
+  const handleDropdownToggle = useCallback((key: 'year') => {
     setOpenDropdown((prev) => (prev === key ? null : key))
   }, [])
 
@@ -381,8 +381,7 @@ export default function SearchSection() {
           filteredCount={filteredEvents.length}
           openDropdown={openDropdown}
           onDropdownToggle={handleDropdownToggle}
-          onDropdownClose={handleDropdownClose}
-        />
+          onDropdownClose={handleDropdownClose}        />
       )}
 
       {error && (

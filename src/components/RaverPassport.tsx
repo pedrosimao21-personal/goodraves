@@ -66,7 +66,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
         <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c4b5fd', marginBottom: 3 }}>
           Goodraves Official
         </div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, margin: 0, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.02em', background: 'var(--gradient-hero)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, margin: 0, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
           Raver Passport
         </h1>
         <div style={{ fontSize: '0.85rem', color: '#fff', opacity: 0.7, marginTop: 3, fontStyle: 'italic' }}>
@@ -93,7 +93,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
           {topCity && (
             <div style={CARD_STYLE}>
               <div style={LABEL_STYLE}>Home Base</div>
-              <div style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{topCity}</div>
+              <div style={{ fontSize: '0.95rem', fontFamily: 'var(--font-display)', fontWeight: 800, lineHeight: 1.2, wordBreak: 'break-word' }}>{topCity}</div>
             </div>
           )}
         </div>

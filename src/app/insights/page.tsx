@@ -244,15 +244,17 @@ export default function Insights() {
               📸 Save to Phone
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', padding: '32px 16px', borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
-            <RaverPassport
-              ref={passportRef}
-              events={attendedEvents}
-              topArtists={topArtists}
-              topGenre={topGenresData[0]?.name}
-              totalArtists={totalArtists}
-            />
+          <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', padding: '32px 16px', borderRadius: 16 }}>
+            <div style={{ width: 360, maxWidth: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ transform: 'scale(min(1, calc((100vw - 64px) / 360)))', transformOrigin: 'top center', flexShrink: 0 }}>
+                <RaverPassport
+                  ref={passportRef}
+                  events={attendedEvents}
+                  topArtists={topArtists}
+                  topGenre={topGenresData[0]?.name}
+                  totalArtists={totalArtists}
+                />
+              </div>
             </div>
           </div>
         </div>

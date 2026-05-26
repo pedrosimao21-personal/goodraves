@@ -3,11 +3,10 @@
 import React, { forwardRef } from 'react'
 
 const CARD_STYLE: React.CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.03)',
+  background: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 12,
   padding: '12px 14px',
-  backdropFilter: 'blur(10px)',
 }
 
 const LABEL_STYLE: React.CSSProperties = {

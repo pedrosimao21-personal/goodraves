@@ -87,7 +87,11 @@ export default function Insights() {
     if (!passportCaptureRef.current) return
     try {
       const html2canvas = (await import('html2canvas')).default
-      const canvas = await html2canvas(passportCaptureRef.current, { backgroundColor: '#000', scale: 3, useCORS: true, logging: false })
+      const el = passportCaptureRef.current as HTMLElement
+      const prevOverflow = el.style.overflow
+      el.style.overflow = 'visible'
+      const canvas = await html2canvas(el, { backgroundColor: '#000', scale: 3, useCORS: true, logging: false })
+      el.style.overflow = prevOverflow
       const url = canvas.toDataURL('image/png')
       const a = document.createElement('a')
       a.href = url

@@ -313,7 +313,9 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     if (!userId || !isAdmin) return
     setState(prev => {
       const base = prev.festivalMeta[id] ?? {}
-      return { ...prev, festivalMeta: { ...prev.festivalMeta, [id]: { ...base, ...meta } } }
+      const venueObj = typeof meta.venue === 'object' ? meta.venue : null
+      const location = meta.location ?? venueObj?.city ?? base.location
+      return { ...prev, festivalMeta: { ...prev.festivalMeta, [id]: { ...base, ...meta, location } } }
     })
     const venueObj = typeof meta.venue === 'object' ? meta.venue : null
     const venueName = venueObj?.name ?? (typeof meta.venue === 'string' ? meta.venue : null)

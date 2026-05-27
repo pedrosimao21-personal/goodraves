@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef } from 'react'
 import { useUserData } from '@/context/UserDataContext'
+import { normalizeLocation } from '@/utils/location-normalizer'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, Legend
@@ -60,11 +61,11 @@ export default function Insights() {
   }, [getArtistSeenCounts, artistMeta])
 
   const cityData = useMemo(() => {
-    const counts = {}
+    const counts: Record<string, number> = {}
     attendedEvents.forEach(e => {
-      const city = e.location || 'Unknown'
-      if (city === 'Unknown') return
-      counts[city] = (counts[city] || 0) + 1
+      const location = normalizeLocation(e.location)
+      if (!location) return
+      counts[location] = (counts[location] || 0) + 1
     })
     return Object.entries(counts)
       .map(([name, count]: [string, any]) => ({ name, count: count as number }))

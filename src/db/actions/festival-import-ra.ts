@@ -7,6 +7,7 @@ import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByName
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { parseRALineup } from "@/services/ra/parser";
 import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
+import { normalizeCountryName } from "@/utils/location-normalizer";
 
 /** Fetch and store imageUrl for an RA event that was imported without one. */
 async function backfillMissingImage(festivalId: string, raId: string): Promise<void> {
@@ -83,7 +84,9 @@ export async function fetchRAEvent(
 
   const venueName = data.venue?.name ?? null;
   const areaName = data.venue?.area?.name ?? null;
-  const countryName = data.venue?.area?.country?.name ?? null;
+  const countryName = data.venue?.area?.country?.name
+    ? normalizeCountryName(data.venue.area.country.name)
+    : null;
   const location = [areaName, countryName].filter(Boolean).join(", ") || null;
   const imageUrl = data.images?.[0]?.filename ?? null;
 

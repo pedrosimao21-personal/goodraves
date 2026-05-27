@@ -33,6 +33,7 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
       name: name.trim() || meta.name,
       date: date.trim() || meta.date,
       venue: { name: venue.trim() || null, city: city.trim() || null },
+      location: city.trim() || null,
       image: image.trim() || null,
       lineup: lineup.split(/[,\n]/).map(s => s.trim()).filter(Boolean),
     }

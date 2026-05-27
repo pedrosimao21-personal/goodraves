@@ -3,6 +3,7 @@
  */
 
 import { type LineupEntry } from "@/services/lineup-types";
+import { normalizeCountryName } from "@/utils/location-normalizer";
 
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
@@ -189,7 +190,8 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
   const cityMatch = html.match(/<span itemprop="addressLocality">[\s\S]*?<a[^>]*>([^<]+)<\/a>/);
   const countryMatch = html.match(/<span itemprop="addressCountry">[\s\S]*?<a[^>]*>([^<]+)<\/a>/);
   const city = cityMatch ? cityMatch[1].trim() : null;
-  const country = countryMatch ? countryMatch[1].trim() : null;
+  const rawCountry = countryMatch ? countryMatch[1].trim() : null;
+  const country = rawCountry ? normalizeCountryName(rawCountry) : null;
 
   let location: string | null = null;
   if (city && country) {

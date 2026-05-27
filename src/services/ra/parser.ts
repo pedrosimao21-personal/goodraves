@@ -4,6 +4,7 @@
  */
 
 import { type RAEventRaw } from "./client";
+import { normalizeCountryName } from "@/utils/location-normalizer";
 import {
   type LineupEntry,
   B2B_CONNECTOR_PATTERN,
@@ -187,7 +188,9 @@ export function mapRAEventToSearchResult(e: RAEventRaw): RASearchResult | null {
 
   const venueName = e.venue?.name ?? null;
   const areaName = e.venue?.area?.name ?? null;
-  const countryName = e.venue?.area?.country?.name ?? null;
+  const countryName = e.venue?.area?.country?.name
+    ? normalizeCountryName(e.venue.area.country.name)
+    : null;
   const location =
     [areaName, countryName].filter(Boolean).join(", ") || null;
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { forwardRef } from 'react'
+import { normalizeLocation } from '@/utils/location-normalizer'
 
 const CARD_STYLE: React.CSSProperties = {
   background: 'rgba(255, 255, 255, 0.05)',
@@ -27,8 +28,9 @@ const RaverPassport = forwardRef<HTMLDivElement, {
   // Calculate top city
   const cityCounts: Record<string, number> = {}
   events.forEach(e => {
-    const city = e.venue?.city || 'Unknown'
-    if (city !== 'Unknown') {
+    const rawCity = e.venue?.city || e.location || null
+    const city = normalizeLocation(rawCity)
+    if (city) {
       cityCounts[city] = (cityCounts[city] || 0) + 1
     }
   })

@@ -2,6 +2,15 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
+    // Cache transformed images for 31 days — reduces repeated transformations for
+    // stable CDN sources (Spotify, Last.fm, RA, etc.) that rarely change.
+    minimumCacheTTL: 2678400,
+    // Limit formats to WebP only; AVIF would double transformation count per image.
+    formats: ['image/webp'],
+    // Custom sizes tailored to actual usage in the app, reducing the number of
+    // possible transformation variants from the large Next.js defaults.
+    imageSizes: [20, 44, 48, 56, 80, 120, 200],
+    deviceSizes: [400, 640, 828, 1200],
     remotePatterns: [
       { protocol: 'https', hostname: '*.scdn.co' },           // Spotify CDN
       { protocol: 'https', hostname: 'i.scdn.co' },           // Spotify images

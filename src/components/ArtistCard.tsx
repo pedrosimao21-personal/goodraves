@@ -64,7 +64,7 @@ const ArtistCard = memo(function ArtistCard({
               alt={displayName}
               width={48}
               height={48}
-              quality={90}
+              quality={85}
               sizes="48px"
               style={{ objectFit: 'cover' }}
             />

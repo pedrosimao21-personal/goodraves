@@ -19,6 +19,7 @@ function ArtistChip({ artist }: { artist: PopularArtist }) {
           alt={artist.name}
           width={20}
           height={20}
+          sizes="20px"
           className="dj-suggestion-chip-img"
         />
       )}

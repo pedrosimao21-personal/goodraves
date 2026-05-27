@@ -185,7 +185,7 @@ export default function FestivalDetail() {
     <div className="page">
       <div className="festival-hero">
         {event.image ? (
-          <Image className="festival-hero-bg" src={event.image} alt="" width={1200} height={400} style={{ objectFit: 'cover' }} aria-hidden />
+          <Image className="festival-hero-bg" src={event.image} alt="" width={1200} height={400} sizes="100vw" quality={85} priority style={{ objectFit: 'cover' }} aria-hidden />
         ) : (
           <div className="festival-hero-bg-fallback" />
         )}
@@ -227,17 +227,17 @@ export default function FestivalDetail() {
 
             {externalUrl && (
               <a href={externalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                <Image src="/ra-logo.svg" alt="" width={20} height={10} style={{ filter: 'invert(1)' }} /> View on Resident Advisor ↗
+                <Image src="/ra-logo.svg" alt="" width={20} height={10} unoptimized style={{ filter: 'invert(1)' }} /> View on Resident Advisor ↗
               </a>
             )}
             {ffExternalUrl && (
               <a href={ffExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                <Image src="/festivalfans-icon.png" alt="" width={14} height={14} /> View on FestivalFans ↗
+                <Image src="/festivalfans-icon.png" alt="" width={14} height={14} unoptimized /> View on FestivalFans ↗
               </a>
             )}
             {pfExternalUrl && (
               <a href={pfExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
-                <Image src="/partyflock-icon.png" alt="" width={14} height={14} /> View on Partyflock ↗
+                <Image src="/partyflock-icon.png" alt="" width={14} height={14} unoptimized /> View on Partyflock ↗
               </a>
             )}
           </div>

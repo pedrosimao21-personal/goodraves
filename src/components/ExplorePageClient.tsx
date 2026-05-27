@@ -37,6 +37,7 @@ function ArtistAvatar({ name, image }: { name: string; image: string | null }) {
         alt={name}
         width={72}
         height={72}
+        sizes="72px"
         className="explore-artist-avatar"
         style={{ objectFit: 'cover' }}
       />
@@ -57,6 +58,7 @@ function AlbumArt({ name, image }: { name: string; image: string | null }) {
         alt={name}
         width={120}
         height={120}
+        sizes="120px"
         className="explore-album-art"
         style={{ objectFit: 'cover' }}
       />
@@ -79,6 +81,7 @@ function TrackArt({ name, image }: { name: string; image: string | null }) {
         alt={name}
         width={48}
         height={48}
+        sizes="48px"
         style={{ objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
       />
     )
@@ -387,6 +390,7 @@ function FestivalThumbnail({ festival }: { festival: TrendingFestival }) {
         alt={festival.name}
         width={60}
         height={60}
+        sizes="60px"
         className="upcoming-festival-thumb"
         style={{ objectFit: 'cover' }}
       />
@@ -468,6 +472,7 @@ function NearbyShowThumbnail({ show }: { show: NearbyShow }) {
         alt={show.name}
         width={60}
         height={60}
+        sizes="60px"
         className="upcoming-festival-thumb"
         style={{ objectFit: 'cover' }}
       />

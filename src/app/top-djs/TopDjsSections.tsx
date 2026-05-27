@@ -162,7 +162,7 @@ function ArtistRow({ artist, index, displayImage, hasSpotifyImage, onSelect }: {
 
       <div style={{ position: 'relative', flexShrink: 0 }}>
         {displayImage ? (
-          <Image src={displayImage} alt={artist.name} width={50} height={50} quality={90} sizes="50px" style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
+          <Image src={displayImage} alt={artist.name} width={50} height={50} quality={85} sizes="50px" style={{ borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
         ) : (
           <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '2px solid var(--border)' }}>&#127908;</div>
         )}

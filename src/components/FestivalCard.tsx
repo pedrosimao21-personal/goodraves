@@ -49,7 +49,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   if (key === 'ra') {
     return (
       <span className="tag" style={badgeStyle}>
-        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} style={{ filter: 'invert(1)' }} />
+        <Image src="/ra-logo.svg" alt="Resident Advisor" width={20} height={10} unoptimized style={{ filter: 'invert(1)' }} />
       </span>
     )
   }
@@ -57,7 +57,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   if (key === 'festivalfans') {
     return (
       <span className="tag" style={badgeStyle}>
-        <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} />
+        <Image src="/festivalfans-icon.png" alt="FestivalFans" width={14} height={14} unoptimized />
       </span>
     )
   }
@@ -65,7 +65,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   if (key === 'partyflock') {
     return (
       <span className="tag" style={badgeStyle}>
-        <Image src="/partyflock-icon.png" alt="Partyflock" width={14} height={14} />
+        <Image src="/partyflock-icon.png" alt="Partyflock" width={14} height={14} unoptimized />
       </span>
     )
   }
@@ -153,7 +153,7 @@ export default function FestivalCard({ event }: { event: any }) {
     <Link href={festivalHref} className="festival-card fade-in">
       <div style={{ position: 'relative' }}>
         {displayImage ? (
-          <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} style={{ objectFit: 'cover' }} />
+          <Image className="festival-card-img" src={displayImage} alt={event.name} width={400} height={225} sizes="(max-width: 640px) 100vw, 400px" quality={85} style={{ objectFit: 'cover' }} />
         ) : (
           <div className="festival-card-img-placeholder">
             🎪

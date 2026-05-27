@@ -71,7 +71,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
                 alt={member.artistName}
                 width={80}
                 height={80}
-                quality={90}
+                quality={85}
                 sizes="80px"
                 style={{
                   objectFit: 'cover',

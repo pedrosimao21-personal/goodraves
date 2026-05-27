@@ -84,7 +84,7 @@ export function ArtistHeader({
           width={200}
           height={200}
           sizes="(max-width: 768px) 140px, 200px"
-          quality={90}
+          quality={85}
           priority
           style={{ objectFit: 'cover' }}
         />

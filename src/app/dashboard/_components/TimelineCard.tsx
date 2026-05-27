@@ -56,6 +56,7 @@ const ArtistChip = React.memo(({ artist }: { artist: TimelineArtist }) => (
         alt=""
         width={22}
         height={22}
+        sizes="22px"
         style={{ borderRadius: '50%', objectFit: 'cover' }}
       />
     ) : (
@@ -111,6 +112,7 @@ const TimelineCard = React.memo(({ festivalId, meta, seenArtists, isUpcoming }: 
             alt=""
             width={56}
             height={56}
+            sizes="56px"
             style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
           />
         ) : (

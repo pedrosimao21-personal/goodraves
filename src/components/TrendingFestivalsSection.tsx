@@ -29,6 +29,7 @@ function FestivalThumbnail({ festival }: { festival: TrendingFestival }) {
         alt={festival.name}
         width={60}
         height={60}
+        sizes="60px"
         className="upcoming-festival-thumb"
         style={{ objectFit: 'cover' }}
       />

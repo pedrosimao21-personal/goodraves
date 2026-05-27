@@ -17,7 +17,7 @@ function FestivalRow({ fest }: { fest: any }) {
       textDecoration: 'none', color: 'inherit', transition: 'border-color 200ms ease'
     }}>
       {fest.imageUrl ? (
-        <Image src={fest.imageUrl} alt={fest.name} width={48} height={48} style={{ borderRadius: 8, objectFit: 'cover' }} />
+        <Image src={fest.imageUrl} alt={fest.name} width={48} height={48} sizes="48px" style={{ borderRadius: 8, objectFit: 'cover' }} />
       ) : (
         <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', flexShrink: 0 }} />
       )}

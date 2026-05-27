@@ -5,11 +5,50 @@ import { useState, useRef } from 'react'
 import { type ArtistData } from '@/db/actions/artists'
 import { type RAUpcomingEvent } from '@/services/ra/client'
 import { getCountryFlag } from '@/services/ra/country-flags'
-import StarRating from '@/components/StarRating'
 import { ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
 import { formatFollowers, formatPlaycount } from './format-counts'
 
 import { MAX_NOTES_LENGTH } from '@/lib/constants'
+
+const FILLED_STAR = '★'
+const EMPTY_STAR = '☆'
+const TOTAL_STARS = 5
+const NO_RATING_MESSAGE = "DJ not rated yet. Go to some raves!"
+
+function AverageRatingDisplay({ averageRating }: { averageRating: number }) {
+  const hasRating = averageRating > 0
+
+  return (
+    <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your rating:</span>
+      {hasRating ? (
+        <AverageStars averageRating={averageRating} />
+      ) : (
+        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+          {NO_RATING_MESSAGE}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function AverageStars({ averageRating }: { averageRating: number }) {
+  const roundedRating = Math.round(averageRating * 2) / 2
+
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontSize: '1.1rem', color: 'var(--accent)', letterSpacing: 2 }}>
+        {Array.from({ length: TOTAL_STARS }, (_, i) => {
+          const isFilledStar = i < Math.floor(roundedRating)
+          return isFilledStar ? FILLED_STAR : EMPTY_STAR
+        }).join('')}
+      </span>
+      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+        {averageRating.toFixed(1)}
+      </span>
+    </span>
+  )
+}
 
 type SpotifyAlbum = { id: string; name: string; releaseDate: string; image: string | null; url: string | null; type: string }
 type LastfmTrack = { name: string; playcount: number; url: string | null; listeners: number; previewUrl?: string | null }
@@ -23,6 +62,7 @@ export function ArtistHeader({
   artist,
   getNotes,
   setNotes,
+  getAverageArtistRating,
 }: {
   displayImage: string | null
   displayName: string
@@ -32,6 +72,7 @@ export function ArtistHeader({
   artist: ArtistData | null
   getNotes: (id: string) => string
   setNotes: (id: string, value: string) => void
+  getAverageArtistRating: (id: string) => number
 }) {
   return (
     <div className="artist-detail-header">
@@ -70,10 +111,7 @@ export function ArtistHeader({
         )}
 
         {!loading && (
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Your rating:</span>
-            <StarRating artistId={artistId} readonly={false} size="md" />
-          </div>
+          <AverageRatingDisplay averageRating={getAverageArtistRating(artistId)} />
         )}
 
         {!loading && (

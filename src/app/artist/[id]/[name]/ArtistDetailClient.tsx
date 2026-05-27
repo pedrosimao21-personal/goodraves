@@ -16,7 +16,7 @@ export default function ArtistDetail() {
   const artistId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const encodedName = Array.isArray(params.name) ? params.name[0] : (params.name ?? '')
   const artistName = decodeURIComponent(encodedName)
-  const { getRating, getNotes, setNotes } = useUserData()
+  const { getAverageArtistRating, getNotes, setNotes } = useUserData()
 
   const [artist, setArtist] = useState<ArtistData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -149,6 +149,7 @@ export default function ArtistDetail() {
           artist={artist}
           getNotes={getNotes}
           setNotes={setNotes}
+          getAverageArtistRating={getAverageArtistRating}
         />
 
         <div className="divider" />

@@ -13,7 +13,7 @@ import { MAX_NOTES_LENGTH } from '@/lib/constants'
 const FILLED_STAR = '★'
 const EMPTY_STAR = '☆'
 const TOTAL_STARS = 5
-const NO_RATING_MESSAGE = "DJ not rated yet. Go to some raves!"
+const NO_RATING_MESSAGE = "DJ not rated yet"
 
 function AverageRatingDisplay({ averageRating }: { averageRating: number }) {
   const hasRating = averageRating > 0

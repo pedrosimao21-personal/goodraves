@@ -274,7 +274,7 @@ export default function SearchSection() {
       const sorted = results.sort((a, b) => {
         if (!a.date) return 1
         if (!b.date) return -1
-        return a.date.localeCompare(b.date)
+        return b.date.localeCompare(a.date)
       })
 
       setEvents(sorted)

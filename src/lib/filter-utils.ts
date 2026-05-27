@@ -28,7 +28,7 @@ export function extractFilterOptions(events: any[]): FilterOptions {
 
   const years: FilterOption[] = Array.from(yearCounts.entries())
     .map(([value, count]) => ({ value, label: value, count }))
-    .sort((a, b) => a.value.localeCompare(b.value))
+    .sort((a, b) => b.value.localeCompare(a.value))
 
   return { years }
 }

@@ -312,7 +312,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const updateFestivalMeta = useCallback((id: string, meta: any) => {
     if (!userId || !isAdmin) return
     setState(prev => {
-      const base = prev.festivalMeta[id] ?? {}
+      const base: Partial<FestivalMeta> = prev.festivalMeta[id] ?? {}
       const venueObj = typeof meta.venue === 'object' ? meta.venue : null
       const location = meta.location ?? venueObj?.city ?? base.location
       return { ...prev, festivalMeta: { ...prev.festivalMeta, [id]: { ...base, ...meta, location } } }

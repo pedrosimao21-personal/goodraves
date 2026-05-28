@@ -8,21 +8,24 @@ import StarRating from './StarRating'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
 import ArtistRenameModal from './ArtistRenameModal'
 import B2bSplitModal from './B2bSplitModal'
+import B2bCreateModal from './B2bCreateModal'
 
-type MenuState = 'closed' | 'options' | 'rename' | 'split'
+type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b'
 
 const ArtistCard = memo(function ArtistCard({
   artist,
   eventId,
   spotifyData,
   isPast = true,
+  availableArtistsForB2b = [],
 }: {
   artist: any
   eventId: string
   spotifyData?: any
   isPast?: boolean
+  availableArtistsForB2b?: { id: string; name: string }[]
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, isAdmin } = useUserData()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin } = useUserData()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
   const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
@@ -39,6 +42,11 @@ const ArtistCard = memo(function ArtistCard({
 
   const handleSplit = async (memberNames: string[]) => {
     await splitB2bArtist(eventId, artist.id, memberNames)
+    setMenuState('closed')
+  }
+
+  const handleCreateB2b = async (memberArtistIds: string[]) => {
+    await createB2bSet(eventId, memberArtistIds)
     setMenuState('closed')
   }
 
@@ -113,6 +121,7 @@ const ArtistCard = memo(function ArtistCard({
         <ArtistOptionsMenu
           onEditName={() => setMenuState('rename')}
           onSplitB2b={() => setMenuState('split')}
+          onCreateB2b={() => setMenuState('createB2b')}
           onClose={closeMenu}
         />
       )}
@@ -129,6 +138,15 @@ const ArtistCard = memo(function ArtistCard({
         <B2bSplitModal
           artistName={displayName}
           onSave={handleSplit}
+          onClose={closeMenu}
+        />
+      )}
+
+      {menuState === 'createB2b' && (
+        <B2bCreateModal
+          initiatingArtist={{ id: artist.id, name: displayName }}
+          availableArtists={availableArtistsForB2b}
+          onSave={handleCreateB2b}
           onClose={closeMenu}
         />
       )}

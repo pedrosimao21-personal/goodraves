@@ -116,6 +116,93 @@ export async function splitB2bArtist(
   };
 }
 
+// ── Create a B2B set from existing festival artists ───────
+
+export async function createB2bSet(
+  festivalId: string,
+  memberArtistIds: string[]
+): Promise<B2bSetWithMembers> {
+  await requireAdmin();
+
+  if (memberArtistIds.length < MIN_MEMBER_COUNT) {
+    throw new Error(`At least ${MIN_MEMBER_COUNT} artists are required`);
+  }
+  if (memberArtistIds.length > MAX_MEMBER_COUNT) {
+    throw new Error(`At most ${MAX_MEMBER_COUNT} artists are allowed`);
+  }
+
+  const uniqueIds = new Set(memberArtistIds);
+  if (uniqueIds.size !== memberArtistIds.length) {
+    throw new Error("Duplicate artists are not allowed");
+  }
+
+  // Fetch the artist names in the given order
+  const memberRows = await db
+    .select({ id: artists.id, name: artists.name })
+    .from(artists)
+    .where(inArray(artists.id, memberArtistIds));
+
+  if (memberRows.length !== memberArtistIds.length) {
+    throw new Error("One or more artists were not found");
+  }
+
+  // Preserve insertion order
+  const orderedMembers = memberArtistIds.map((id) => {
+    const found = memberRows.find((r) => r.id === id);
+    if (!found) throw new Error(`Artist ${id} not found`);
+    return found;
+  });
+
+  const generatedName = orderedMembers.map((m) => m.name).join(" b2b ");
+
+  const [b2bSet] = await db
+    .insert(festivalB2bSets)
+    .values({ festivalId, originalArtistName: generatedName })
+    .returning({ id: festivalB2bSets.id });
+
+  const memberInserts = orderedMembers.map((member, idx) => ({
+    b2bSetId: b2bSet.id,
+    artistId: member.id,
+    position: idx,
+  }));
+  await db.insert(festivalB2bSetMembers).values(memberInserts);
+
+  revalidatePath(`/festival/${festivalId}`);
+
+  return {
+    id: b2bSet.id,
+    festivalId,
+    originalArtistName: generatedName,
+    members: orderedMembers.map((m, idx) => ({
+      artistId: m.id,
+      artistName: m.name,
+      position: idx,
+    })),
+  };
+}
+
+// ── Unsplit (delete) a B2B set, restoring solo artists ────
+
+export async function unsplitB2bSet(b2bSetId: string): Promise<void> {
+  await requireAdmin();
+
+  const [b2bSet] = await db
+    .select({ id: festivalB2bSets.id, festivalId: festivalB2bSets.festivalId })
+    .from(festivalB2bSets)
+    .where(eq(festivalB2bSets.id, b2bSetId))
+    .limit(1);
+
+  if (!b2bSet) {
+    throw new Error("B2B set not found");
+  }
+
+  // Deleting the set cascades to festivalB2bSetMembers — artists remain in
+  // festival_artists and will reappear as solo artists automatically.
+  await db.delete(festivalB2bSets).where(eq(festivalB2bSets.id, b2bSetId));
+
+  revalidatePath(`/festival/${b2bSet.festivalId}`);
+}
+
 // ── Rate a B2B set (propagates to all members) ───────────
 
 export async function rateB2bSet(b2bSetId: string, rating: number) {

@@ -18,6 +18,8 @@ import {
   setGlobalArtistNotes,
   setFestivalNotes as setFestivalNotesAction,
   splitB2bArtist as splitB2bArtistAction,
+  createB2bSet as createB2bSetAction,
+  unsplitB2bSet as unsplitB2bSetAction,
   rateB2bSet as rateB2bSetAction,
   getB2bSetsForFestival,
 } from '@/db/actions/festivals'
@@ -167,6 +169,33 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       return {
         ...prev,
         b2bSets: { ...prev.b2bSets, [festivalId]: [...existingSets, result] },
+      }
+    })
+  }, [userId, promptAuth])
+
+  const createB2bSet = useCallback(async (festivalId: string, memberArtistIds: string[]) => {
+    if (!userId) { promptAuth(); return }
+    const result = await createB2bSetAction(festivalId, memberArtistIds)
+    setState(prev => {
+      const existingSets = prev.b2bSets[festivalId] ?? []
+      return {
+        ...prev,
+        b2bSets: { ...prev.b2bSets, [festivalId]: [...existingSets, result] },
+      }
+    })
+  }, [userId, promptAuth])
+
+  const unsplitB2bSet = useCallback(async (b2bSetId: string, festivalId: string) => {
+    if (!userId) { promptAuth(); return }
+    await unsplitB2bSetAction(b2bSetId)
+    setState(prev => {
+      const existingSets = prev.b2bSets[festivalId] ?? []
+      return {
+        ...prev,
+        b2bSets: {
+          ...prev.b2bSets,
+          [festivalId]: existingSets.filter(s => s.id !== b2bSetId),
+        },
       }
     })
   }, [userId, promptAuth])
@@ -346,7 +375,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     ...readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
-    splitB2bArtist, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
+    splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
     state, loaded, isAdmin,
     toggleFestival, toggleSawArtist,
@@ -354,7 +383,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
-    splitB2bArtist, rateB2bSetFn, loadB2bSets, renameArtist,
+    splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSetFn, loadB2bSets, renameArtist,
   ])
 
   return (

@@ -8,10 +8,11 @@ const MODAL_MAX_WIDTH = 480
 interface ArtistOptionsMenuProps {
   onEditName: () => void
   onSplitB2b: () => void
+  onCreateB2b: () => void
   onClose: () => void
 }
 
-export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onClose }: ArtistOptionsMenuProps) {
+export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onCreateB2b, onClose }: ArtistOptionsMenuProps) {
   const buttonStyle: React.CSSProperties = {
     width: '100%',
     background: 'none',
@@ -65,6 +66,9 @@ export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onClose }: A
 
         <button onClick={onEditName} style={buttonStyle}>
           Edit artist name
+        </button>
+        <button onClick={onCreateB2b} style={buttonStyle}>
+          Create B2B with...
         </button>
         <button onClick={onSplitB2b} style={{ ...buttonStyle, borderBottom: 'none' }}>
           Split B2B artist

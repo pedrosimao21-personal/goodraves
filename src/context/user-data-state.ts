@@ -63,6 +63,8 @@ export interface UserDataContextType {
   setNotes: (artistId: string, notes: string) => Promise<void>
   setFestivalNotes: (eventId: string, notes: string) => Promise<void>
   splitB2bArtist: (festivalId: string, artistId: string, memberNames: string[]) => Promise<void>
+  createB2bSet: (festivalId: string, memberArtistIds: string[]) => Promise<void>
+  unsplitB2bSet: (b2bSetId: string, festivalId: string) => Promise<void>
   renameArtist: (festivalId: string, artistId: string, newName: string) => Promise<void>
   rateB2bSet: (b2bSetId: string, rating: number) => Promise<void>
   loadB2bSets: (festivalId: string) => Promise<void>

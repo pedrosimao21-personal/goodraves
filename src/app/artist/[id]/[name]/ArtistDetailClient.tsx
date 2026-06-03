@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getArtistData, getOrCreateArtistByName, type ArtistData } from '@/db/actions/artists'
+import {
+  getArtistData,
+  getArtistDataSnapshot,
+  getOrCreateArtistByName,
+  clearArtistCache,
+  type ArtistData,
+} from '@/db/actions/artists'
 import { useUserData } from '@/context/UserDataContext'
 import { BackIcon } from '@/components/icons'
 import { SimilarArtistCard } from './SimilarArtistCard'
@@ -20,62 +26,83 @@ export default function ArtistDetail() {
 
   const [artist, setArtist] = useState<ArtistData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const [similarUrls, setSimilarUrls] = useState<Map<string, string>>(new Map())
+  const [reportSent, setReportSent] = useState(false)
 
   useEffect(() => {
     if (!artistId) return
     let cancelled = false
     setLoading(true)
     setTimedOut(false)
+    setReportSent(false)
 
-    // Safety timeout — if enrichment takes >15s, unblock the UI
     const timeout = setTimeout(() => {
       if (!cancelled) { setTimedOut(true); setLoading(false) }
     }, 15_000)
 
     const fetchArtist = async () => {
       try {
-        let data = await (getArtistData(artistId) as unknown as Promise<ArtistData | null>)
-        if (!data) {
+        // ── Step 1: Show cached DB data immediately (fast path) ──────────
+        // This unblocks the UI so the user sees content within ~200ms for
+        // returning visitors, rather than staring at a skeleton for 3-5s.
+        const snapshot = await (getArtistDataSnapshot(artistId) as unknown as Promise<ArtistData | null>)
+        if (cancelled) return
+
+        let resolvedId = artistId
+
+        if (snapshot) {
+          setArtist(snapshot)
+          setLoading(false)
+          setRefreshing(true)
+        }
+
+        // ── Step 2: Refresh stale data from external APIs (slow path) ────
+        // Runs after the snapshot is displayed. Updates the UI when done.
+        let fresh = await (getArtistData(resolvedId) as unknown as Promise<ArtistData | null>)
+
+        if (!fresh && !snapshot) {
           const created = await (getOrCreateArtistByName(artistName) as unknown as Promise<{ id: string; name: string }>)
-          data = await (getArtistData(created.id) as unknown as Promise<ArtistData | null>)
-          // Optionally update the URL to have the correct ID without reloading
-          if (data && typeof window !== 'undefined') {
-            window.history.replaceState(null, '', `/artist/${data.id}/${encodeURIComponent(data.name)}`)
+          resolvedId = created.id
+          fresh = await (getArtistData(created.id) as unknown as Promise<ArtistData | null>)
+          if (fresh && typeof window !== 'undefined') {
+            window.history.replaceState(null, '', `/artist/${fresh.id}/${encodeURIComponent(fresh.name)}`)
           }
         }
-        
+
         clearTimeout(timeout)
         if (cancelled) return
-        
-        if (!data) {
+
+        if (fresh) {
+          setArtist(fresh)
+        } else if (!snapshot) {
           setNotFound(true)
-        } else {
-          setArtist(data)
         }
         setLoading(false)
+        setRefreshing(false)
       } catch (err) {
         clearTimeout(timeout)
         if (!cancelled) {
           try {
-            // If the error was an invalid UUID, try by name one last time
             const created = await (getOrCreateArtistByName(artistName) as unknown as Promise<{ id: string; name: string }>)
             const data = await (getArtistData(created.id) as unknown as Promise<ArtistData | null>)
             if (data) {
               setArtist(data)
               setLoading(false)
+              setRefreshing(false)
               if (typeof window !== 'undefined') {
                 window.history.replaceState(null, '', `/artist/${data.id}/${encodeURIComponent(data.name)}`)
               }
               return
             }
-          } catch (e) {
+          } catch {
             // ignore
           }
           setNotFound(true)
           setLoading(false)
+          setRefreshing(false)
         }
       }
     }
@@ -107,9 +134,20 @@ export default function ArtistDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artist?.lastfmSimilar])
 
-  const displayImage = artist?.imageUrl ?? null
-  const displayName = artist?.name ?? artistName
-  const mergedTags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
+  async function handleReportWrongData() {
+    if (!artist?.id) return
+    try {
+      await (clearArtistCache(artist.id) as unknown as Promise<void>)
+      setReportSent(true)
+      // Re-fetch fresh data after clearing cache
+      setRefreshing(true)
+      const fresh = await (getArtistData(artist.id) as unknown as Promise<ArtistData | null>)
+      if (fresh) setArtist(fresh)
+      setRefreshing(false)
+    } catch {
+      setRefreshing(false)
+    }
+  }
 
   async function navigateToSimilar(name: string) {
     try {
@@ -120,7 +158,9 @@ export default function ArtistDetail() {
     }
   }
 
-
+  const displayImage = artist?.imageUrl ?? null
+  const displayName = artist?.name ?? artistName
+  const mergedTags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
 
   if (notFound) {
     return (
@@ -208,6 +248,30 @@ export default function ArtistDetail() {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {artist && !loading && (
+          <div style={{ marginTop: 48, paddingBottom: 32, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
+            {refreshing && (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 12 }}>
+                Refreshing data…
+              </p>
+            )}
+            {reportSent ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Cache cleared — reloading fresh data.
+              </p>
+            ) : (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleReportWrongData}
+                disabled={refreshing}
+                style={{ fontSize: '0.8rem', color: 'var(--text-muted)', opacity: refreshing ? 0.5 : 1 }}
+              >
+                Report wrong info
+              </button>
+            )}
           </div>
         )}
       </div>

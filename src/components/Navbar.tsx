@@ -48,7 +48,6 @@ const ChartIcon = () => (
 
 const NAV_ITEMS = [
   { to: '/', label: 'Discover', icon: <DiscoverIcon />, end: true },
-  { to: '/explore', label: 'Explore', icon: <ExploreIcon />, end: false },
   { to: '/dashboard', label: 'My Festivals', icon: <MyFestivalsIcon />, end: false },
   { to: '/top-djs', label: 'Top DJs', icon: <TopDjsIcon />, end: false },
 ]

@@ -9,6 +9,8 @@ import AddCustomEvent from '@/components/AddCustomFestival'
 import EditFestivalModal from './EditFestivalModal'
 import FestivalRow from './FestivalRow'
 import TimelineView from './TimelineView'
+import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
+import type { TrendingFestival } from '@/db/actions/trending-festivals'
 
 const CLEAR_LIST_COLOR = '#ff4444'
 const UPCOMING_BG_COLOR = '#3b82f6'
@@ -22,7 +24,12 @@ function getTabFromHash(): ActiveTab {
   return 'attended'
 }
 
-export default function DashboardView() {
+type Props = {
+  trendingFestivals: TrendingFestival[]
+  userCity: string | null
+}
+
+export default function DashboardView({ trendingFestivals, userCity }: Props) {
   const {
     attendedFestivals, upcomingFestivals, seenArtists, festivalRatings,
     toggleFestival, clearFestivals, getFestivalMeta, loaded, isAdmin,
@@ -222,6 +229,13 @@ export default function DashboardView() {
 
       {editingId && (
         <EditFestivalModal eventId={editingId} onClose={() => setEditingId(null)} />
+      )}
+
+      {trendingFestivals.length > 0 && (
+        <div className="container" style={{ paddingBottom: 48 }}>
+          <div className="divider" />
+          <TrendingFestivalsSection festivals={trendingFestivals} userCity={userCity} />
+        </div>
       )}
     </div>
   )

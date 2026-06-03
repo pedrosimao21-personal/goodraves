@@ -34,6 +34,8 @@ export async function getInitialUserData() {
           date: festivals.date,
           venue: festivals.venue,
           location: festivals.location,
+          latitude: festivals.latitude,
+          longitude: festivals.longitude,
           imageUrl: festivals.imageUrl,
           source: festivals.source,
         })

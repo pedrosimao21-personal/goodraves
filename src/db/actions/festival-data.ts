@@ -40,7 +40,7 @@ function formatFestivalWithLineup(
 }
 
 export async function getFestival(id: string) {
-  const [festival] = await db
+  let [festival] = await db
     .select()
     .from(festivals)
     .where(eq(festivals.id, id))
@@ -52,8 +52,9 @@ export async function getFestival(id: string) {
 
   let lineup = await fetchLineup(id);
 
-  // If the festival has no lineup and is from FestivalFans, re-fetch to populate
-  // If the festival has no lineup, re-fetch from original source to populate
+  // If the festival has no lineup, re-fetch from the original source to populate.
+  // After the re-fetch, re-read the festival row so we pick up any imageUrl or
+  // coordinate updates that PF/FF imports write via COALESCE on conflict.
   if (lineup.length === 0) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
     const raMatch = id.match(/^ra-(\d+)$/);
@@ -68,6 +69,14 @@ export async function getFestival(id: string) {
       await fetchPFEvent(pfMatch[1]);
       lineup = await fetchLineup(id);
     }
+
+    // Re-read the festival row to capture any imageUrl / lat/lng written by the re-fetch
+    const [refreshed] = await db
+      .select()
+      .from(festivals)
+      .where(eq(festivals.id, id))
+      .limit(1);
+    if (refreshed) festival = refreshed;
   }
 
   // Backfill missing image from the original source
@@ -150,6 +159,8 @@ export async function getFullUserData() {
         date: festivals.date,
         venue: festivals.venue,
         location: festivals.location,
+        latitude: festivals.latitude,
+        longitude: festivals.longitude,
         imageUrl: festivals.imageUrl,
         source: festivals.source,
       })

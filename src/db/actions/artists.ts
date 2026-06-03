@@ -20,6 +20,25 @@ const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 
+// Keywords that indicate an artist is in the electronic music space.
+// Used to validate Last.fm data before storing it — prevents saving wrong
+// bios/tags when Last.fm resolves a DJ name to a different artist entirely.
+const ELECTRONIC_KEYWORDS = [
+  'dj', 'techno', 'electronic', 'house', 'rave', 'producer', 'trance',
+  'berlin', 'club', 'electro', 'dance music', 'edm', 'dubstep',
+  'drum and bass', 'dnb', 'ambient', 'minimal', 'hardcore', 'psytrance',
+  'deejay', 'nightclub', 'festival', 'vinyl',
+]
+
+function isElectronicRelevant(bio: string, tags: string[]): boolean {
+  const bioLower = bio.toLowerCase()
+  const hasBioKeyword = ELECTRONIC_KEYWORDS.some(k => bioLower.includes(k))
+  const hasTagKeyword = tags.some(t =>
+    ELECTRONIC_KEYWORDS.some(k => t.toLowerCase().includes(k))
+  )
+  return hasBioKeyword || hasTagKeyword
+}
+
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
   const ms = fetchedAt instanceof Date ? fetchedAt.getTime() : new Date(fetchedAt).getTime();
@@ -266,13 +285,24 @@ async function refreshLastfm(name: string) {
       lastfmGetArtistTopTracks(name).catch(() => []),
     ]);
 
+    const tags: string[] = info.tags ?? [];
+    const bio: string = info.bio ?? '';
+
+    // Validate that Last.fm returned data for an electronic music artist.
+    // If the bio and tags contain no electronic keywords, the result likely
+    // resolved to the wrong person (e.g. a classical composer with the same name).
+    // In that case, discard bio and tags rather than persist wrong information.
+    const bioIsRelevant = !bio || isElectronicRelevant(bio, tags);
+    const validatedBio = bioIsRelevant ? bio : null;
+    const validatedTags = bioIsRelevant ? tags : [];
+
     const similarNames = (info.similar ?? []).map((a: any) => a.name).filter(Boolean);
 
     // Fetch Spotify images for similar artists and upsert them into the artists
     // table so their images are available for DB lookups and navigation is instant.
     if (similarNames.length) {
       const spotifyResults = await spotifySearchArtistsBatch(similarNames).catch(() => ({}) as Record<string, any>);
-  const now = new Date();
+      const now = new Date();
       await Promise.allSettled(
         similarNames.map(async (similarName: string) => {
           const sp = spotifyResults[similarName];
@@ -303,23 +333,15 @@ async function refreshLastfm(name: string) {
       url: a.url ?? null,
     }));
 
-    // Enrich Last.fm top tracks with Spotify 30-second preview URLs.
-    // We process in batches of 3 to avoid hammering the Spotify search API.
-    const PREVIEW_BATCH_SIZE = 3;
-    const enrichedTopTracks: LastfmTrack[] = [];
-    for (let i = 0; i < topTracks.length; i += PREVIEW_BATCH_SIZE) {
-      const batch = topTracks.slice(i, i + PREVIEW_BATCH_SIZE);
-      const previews = await Promise.all(
-        batch.map((track: any) =>
-          spotifySearchTrackPreview(name, track.name).catch(() => null)
-        )
-      );
-      batch.forEach((track: any, idx: number) => {
-        enrichedTopTracks.push({ ...track, previewUrl: previews[idx] ?? null });
-      });
-    }
+    // Enrich Last.fm top tracks with Spotify 30-second preview URLs in parallel.
+    const enrichedTopTracks: LastfmTrack[] = await Promise.all(
+      topTracks.map(async (track: any) => {
+        const previewUrl = await spotifySearchTrackPreview(name, track.name).catch(() => null);
+        return { ...track, previewUrl: previewUrl ?? null };
+      })
+    );
 
-    return { ...info, similar, topTracks: enrichedTopTracks };
+    return { ...info, bio: validatedBio, tags: validatedTags, similar, topTracks: enrichedTopTracks };
   } catch (err) {
     console.error(`[artists] Last.fm refresh failed for "${name}":`, err instanceof Error ? err.message : err);
     return null;
@@ -365,6 +387,46 @@ async function refreshRelatedArtists(spotifyId: string) {
     return null;
   }
 }
+// ── Snapshot: fast DB-only read, no external API calls ────────────────────
+// Used for progressive loading — returns cached data immediately so the page
+// can render, while a separate call to getArtistData refreshes stale data.
+
+export async function getArtistDataSnapshot(id: string): Promise<ArtistData | null> {
+  const [row] = await db.select().from(artists).where(eq(artists.id, id)).limit(1);
+  if (!row) return null;
+
+  const data = await enrichWithSimilarImages(rowToArtistData(row));
+  data.genres = await fetchArtistGenres(row.id);
+  return data;
+}
+
+// ── Clear artist cache: wipes all external data so it re-fetches on next load ─
+// Used by the "Report wrong data" button on the artist page.
+
+export async function clearArtistCache(artistId: string): Promise<void> {
+  await db.update(artists).set({
+    spotifyId: null,
+    imageUrl: null,
+    spotifyFollowers: null,
+    spotifyAlbums: null,
+    spotifyFetchedAt: null,
+    relatedArtists: null,
+    relatedArtistsFetchedAt: null,
+    lastfmId: null,
+    lastfmBio: null,
+    lastfmListeners: null,
+    lastfmPlaycount: null,
+    lastfmSimilar: null,
+    lastfmTopTracks: null,
+    lastfmFetchedAt: null,
+    raArtistId: null,
+    raUpcomingEvents: null,
+    raEventsFetchedAt: null,
+    countryCode: null,
+    countryName: null,
+  }).where(eq(artists.id, artistId));
+}
+
 // Used when navigating to a similar artist that may not be in the DB yet.
 
 export async function getOrCreateArtistByName(name: string): Promise<{ id: string; name: string }> {

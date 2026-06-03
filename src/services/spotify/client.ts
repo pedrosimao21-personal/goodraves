@@ -8,6 +8,21 @@ const MS_PER_SECOND = 1000;
 const MIN_IMAGE_WIDTH = 300;
 const MAX_IMAGE_WIDTH = 640;
 const DEFAULT_ALBUM_LIMIT = 10;
+const ARTIST_SEARCH_CANDIDATE_LIMIT = 5;
+
+// Genre keywords that indicate an electronic music artist.
+// Used to disambiguate between multiple search results (e.g. "Franck" the DJ vs César Franck).
+const ELECTRONIC_GENRE_KEYWORDS = [
+  'electronic', 'techno', 'house', 'trance', 'edm', 'dance',
+  'drum and bass', 'dnb', 'dubstep', 'ambient', 'industrial',
+  'electro', 'rave', 'hardcore', 'psytrance', 'minimal',
+]
+
+function hasElectronicGenre(genres: string[]): boolean {
+  return genres.some(genre =>
+    ELECTRONIC_GENRE_KEYWORDS.some(keyword => genre.toLowerCase().includes(keyword))
+  )
+}
 const DEFAULT_SHOW_LIMIT = 5;
 const BATCH_MAX_IDS = 50;
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -121,11 +136,17 @@ export async function spotifySearchArtist(name: string) {
   const data = await apiFetch("/search", {
     q: name,
     type: "artist",
-    limit: 1,
+    limit: ARTIST_SEARCH_CANDIDATE_LIMIT,
   });
 
-  const artist = data.artists?.items?.[0];
-  if (!artist) return null;
+  const candidates: any[] = data.artists?.items ?? [];
+  if (!candidates.length) return null;
+
+  // Prefer the first result that has at least one electronic genre tag.
+  // This disambiguates e.g. "Franck" (DJ) from "César Franck" (classical composer).
+  const electronicMatch = candidates.find(a => hasElectronicGenre(a.genres ?? []));
+  const artist = electronicMatch ?? candidates[0];
+
   return normalizeArtist(artist);
 }
 

@@ -150,6 +150,8 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
       date: f.date,
       venue: f.venue ? { name: f.venue, city: f.location ?? undefined } : undefined,
       location: f.location ?? undefined,
+      latitude: f.latitude ?? undefined,
+      longitude: f.longitude ?? undefined,
       imageUrl: f.imageUrl,
       source: f.source ?? undefined,
       lineup: lineupByFestival[f.festivalId] ?? [],

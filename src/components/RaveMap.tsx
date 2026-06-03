@@ -13,11 +13,21 @@ const MARKER_BORDER_COLOR = '#c4b5fd'
 const MARKER_FILL_OPACITY = 0.6
 const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 
-// Built-in dictionary of major cities
+// Fallback dictionary for events that have no stored coordinates.
+// Entries are looked up when e.latitude / e.longitude are absent.
 const CITY_COORDS: Record<string, [number, number]> = {
+  'Amsterdam': [52.3676, 4.9041],
+  'Rotterdam': [51.9225, 4.4792],
+  'Utrecht': [52.0907, 5.1214],
+  'The Hague': [52.0705, 4.3007],
+  'Den Haag': [52.0705, 4.3007],
+  'Eindhoven': [51.4416, 5.4697],
+  'Tilburg': [51.5555, 5.0913],
+  'Groningen': [53.2194, 6.5665],
+  'Maastricht': [50.8514, 5.6910],
+  'Arnhem': [51.9851, 5.8987],
   'Berlin': [52.52, 13.405],
   'London': [51.5074, -0.1278],
-  'Amsterdam': [52.3676, 4.9041],
   'Paris': [48.8566, 2.3522],
   'Madrid': [40.4168, -3.7038],
   'Barcelona': [41.3851, 2.1734],
@@ -103,7 +113,78 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Reykjavik': [64.1466, -21.9426],
 }
 
-export default function RaveMap({ events }: { events: any[] }) {
+type EventWithCoords = {
+  latitude?: number | null
+  longitude?: number | null
+  location?: string | null
+  venue?: { city?: string; name?: string } | string | null
+  [key: string]: any
+}
+
+function resolveCoords(event: EventWithCoords): [number, number] | null {
+  // Prefer stored coordinates — no dictionary lookup needed
+  if (event.latitude != null && event.longitude != null) {
+    return [event.latitude, event.longitude]
+  }
+
+  // Fall back to city-name dictionary for legacy events without stored coords
+  const candidates = [
+    event.location,
+    typeof event.venue === 'object' ? event.venue?.city : null,
+    typeof event.venue === 'object' ? event.venue?.name : null,
+  ].filter((c): c is string => typeof c === 'string' && c.length > 0)
+
+  const cityNames = Object.keys(CITY_COORDS)
+
+  for (const candidate of candidates) {
+    if (CITY_COORDS[candidate]) return CITY_COORDS[candidate]
+    const match = cityNames.find(c => candidate.startsWith(c) || candidate.includes(c))
+    if (match) return CITY_COORDS[match]
+  }
+
+  return null
+}
+
+// Cluster nearby points to avoid plotting duplicate markers for the same venue.
+// Two coords are considered the same cluster if they are within ~1 km.
+const CLUSTER_THRESHOLD_DEGREES = 0.01
+
+function buildClusterKey(lat: number, lng: number): string {
+  const latBucket = Math.round(lat / CLUSTER_THRESHOLD_DEGREES)
+  const lngBucket = Math.round(lng / CLUSTER_THRESHOLD_DEGREES)
+  return `${latBucket},${lngBucket}`
+}
+
+type ClusterEntry = {
+  coords: [number, number]
+  count: number
+  label: string
+}
+
+function buildClusters(events: EventWithCoords[]): ClusterEntry[] {
+  const clusterMap = new Map<string, ClusterEntry>()
+
+  for (const event of events) {
+    const coords = resolveCoords(event)
+    if (!coords) continue
+
+    const key = buildClusterKey(coords[0], coords[1])
+    const existing = clusterMap.get(key)
+
+    if (existing) {
+      existing.count += 1
+    } else {
+      const locationLabel = event.location
+        ?? (typeof event.venue === 'object' ? event.venue?.city : null)
+        ?? 'Unknown location'
+      clusterMap.set(key, { coords, count: 1, label: locationLabel })
+    }
+  }
+
+  return Array.from(clusterMap.values())
+}
+
+export default function RaveMap({ events }: { events: EventWithCoords[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
 
@@ -111,31 +192,9 @@ export default function RaveMap({ events }: { events: any[] }) {
     const container = containerRef.current
     if (!container) return
 
-    // Compute city counts — events may store location as e.location (string) or e.venue?.city
-    const cityCounts: Record<string, number> = {}
-    const cityNames = Object.keys(CITY_COORDS)
+    const clusters = buildClusters(events)
 
-    function resolveCity(e: any): string | null {
-      // Direct match: e.location or e.venue?.city
-      const candidates = [e.location, e.venue?.city, e.venue?.name].filter(Boolean)
-      for (const candidate of candidates) {
-        if (CITY_COORDS[candidate]) return candidate
-        // Partial match: "Berlin, Germany" → "Berlin"
-        const match = cityNames.find(c => candidate.startsWith(c) || candidate.includes(c))
-        if (match) return match
-      }
-      return null
-    }
-
-    events.forEach(e => {
-      const city = resolveCity(e)
-      if (city) cityCounts[city] = (cityCounts[city] || 0) + 1
-    })
-
-    // Imperatively init Leaflet so we fully control cleanup and avoid
-    // "Map container is already initialized" from React Strict Mode double-invoke.
     import('leaflet').then(({ default: L }) => {
-      // Destroy any existing map on this container before creating a new one
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
@@ -144,6 +203,7 @@ export default function RaveMap({ events }: { events: any[] }) {
       const map = L.map(container, {
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+        // Disable scroll wheel zoom to prevent accidental map captures while scrolling on mobile
         scrollWheelZoom: false,
         zoomControl: true,
       })
@@ -153,19 +213,17 @@ export default function RaveMap({ events }: { events: any[] }) {
         attribution: '&copy; CARTO',
       }).addTo(map)
 
-      Object.entries(cityCounts).forEach(([city, count]) => {
-        const coords = CITY_COORDS[city]
-        if (!coords) return
-        L.circleMarker(coords, {
-          radius: Math.min(BASE_MARKER_RADIUS + count * MARKER_RADIUS_GROWTH, MAX_MARKER_RADIUS),
+      for (const cluster of clusters) {
+        L.circleMarker(cluster.coords, {
+          radius: Math.min(BASE_MARKER_RADIUS + cluster.count * MARKER_RADIUS_GROWTH, MAX_MARKER_RADIUS),
           fillColor: MARKER_FILL_COLOR,
           color: MARKER_BORDER_COLOR,
           weight: 2,
           fillOpacity: MARKER_FILL_OPACITY,
         })
           .addTo(map)
-          .bindPopup(`<strong>${city}</strong><br/>${count} event${count > 1 ? 's' : ''} here`)
-      })
+          .bindPopup(`<strong>${cluster.label}</strong><br/>${cluster.count} event${cluster.count > 1 ? 's' : ''} here`)
+      }
     })
 
     return () => {

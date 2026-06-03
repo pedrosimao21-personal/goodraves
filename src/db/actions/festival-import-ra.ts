@@ -8,6 +8,7 @@ import { fetchRAEventRaw } from "@/services/ra/client";
 import { parseRALineup } from "@/services/ra/parser";
 import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 import { normalizeCountryName } from "@/utils/location-normalizer";
+import { geocodeLocation } from "@/utils/geocoding";
 
 /** Fetch and store imageUrl for an RA event that was imported without one. */
 async function backfillMissingImage(festivalId: string, raId: string): Promise<void> {
@@ -90,6 +91,11 @@ export async function fetchRAEvent(
   const location = [areaName, countryName].filter(Boolean).join(", ") || null;
   const imageUrl = data.images?.[0]?.filename ?? null;
 
+  // Geocode the location to get coordinates for the heatmap.
+  // We do this in the background alongside the rest of the import;
+  // failures are silently ignored — the map will fall back to city-name lookup.
+  const geocoded = location ? await geocodeLocation(location).catch(() => null) : null;
+
   const artistsFallback = (data.artists ?? [])
     .map((a) => a?.name)
     .filter(Boolean) as string[];
@@ -111,6 +117,8 @@ export async function fetchRAEvent(
       endDate,
       venue: venueName,
       location,
+      latitude: geocoded?.latitude ?? null,
+      longitude: geocoded?.longitude ?? null,
       source: "ra",
       sourceId: id,
       imageUrl,

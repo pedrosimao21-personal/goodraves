@@ -14,7 +14,8 @@
 export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents } from "./festival-search";
 
 // Data reads
-export { getFestival, getFullUserData } from "./festival-data";
+export { getFestival, getFullUserData, getTimetable } from "./festival-data";
+export type { TimetableStage, TimetableSlotRow } from "./festival-data";
 
 // User attendance & ratings
 export {

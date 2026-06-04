@@ -2,6 +2,15 @@
  * Shared types for parsed lineup entries across all import sources.
  */
 
+export type TimetableSlot = {
+  artistName: string;
+  stageName: string;
+  startTime: string;
+  endTime: string;
+  stageOrder: number;
+  slotOrder: number;
+};
+
 export type SoloLineupEntry = {
   type: "solo";
   name: string;

@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
-import { getFestival, reimportFestival } from '@/db/actions/festivals'
+import { getFestival, reimportFestival, getTimetable, type TimetableStage } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
 import FestivalNotes from './FestivalNotes'
+import TimetableView from './TimetableView'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
 import { formatDate } from '@/lib/format-date'
 import { getFestivalPlaylist, type FestivalPlaylistData } from '@/db/actions/festival-playlist'
@@ -70,6 +71,8 @@ export default function FestivalDetail() {
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showReimportConfirm, setShowReimportConfirm] = useState(false)
   const [isReimporting, setIsReimporting] = useState(false)
+  const [timetableStages, setTimetableStages] = useState<TimetableStage[]>([])
+  const [lineupView, setLineupView] = useState<'lineup' | 'timetable'>('lineup')
 
   const isCustom = id.startsWith('custom-')
 
@@ -140,6 +143,7 @@ export default function FestivalDetail() {
 
   useEffect(() => {
     loadB2bSets(id)
+    getTimetable(id).then(stages => setTimetableStages(stages)).catch(() => {})
   }, [id, loadB2bSets])
 
   const isFuture = event?.date && new Date(event.date + 'T00:00:00') > new Date()
@@ -411,42 +415,90 @@ export default function FestivalDetail() {
         {event.attractions.length > 0 ? (
           <>
             <div className="section-header">
-              <h2 className="section-title">Lineup</h2>
-              <span className="section-count">{event.attractions.length} artist{event.attractions.length !== 1 ? 's' : ''}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h2 className="section-title" style={{ margin: 0 }}>
+                  {lineupView === 'lineup' ? 'Lineup' : 'Timetable'}
+                </h2>
+                {lineupView === 'lineup' && (
+                  <span className="section-count">{event.attractions.length} artist{event.attractions.length !== 1 ? 's' : ''}</span>
+                )}
+              </div>
+              {timetableStages.length > 0 && (
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={() => setLineupView('lineup')}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.12))',
+                      background: lineupView === 'lineup' ? 'var(--accent, rgba(255,255,255,0.15))' : 'transparent',
+                      color: lineupView === 'lineup' ? 'var(--text-primary, #fff)' : 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      fontWeight: lineupView === 'lineup' ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'background 120ms, color 120ms',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    Lineup
+                  </button>
+                  <button
+                    onClick={() => setLineupView('timetable')}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.12))',
+                      background: lineupView === 'timetable' ? 'var(--accent, rgba(255,255,255,0.15))' : 'transparent',
+                      color: lineupView === 'timetable' ? 'var(--text-primary, #fff)' : 'var(--text-muted)',
+                      fontSize: '0.8rem',
+                      fontWeight: lineupView === 'timetable' ? 600 : 400,
+                      cursor: 'pointer',
+                      transition: 'background 120ms, color 120ms',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    Timetable
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="grid-artists">
-              {(() => {
-                const b2bSets = getB2bSets(id)
-                const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
-                const b2bOriginalNames = new Set(b2bSets.map(s => s.originalArtistName.toLowerCase()))
-                const soloArtists = event.attractions.filter(
-                  (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
-                )
-                return (
-                  <>
-                    {b2bSets.map(b2bSet => (
-                      <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
-                    ))}
-                    {soloArtists.map((artist: any) => {
-                        const availableArtistsForB2b = soloArtists
-                          .filter((a: any) => a.id !== artist.id)
-                          .map((a: any) => ({ id: a.id, name: a.name }))
-                        return (
-                          <ArtistCard
-                            key={artist.id}
-                            artist={artist}
-                            eventId={id}
-                            spotifyData={spotifyData[artist.name]}
-                            isPast={!isFuture}
-                            availableArtistsForB2b={availableArtistsForB2b}
-                          />
-                        )
-                      })
-                    }
-                  </>
-                )
-              })()}
-            </div>
+            {lineupView === 'timetable' ? (
+              <TimetableView stages={timetableStages} />
+            ) : (
+              <div className="grid-artists">
+                {(() => {
+                  const b2bSets = getB2bSets(id)
+                  const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
+                  const b2bOriginalNames = new Set(b2bSets.map(s => s.originalArtistName.toLowerCase()))
+                  const soloArtists = event.attractions.filter(
+                    (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
+                  )
+                  return (
+                    <>
+                      {b2bSets.map(b2bSet => (
+                        <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
+                      ))}
+                      {soloArtists.map((artist: any) => {
+                          const availableArtistsForB2b = soloArtists
+                            .filter((a: any) => a.id !== artist.id)
+                            .map((a: any) => ({ id: a.id, name: a.name }))
+                          return (
+                            <ArtistCard
+                              key={artist.id}
+                              artist={artist}
+                              eventId={id}
+                              spotifyData={spotifyData[artist.name]}
+                              isPast={!isFuture}
+                              availableArtistsForB2b={availableArtistsForB2b}
+                            />
+                          )
+                        })
+                      }
+                    </>
+                  )
+                })()}
+              </div>
+            )}
           </>
         ) : (
           <div className="empty-state">

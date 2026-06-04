@@ -2,7 +2,7 @@
  * Parse partyflock.nl HTML pages to extract structured event data.
  */
 
-import { type LineupEntry } from "@/services/lineup-types";
+import { type LineupEntry, type TimetableSlot } from "@/services/lineup-types";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 
 const DUTCH_MONTHS: Record<string, string> = {
@@ -96,6 +96,7 @@ export interface ParsedPFEvent {
   location: string | null;
   imageUrl: string | null;
   lineup: LineupEntry[];
+  timetable: TimetableSlot[];
   latitude: number | null;
   longitude: number | null;
 }
@@ -166,6 +167,94 @@ function parsePFTimeslotGroups(tableHtml: string): string[][] {
   return groups;
 }
 
+/**
+ * Parse stage name from a `<th>` element in the PF lineup table.
+ * Stage headers look like: <th><span class="r">1</span><span class="name">Mainstage</span></th>
+ */
+function parseStageName(thContent: string): { name: string; order: number } {
+  const orderMatch = thContent.match(/<span class="r">(\d+)<\/span>/);
+  const nameMatch = thContent.match(/<span class="name">([^<]+)<\/span>/);
+  const order = orderMatch ? parseInt(orderMatch[1], 10) : 0;
+  const name = nameMatch ? decodeHtmlEntities(nameMatch[1].trim()) : "Stage";
+  return { name, order };
+}
+
+/**
+ * Parse a PF timeslot time range string like "za 13:00 - 15:00:" into start/end times.
+ * The day prefix ("za ", "zo ", etc.) is stripped.
+ */
+function parseTimeRange(timesContent: string): { startTime: string; endTime: string } | null {
+  const match = timesContent.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+  if (!match) return null;
+  return { startTime: match[1], endTime: match[2] };
+}
+
+/**
+ * Parse the full PF lineup table into a flat list of timetable slots.
+ *
+ * Each row in the table is either:
+ *  - A stage header `<th>` with the stage name and order
+ *  - An artist `<div>` with a time range (starts a new slot) or without one (B2B partner)
+ *
+ * B2B partners share the same stage/startTime/endTime as the preceding artist.
+ * Each artist (including B2B partners) gets its own TimetableSlot row at the same slotOrder.
+ * Stages or artists without time data are skipped.
+ */
+function parsePFTimetable(tableHtml: string): TimetableSlot[] {
+  const slots: TimetableSlot[] = [];
+  const tokenRegex = /<th>([\s\S]*?)<\/th>|<div>([\s\S]*?)<\/div>/g;
+  let tokenMatch;
+
+  let currentStage = { name: "Stage", order: 0 };
+  let currentTimeRange: { startTime: string; endTime: string } | null = null;
+  let currentSlotOrder = 0;
+
+  while ((tokenMatch = tokenRegex.exec(tableHtml)) !== null) {
+    const thContent = tokenMatch[1];
+    const divContent = tokenMatch[2];
+
+    if (thContent !== undefined) {
+      currentStage = parseStageName(thContent);
+      currentTimeRange = null;
+      currentSlotOrder = 0;
+      continue;
+    }
+
+    if (!divContent) continue;
+
+    const nameMatch = divContent.match(/<span itemprop="name">([^<]+)<\/span>/);
+    if (!nameMatch) continue;
+
+    const artistName = decodeHtmlEntities(nameMatch[1].trim());
+    const hasVisibleTime = divContent.includes('class="light times"');
+    const hasInvisibleTime = divContent.includes('class="invisible times"');
+
+    if (hasVisibleTime) {
+      const timeRange = parseTimeRange(divContent);
+      if (!timeRange) continue;
+
+      currentTimeRange = timeRange;
+      currentSlotOrder += 1;
+    } else if (!hasInvisibleTime && currentTimeRange === null) {
+      // Stage with no timetable at all — skip
+      continue;
+    }
+
+    if (!currentTimeRange) continue;
+
+    slots.push({
+      artistName,
+      stageName: currentStage.name,
+      startTime: currentTimeRange.startTime,
+      endTime: currentTimeRange.endTime,
+      stageOrder: currentStage.order,
+      slotOrder: currentSlotOrder,
+    });
+  }
+
+  return slots;
+}
+
 /** Parse a partyflock.nl event detail page to extract structured data. */
 export function parsePFEventPage(html: string): ParsedPFEvent {
   const h1Match = html.match(/<h1[^>]*itemprop="name"[^>]*>(?:<a[^>]*>)?([^<]+)/);
@@ -212,6 +301,7 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
 
   const lineup: LineupEntry[] = [];
   const seenEntries = new Set<string>();
+  let timetable: TimetableSlot[] = [];
   const lineupSection = html.match(/<table class="lineup[^"]*">([\s\S]*?)<\/table>/);
 
   if (lineupSection) {
@@ -230,7 +320,9 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
         lineup.push({ type: "b2b", originalName, members: group });
       }
     }
+
+    timetable = parsePFTimetable(lineupSection[1]);
   }
 
-  return { name, date, endDate, venue, location, imageUrl, lineup, latitude, longitude };
+  return { name, date, endDate, venue, location, imageUrl, lineup, timetable, latitude, longitude };
 }

@@ -5,6 +5,7 @@ import { eq, sql, inArray } from "drizzle-orm";
 import {
   festivals,
   festivalArtists,
+  festivalTimetableSlots,
   artists,
   userFestivals,
   userFestivalArtistRatings,
@@ -230,4 +231,60 @@ async function fetchArtistGenreData(artistIds: string[]) {
     name: r.name,
     genres: genresByArtist.get(r.id) ?? [],
   }));
+}
+
+// ── Timetable ──────────────────────────────────────────
+
+export type TimetableStage = {
+  stageName: string;
+  stageOrder: number;
+  slots: TimetableSlotRow[];
+};
+
+export type TimetableSlotRow = {
+  artistId: string;
+  artistName: string;
+  startTime: string;
+  endTime: string;
+  slotOrder: number;
+};
+
+/**
+ * Fetch all timetable slots for a festival, grouped by stage.
+ * Returns an empty array when no timetable data exists.
+ */
+export async function getTimetable(festivalId: string): Promise<TimetableStage[]> {
+  const rows = await db
+    .select({
+      stageName: festivalTimetableSlots.stageName,
+      stageOrder: festivalTimetableSlots.stageOrder,
+      slotOrder: festivalTimetableSlots.slotOrder,
+      startTime: festivalTimetableSlots.startTime,
+      endTime: festivalTimetableSlots.endTime,
+      artistId: artists.id,
+      artistName: artists.name,
+    })
+    .from(festivalTimetableSlots)
+    .innerJoin(artists, eq(festivalTimetableSlots.artistId, artists.id))
+    .where(eq(festivalTimetableSlots.festivalId, festivalId))
+    .orderBy(festivalTimetableSlots.stageOrder, festivalTimetableSlots.slotOrder);
+
+  const stageMap = new Map<number, TimetableStage>();
+
+  for (const row of rows) {
+    let stage = stageMap.get(row.stageOrder);
+    if (!stage) {
+      stage = { stageName: row.stageName, stageOrder: row.stageOrder, slots: [] };
+      stageMap.set(row.stageOrder, stage);
+    }
+    stage.slots.push({
+      artistId: row.artistId,
+      artistName: row.artistName,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      slotOrder: row.slotOrder,
+    });
+  }
+
+  return Array.from(stageMap.values()).sort((a, b) => a.stageOrder - b.stageOrder);
 }

@@ -2,11 +2,11 @@
 
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
-import { festivals, festivalArtists } from "@/db/schema";
+import { festivals, festivalArtists, festivalTimetableSlots } from "@/db/schema";
 import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { parsePFEventPage } from "@/services/partyflock/parser";
-import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
+import { flattenLineupNames, filterB2bEntries, type TimetableSlot } from "@/services/lineup-types";
 
 /** Fetch and store imageUrl for a festival that was imported without one. */
 async function backfillMissingImage(festivalId: string, partyId: string): Promise<void> {
@@ -30,6 +30,32 @@ async function backfillMissingImage(festivalId: string, partyId: string): Promis
     .where(eq(festivals.id, festivalId));
 }
 
+/** Insert timetable slots for a festival, mapping artist names to IDs. */
+async function insertTimetableSlots(
+  festivalId: string,
+  slots: TimetableSlot[],
+  nameToId: Record<string, string>
+): Promise<void> {
+  const rows = slots
+    .filter((slot) => nameToId[slot.artistName])
+    .map((slot) => ({
+      festivalId,
+      artistId: nameToId[slot.artistName],
+      stageName: slot.stageName,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      stageOrder: slot.stageOrder,
+      slotOrder: slot.slotOrder,
+    }));
+
+  if (rows.length === 0) return;
+
+  await db
+    .insert(festivalTimetableSlots)
+    .values(rows)
+    .onConflictDoNothing();
+}
+
 /** Fetch only the og:image URL for a Partyflock event by party ID. */
 export async function fetchPFEventImageUrl(partyId: string): Promise<string | null> {
   if (!partyId || !/^\d+$/.test(partyId)) return null;
@@ -51,6 +77,10 @@ export async function reimportPFEvent(partyId: string): Promise<string | null> {
   await db
     .delete(festivalArtists)
     .where(eq(festivalArtists.festivalId, festivalId));
+
+  await db
+    .delete(festivalTimetableSlots)
+    .where(eq(festivalTimetableSlots.festivalId, festivalId));
 
   return fetchPFEvent(partyId, { force: true });
 }
@@ -145,6 +175,10 @@ export async function fetchPFEvent(
     const b2bEntries = filterB2bEntries(parsed.lineup);
     if (b2bEntries.length > 0) {
       await createB2bSets(festivalId, b2bEntries, nameToId);
+    }
+
+    if (parsed.timetable.length > 0) {
+      await insertTimetableSlots(festivalId, parsed.timetable, nameToId);
     }
   }
 

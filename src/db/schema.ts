@@ -191,6 +191,28 @@ export const festivalB2bSetMembers = pgTable(
   ]
 );
 
+// ── Festival Timetable Slots ───────────────────────────
+export const festivalTimetableSlots = pgTable(
+  "festival_timetable_slots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    festivalId: text("festival_id")
+      .notNull()
+      .references(() => festivals.id, { onDelete: "cascade" }),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    stageName: text("stage_name").notNull(),
+    startTime: text("start_time").notNull(),
+    endTime: text("end_time").notNull(),
+    stageOrder: integer("stage_order").notNull(),
+    slotOrder: integer("slot_order").notNull(),
+  },
+  (t) => [
+    index("festival_timetable_slots_festival_id_idx").on(t.festivalId),
+  ]
+);
+
 // ── User Artist Global (overall artist ratings & notes) ─
 export const userArtistGlobal = pgTable(
   "user_artist_global",

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
-import { getFestival } from '@/db/actions/festivals'
+import { getFestival, reimportFestival } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
@@ -60,13 +60,16 @@ export default function FestivalDetail() {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
-  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin } = useUserData()
 
   const [event, setEvent] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
   const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(null)
+  const [showAdminMenu, setShowAdminMenu] = useState(false)
+  const [showReimportConfirm, setShowReimportConfirm] = useState(false)
+  const [isReimporting, setIsReimporting] = useState(false)
 
   const isCustom = id.startsWith('custom-')
 
@@ -149,6 +152,19 @@ export default function FestivalDetail() {
     toggleFestival(id, payload)
   }
 
+  const handleReimport = async () => {
+    setIsReimporting(true)
+    try {
+      await reimportFestival(id)
+      // Re-fetch the festival so the updated lineup is reflected immediately
+      const updated = await getFestival(id)
+      if (updated) setEvent(transformDbFestival(updated))
+      setShowReimportConfirm(false)
+    } finally {
+      setIsReimporting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="page">
@@ -191,9 +207,29 @@ export default function FestivalDetail() {
         )}
 
         <div className="festival-hero-content">
-          <button className="festival-hero-back" onClick={() => router.back()} id="back-btn">
-            <BackIcon /> Back to search
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0 }}>
+            <button className="festival-hero-back" onClick={() => router.back()} id="back-btn" style={{ marginBottom: 0 }}>
+              <BackIcon /> Back to search
+            </button>
+
+            {isAdmin && !isCustom && (
+              <button
+                className="artist-card-options-btn"
+                onClick={() => setShowAdminMenu(true)}
+                title="Admin options"
+                style={{
+                  position: 'static',
+                  opacity: 1,
+                  pointerEvents: 'auto',
+                  fontSize: '1rem',
+                  padding: '4px 10px',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                &#8943;
+              </button>
+            )}
+          </div>
 
           <h1 className="festival-hero-title">{event.name}</h1>
 
@@ -241,6 +277,125 @@ export default function FestivalDetail() {
               </a>
             )}
           </div>
+
+          {/* Admin options sheet */}
+          {showAdminMenu && (
+            <div
+              onClick={(e) => { if (e.target === e.currentTarget) setShowAdminMenu(false) }}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 1000,
+                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                padding: '0 0 env(safe-area-inset-bottom, 0)',
+              }}
+            >
+              <div
+                className="fade-in"
+                style={{
+                  background: 'var(--bg-card)',
+                  width: '100%', maxWidth: 480,
+                  borderRadius: '20px 20px 0 0',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  padding: '18px 20px 14px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>
+                    Options
+                  </span>
+                  <button
+                    onClick={() => setShowAdminMenu(false)}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}
+                  >
+                    &times;
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setShowAdminMenu(false); setShowReimportConfirm(true) }}
+                  style={{
+                    width: '100%', background: 'none', border: 'none',
+                    color: 'var(--accent-red, #ef4444)',
+                    fontSize: '0.95rem', fontFamily: 'var(--font-sans)',
+                    padding: '16px 20px', textAlign: 'left', cursor: 'pointer',
+                  }}
+                >
+                  Re-import Festival
+                </button>
+                <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)' }}>
+                  <button onClick={() => setShowAdminMenu(false)} className="btn btn-secondary" style={{ width: '100%' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Re-import confirmation overlay — admin only */}
+          {showReimportConfirm && (
+            <div
+              onClick={(e) => { if (e.target === e.currentTarget) setShowReimportConfirm(false) }}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 1000,
+                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                padding: '0 0 env(safe-area-inset-bottom, 0)',
+              }}
+            >
+              <div
+                className="fade-in"
+                style={{
+                  background: 'var(--bg-card)',
+                  width: '100%', maxWidth: 480,
+                  borderRadius: '20px 20px 0 0',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{
+                  padding: '18px 20px 14px',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>
+                    Re-import Festival
+                  </span>
+                  <button
+                    onClick={() => setShowReimportConfirm(false)}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}
+                  >
+                    &times;
+                  </button>
+                </div>
+                <div style={{ padding: '20px' }}>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+                    This will clear the entire lineup for <strong>{event.name}</strong>, including all B2B sets and any artist ratings logged for this festival, and re-fetch it from the source. This cannot be undone.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => setShowReimportConfirm(false)}
+                      className="btn btn-secondary"
+                      style={{ flex: 1 }}
+                      disabled={isReimporting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleReimport}
+                      className="btn btn-primary"
+                      style={{ flex: 2, background: 'var(--accent-red, #ef4444)', borderColor: 'var(--accent-red, #ef4444)' }}
+                      disabled={isReimporting}
+                    >
+                      {isReimporting ? 'Re-importing…' : 'Re-import Festival'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {attended && (
             <div style={{ marginTop: 16, display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>

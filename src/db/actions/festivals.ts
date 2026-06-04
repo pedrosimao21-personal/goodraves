@@ -47,5 +47,8 @@ export { splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet, getB2bSetsForF
 // Partyflock import
 export { reimportPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 
+// Admin re-import (clears and re-fetches lineup from source)
+export { reimportFestival } from "./festival-reimport";
+
 // FestivalFans slug extraction (re-exported from service for backward compat)
 export { extractFFSlug } from "@/services/festivalfans/client";

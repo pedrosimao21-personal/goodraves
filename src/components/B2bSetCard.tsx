@@ -2,6 +2,7 @@
 
 import { memo, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useUserData } from '@/context/UserDataContext'
 import type { B2bSetData } from '@/context/user-data-state'
 
@@ -23,10 +24,19 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
   const [showUnsplitConfirm, setShowUnsplitConfirm] = useState(false)
   const hasRating = currentRating > 0
 
+  const ariaDisplayName = b2bSet.members.map(m => m.artistName).join(' b2b ')
+
   const displayName = b2bSet.members.map((m, idx) => (
     <span key={m.artistId}>
       {idx > 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> b2b </span>}
-      {m.artistName}
+      <Link
+        href={`/artist/${m.artistId}/${encodeURIComponent(m.artistName)}`}
+        style={{ color: 'inherit', textDecoration: 'none' }}
+        onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
+        onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
+      >
+        {m.artistName}
+      </Link>
     </span>
   ))
 
@@ -143,7 +153,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
               <button
                 className="mark-seen-btn"
                 onClick={() => setIsRatingVisible(true)}
-                aria-label={`Mark ${displayName} as seen`}
+                aria-label={`Mark ${ariaDisplayName} as seen`}
               >
                 Mark as seen
               </button>

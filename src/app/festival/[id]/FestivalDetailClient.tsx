@@ -72,9 +72,19 @@ export default function FestivalDetail() {
   const [showReimportConfirm, setShowReimportConfirm] = useState(false)
   const [isReimporting, setIsReimporting] = useState(false)
   const [timetableStages, setTimetableStages] = useState<TimetableStage[]>([])
-  const [lineupView, setLineupView] = useState<'lineup' | 'timetable'>('lineup')
+  const [lineupView, setLineupView] = useState<'lineup' | 'timetable'>(
+    typeof window !== 'undefined' && window.location.hash === '#timetable' ? 'timetable' : 'lineup'
+  )
 
   const isCustom = id.startsWith('custom-')
+
+  useEffect(() => {
+    function onHashChange() {
+      setLineupView(window.location.hash === '#timetable' ? 'timetable' : 'lineup')
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -150,6 +160,11 @@ export default function FestivalDetail() {
   const attended = isAttended(id)
   const upcoming = isUpcoming(id)
   const seenCount = getSeenCount(id)
+
+  function switchView(view: 'lineup' | 'timetable') {
+    setLineupView(view)
+    window.location.hash = view === 'timetable' ? 'timetable' : ''
+  }
 
   const handleAction = () => {
     const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, genre: event.genre, source: event.source }
@@ -415,7 +430,7 @@ export default function FestivalDetail() {
         {event.attractions.length > 0 ? (
           <>
             <div className="section-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <h2 className="section-title" style={{ margin: 0 }}>
                   {lineupView === 'lineup' ? 'Lineup' : 'Timetable'}
                 </h2>
@@ -425,8 +440,8 @@ export default function FestivalDetail() {
               </div>
               {timetableStages.length > 0 && (
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={() => setLineupView('lineup')}
+                   <button
+                    onClick={() => switchView('lineup')}
                     style={{
                       padding: '4px 12px',
                       borderRadius: 6,
@@ -442,8 +457,8 @@ export default function FestivalDetail() {
                   >
                     Lineup
                   </button>
-                  <button
-                    onClick={() => setLineupView('timetable')}
+                   <button
+                    onClick={() => switchView('timetable')}
                     style={{
                       padding: '4px 12px',
                       borderRadius: 6,

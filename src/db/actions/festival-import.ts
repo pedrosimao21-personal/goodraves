@@ -1,27 +1,29 @@
 "use server";
 
 import { db } from "@/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
 import {
   requireAuth,
-  requireAdmin,
   ensureArtistsAndGetIds,
   findExistingFestivalByNameDate,
   MAX_FESTIVAL_NAME_LENGTH,
 } from "./festival-helpers";
-
-const BATCH_CHUNK_SIZE = 50;
 
 // ── Upsert a custom festival ──────────────────────────
 export async function upsertFestival(data: {
   id: string;
   name: string;
   date: string;
+  endDate?: string | null;
   venue?: string | null;
   location?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   imageUrl?: string | null;
   source?: string | null;
+  sourceId?: string | null;
+  interestedCount?: number | null;
   lineup?: string[];
 }) {
   await requireAuth();
@@ -41,10 +43,15 @@ export async function upsertFestival(data: {
       id: data.id,
       name: data.name,
       date: data.date,
+      endDate: data.endDate ?? null,
       venue: data.venue ?? null,
       location: data.location ?? null,
+      latitude: data.latitude ?? null,
+      longitude: data.longitude ?? null,
       imageUrl: data.imageUrl ?? null,
       source: data.source ?? "custom",
+      sourceId: data.sourceId ?? null,
+      interestedCount: data.interestedCount ?? 0,
     })
     .onConflictDoUpdate({
       target: [festivals.id],
@@ -53,7 +60,12 @@ export async function upsertFestival(data: {
         date: data.date,
         venue: data.venue ?? null,
         location: data.location ?? null,
-        imageUrl: data.imageUrl ?? null,
+        endDate: sql`COALESCE(${data.endDate ?? null}, ${festivals.endDate})`,
+        latitude: sql`COALESCE(${data.latitude ?? null}, ${festivals.latitude})`,
+        longitude: sql`COALESCE(${data.longitude ?? null}, ${festivals.longitude})`,
+        imageUrl: sql`COALESCE(${data.imageUrl ?? null}, ${festivals.imageUrl})`,
+        sourceId: sql`COALESCE(${data.sourceId ?? null}, ${festivals.sourceId})`,
+        interestedCount: sql`COALESCE(${data.interestedCount ?? null}, ${festivals.interestedCount})`,
       },
     });
 
@@ -80,66 +92,3 @@ export async function upsertFestival(data: {
   }
 }
 
-// ── Batch import events into festivals table ───────────
-export async function batchImportFestivals(
-  events: Array<{
-    id: string;
-    name: string;
-    date: string;
-    venue?: string | null;
-    location?: string | null;
-    source?: string;
-    lineup?: string[];
-  }>
-) {
-  await requireAdmin();
-
-  for (let i = 0; i < events.length; i += BATCH_CHUNK_SIZE) {
-    const chunk = events.slice(i, i + BATCH_CHUNK_SIZE);
-
-    const nonDuplicateEvents = [];
-    for (const event of chunk) {
-      const existingId = await findExistingFestivalByNameDate(event.name, event.date);
-      if (!existingId || existingId === event.id) {
-        nonDuplicateEvents.push(event);
-      }
-    }
-
-    if (nonDuplicateEvents.length === 0) continue;
-
-    await db
-      .insert(festivals)
-      .values(
-        nonDuplicateEvents.map((e) => ({
-          id: e.id,
-          name: e.name,
-          date: e.date,
-          venue: e.venue ?? null,
-          location: e.location ?? null,
-          source: e.source ?? "ra",
-        }))
-      )
-      .onConflictDoNothing();
-
-    const allArtistNames = [...new Set(nonDuplicateEvents.flatMap((e) => e.lineup ?? []))];
-    if (allArtistNames.length > 0) {
-      const nameToId = await ensureArtistsAndGetIds(allArtistNames);
-
-      const lineupRows = nonDuplicateEvents.flatMap((e) =>
-        (e.lineup ?? [])
-          .filter((name) => nameToId[name])
-          .map((name) => ({
-            festivalId: e.id,
-            artistId: nameToId[name],
-          }))
-      );
-
-      if (lineupRows.length > 0) {
-        await db
-          .insert(festivalArtists)
-          .values(lineupRows)
-          .onConflictDoNothing();
-      }
-    }
-  }
-}

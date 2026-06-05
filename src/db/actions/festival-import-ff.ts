@@ -114,6 +114,7 @@ export async function fetchFFEvent(
           imageUrl: festivalValues.imageUrl,
           latitude: festivalValues.latitude,
           longitude: festivalValues.longitude,
+          sourceId: festivalValues.sourceId,
         },
       });
   } else {
@@ -123,9 +124,11 @@ export async function fetchFFEvent(
       .onConflictDoUpdate({
         target: festivals.id,
         set: {
+          endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
           imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
           latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
           longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
+          sourceId: sql`COALESCE(${festivalValues.sourceId}, ${festivals.sourceId})`,
         },
       });
   }

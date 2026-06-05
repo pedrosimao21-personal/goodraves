@@ -33,7 +33,6 @@ export {
 // Import & upsert
 export {
   upsertFestival,
-  batchImportFestivals,
 } from "./festival-import";
 
 // RA import

@@ -134,7 +134,11 @@ export default function FestivalCard({ event }: { event: any }) {
     const payload = {
       name: event.name,
       date: event.date,
+      endDate: event.endDate ?? null,
       venue: event.venue,
+      location: event.location ?? null,
+      latitude: event.latitude ?? null,
+      longitude: event.longitude ?? null,
       image: displayImage,
       genre: event.genre,
       source: event.source,

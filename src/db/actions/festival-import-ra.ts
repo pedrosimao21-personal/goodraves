@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { artists, festivals, festivalArtists } from "@/db/schema";
 import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
 import { fetchRAEventRaw } from "@/services/ra/client";
@@ -108,23 +108,56 @@ export async function fetchRAEvent(
     return existingId;
   }
 
-  await db
-    .insert(festivals)
-    .values({
-      id: festivalId,
-      name: festivalName,
-      date,
-      endDate,
-      venue: venueName,
-      location,
-      latitude: geocoded?.latitude ?? null,
-      longitude: geocoded?.longitude ?? null,
-      source: "ra",
-      sourceId: id,
-      imageUrl,
-      interestedCount: (data.interestedCount ?? 0) + (data.attending ?? 0),
-    })
-    .onConflictDoNothing();
+  const festivalValues = {
+    id: festivalId,
+    name: festivalName,
+    date,
+    endDate,
+    venue: venueName,
+    location,
+    latitude: geocoded?.latitude ?? null,
+    longitude: geocoded?.longitude ?? null,
+    source: "ra" as const,
+    sourceId: id,
+    imageUrl,
+    interestedCount: (data.interestedCount ?? 0) + (data.attending ?? 0),
+  };
+
+  if (opts?.force) {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoUpdate({
+        target: festivals.id,
+        set: {
+          name: festivalValues.name,
+          date: festivalValues.date,
+          endDate: festivalValues.endDate,
+          venue: festivalValues.venue,
+          location: festivalValues.location,
+          latitude: festivalValues.latitude,
+          longitude: festivalValues.longitude,
+          imageUrl: festivalValues.imageUrl,
+          sourceId: festivalValues.sourceId,
+          interestedCount: festivalValues.interestedCount,
+        },
+      });
+  } else {
+    await db
+      .insert(festivals)
+      .values(festivalValues)
+      .onConflictDoUpdate({
+        target: festivals.id,
+        set: {
+          endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
+          imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
+          latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
+          longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
+          sourceId: sql`COALESCE(${festivalValues.sourceId}, ${festivals.sourceId})`,
+          interestedCount: sql`COALESCE(${festivalValues.interestedCount}, ${festivals.interestedCount})`,
+        },
+      });
+  }
 
   if (lineup.length > 0) {
     const nameToId = await ensureArtistsAndGetIds(lineup);

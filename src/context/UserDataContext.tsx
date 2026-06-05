@@ -13,7 +13,6 @@ import {
   rateArtist,
   upsertFestival,
   clearUserFestivals,
-  batchImportFestivals,
   setGlobalArtistRating,
   setGlobalArtistNotes,
   setFestivalNotes as setFestivalNotesAction,
@@ -263,30 +262,6 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     })
   }, [userId, promptAuth])
 
-  const batchImportRA = useCallback(async (events: Record<string, any>) => {
-    const eventArray = Object.entries(events).map(([id, e]: [string, any]) => ({
-      id,
-      name: e.name ?? e.title ?? id,
-      date: e.date ?? e.startDate ?? '',
-      venue: typeof e.venue === 'object' ? e.venue?.name : e.venue,
-      location: e.location ?? (typeof e.venue === 'object' ? e.venue?.city : undefined),
-      source: 'ra',
-      lineup: e.lineup ?? [],
-    }))
-    await batchImportFestivals(eventArray)
-    setState(prev => {
-      const festivalMeta = { ...prev.festivalMeta }
-      for (const [id, e] of Object.entries(events)) {
-        festivalMeta[id] = e
-      }
-      return { ...prev, festivalMeta }
-    })
-  }, [])
-
-  const clearImportedRA = useCallback(() => {
-    // No-op in DB mode -- RA events live in festivals table
-  }, [])
-
   const batchEnrichArtists = useCallback((metadata: Record<string, any>) => {
     setState(prev => ({ ...prev, artistMeta: { ...prev.artistMeta, ...metadata } }))
   }, [])
@@ -374,7 +349,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     ...readers,
     importData, addCustomFestival, clearFestivals,
-    updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
+    updateFestivalMeta, batchEnrichArtists,
     splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
     state, loaded, isAdmin,
@@ -382,7 +357,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     readers,
     importData, addCustomFestival, clearFestivals,
-    updateFestivalMeta, batchEnrichArtists, batchImportRA, clearImportedRA,
+    updateFestivalMeta, batchEnrichArtists,
     splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSetFn, loadB2bSets, renameArtist,
   ])
 

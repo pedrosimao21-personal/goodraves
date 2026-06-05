@@ -90,8 +90,12 @@ export interface UserDataContextType {
   clearFestivals: (type: string) => Promise<void>
   updateFestivalMeta: (id: string, meta: any) => void
   batchEnrichArtists: (metadata: Record<string, any>) => void
-  batchImportRA: (events: Record<string, any>) => Promise<void>
-  clearImportedRA: () => void
+}
+
+/** Derive the provider-specific sourceId from a prefixed festival ID (e.g. "ra-12345" -> "12345") */
+function deriveSourceId(eventId: string): string | null {
+  const match = eventId.match(/^(?:ra|ff|pf)-(.+)$/)
+  return match ? match[1] : null
 }
 
 /** Build the upsert payload used by toggleFestival / addCustomFestival */
@@ -100,10 +104,14 @@ export function buildUpsertPayload(eventId: string, meta: any) {
     id: eventId,
     name: meta.name,
     date: meta.date ?? meta.startDate ?? '',
+    endDate: meta.endDate ?? null,
     venue: typeof meta.venue === 'object' ? meta.venue?.name : meta.venue,
     location: meta.location ?? (typeof meta.venue === 'object' ? meta.venue?.city : undefined),
+    latitude: meta.latitude ?? null,
+    longitude: meta.longitude ?? null,
     imageUrl: meta.imageUrl ?? meta.image ?? null,
     source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
+    sourceId: deriveSourceId(eventId),
     lineup: meta.lineup?.length ? meta.lineup : undefined,
   }
 }

@@ -17,6 +17,7 @@ import { requireAuth } from "./festival-helpers";
 import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
+import { resolvePFEventSlug } from "@/services/partyflock/client";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -122,6 +123,15 @@ async function tryAutoImport(id: string) {
   const pfMatch = id.match(/^pf-(\d+)$/);
   if (pfMatch) {
     return await importAndReturn(id, () => fetchPFEvent(pfMatch[1]));
+  }
+
+  // Partyflock permanent series URLs (/event/slug) can't be fetched directly;
+  // resolve the slug to the underlying numeric party ID first.
+  const pfEventMatch = id.match(/^pf-event-([a-z0-9-]+)$/);
+  if (pfEventMatch) {
+    const partyId = await resolvePFEventSlug(pfEventMatch[1]);
+    if (!partyId) return null;
+    return await importAndReturn(`pf-${partyId}`, () => fetchPFEvent(partyId));
   }
 
   return null;

@@ -193,6 +193,32 @@ export default function SearchSection() {
         results.map((r: any) => `${r.name?.toLowerCase()}::${r.date ?? ''}`)
       )
 
+      // Collect PF IDs already in DB results to deduplicate
+      const dbPFIds = new Set(
+        dbResults
+          .filter((f: any) => f.source === 'partyflock' && f.sourceId)
+          .map((f: any) => String(f.sourceId))
+      )
+
+      // Add PF results that aren't already in DB or exact duplicates (same name + date)
+      for (const pf of pfResults) {
+        if (!pf.date) continue
+        if (dbPFIds.has(pf.pfId)) continue
+        if (existingKeys.has(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)) continue
+        existingKeys.add(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)
+        results.push({
+          id: `pf-${pf.pfId}`,
+          name: pf.name,
+          date: pf.date,
+          venue: pf.venue ? { name: pf.venue, city: pf.location ?? '' } : undefined,
+          location: pf.location,
+          lineup: [],
+          source: 'partyflock',
+          image: pf.imageUrl,
+          _fromPF: true,
+        })
+      }
+
       // Collect RA source IDs already in DB results to deduplicate
       const dbRaIds = new Set(
         dbResults
@@ -242,32 +268,6 @@ export default function SearchSection() {
           source: 'festivalfans',
           image: ff.imageUrl,
           _fromFF: true,
-        })
-      }
-
-      // Collect PF IDs already in DB results to deduplicate
-      const dbPFIds = new Set(
-        dbResults
-          .filter((f: any) => f.source === 'partyflock' && f.sourceId)
-          .map((f: any) => String(f.sourceId))
-      )
-
-      // Add PF results that aren't already in DB or exact duplicates (same name + date)
-      for (const pf of pfResults) {
-        if (!pf.date) continue
-        if (dbPFIds.has(pf.pfId)) continue
-        if (existingKeys.has(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)) continue
-        existingKeys.add(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)
-        results.push({
-          id: `pf-${pf.pfId}`,
-          name: pf.name,
-          date: pf.date,
-          venue: pf.venue ? { name: pf.venue, city: pf.location ?? '' } : undefined,
-          location: pf.location,
-          lineup: [],
-          source: 'partyflock',
-          image: pf.imageUrl,
-          _fromPF: true,
         })
       }
 

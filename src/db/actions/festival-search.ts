@@ -7,7 +7,7 @@ import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS } from "./festival-helpers";
 import { searchRAEventsRaw } from "@/services/ra/client";
 import { mapRAEventToSearchResult } from "@/services/ra/parser";
 import { searchFFEventsRaw, resolveFFSlug } from "@/services/festivalfans/client";
-import { searchPFEventsRaw } from "@/services/partyflock/client";
+import { searchPFEventsRaw, resolvePFEventSlug } from "@/services/partyflock/client";
 import { parsePFSearchResults } from "@/services/partyflock/parser";
 
 // ── DB search ──────────────────────────────────────────
@@ -140,7 +140,25 @@ export async function searchPFEvents(query: string) {
   }
 
   const parsed = parsePFSearchResults(html);
-  const results = parsed.map((ev) => ({
+
+  // Partyflock series pages use /event/slug instead of /party/DIGITS. Resolve
+  // any such slugs to their underlying numeric party ID now so callers always
+  // receive a numeric pfId and generate stable /festival/pf-DIGITS URLs.
+  const results = (
+    await Promise.all(
+      parsed.map(async (ev) => {
+        if (!ev.pfId.startsWith("event-")) {
+          return { ...ev };
+        }
+        const slug = ev.pfId.replace(/^event-/, "");
+        const resolvedId = await resolvePFEventSlug(slug);
+        if (!resolvedId) return null;
+        return { ...ev, pfId: resolvedId };
+      })
+    )
+  ).filter((ev): ev is NonNullable<typeof ev> => ev !== null);
+
+  const mapped = results.map((ev) => ({
     pfId: ev.pfId,
     name: ev.name,
     date: ev.date,
@@ -153,6 +171,6 @@ export async function searchPFEvents(query: string) {
     longitude: null as number | null,
   }));
 
-  pfSearchCache.set(cacheKey, { data: results, ts: Date.now() });
-  return results;
+  pfSearchCache.set(cacheKey, { data: mapped, ts: Date.now() });
+  return mapped;
 }

@@ -64,11 +64,16 @@ export function parsePFSearchResults(html: string): PFSearchResult[] {
     const typeMatch = block.match(/<div class="type">([^<]+)<\/div>/);
     if (!typeMatch || typeMatch[1].trim() !== "feest") continue;
 
-    const linkMatch = block.match(/<a href="\/party\/(\d+):[^"]*">([^<]+)<\/a>/);
-    if (!linkMatch) continue;
+    // Partyflock uses /party/DIGITS:slug for individual editions and
+    // /event/slug for permanent series pages (e.g. recurring festivals).
+    const partyLinkMatch = block.match(/<a href="\/party\/(\d+):[^"]*">([^<]+)<\/a>/);
+    const eventLinkMatch = block.match(/<a href="\/event\/([^"]+)">([^<]+)<\/a>/);
 
-    const pfId = linkMatch[1];
-    const name = linkMatch[2].trim();
+    const primaryMatch = partyLinkMatch ?? eventLinkMatch;
+    if (!primaryMatch) continue;
+
+    const pfId = partyLinkMatch ? partyLinkMatch[1] : `event-${eventLinkMatch![1]}`;
+    const name = primaryMatch[2].trim();
 
     const dateMatch = block.match(/<div class="small"><div>([^<]+)<\/div>/);
     const date = dateMatch ? parseDutchDate(dateMatch[1]) : null;

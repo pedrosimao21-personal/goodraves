@@ -84,7 +84,8 @@ export async function fetchRAEvent(
     : null;
 
   const venueName = data.venue?.name ?? null;
-  const areaName = data.venue?.area?.name ?? null;
+  const rawAreaName = data.venue?.area?.name ?? null;
+  const areaName = rawAreaName === "All" ? null : rawAreaName;
   const countryName = data.venue?.area?.country?.name
     ? normalizeCountryName(data.venue.area.country.name)
     : null;

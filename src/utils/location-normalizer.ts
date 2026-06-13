@@ -53,8 +53,6 @@ export function normalizeCountryName(country: string): string {
  * Normalizes a full location string (e.g. "Amsterdam, Nederland") by:
  * - Mapping non-English country names to English
  * - Returns null if the location is null/empty
- *
- * Does NOT filter out values like "All" — those should be corrected via the edit feature.
  */
 export function normalizeLocation(location: string | null | undefined): string | null {
   if (!location) return null

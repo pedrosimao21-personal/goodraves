@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { getFestival } from '@/db/actions/festivals'
 import FestivalDetailClient from './FestivalDetailClient'
 
+// Cache the server-rendered page shell for 1 hour (ISR)
+export const revalidate = 3600
+
 interface Props {
   params: Promise<{ id: string }>
 }

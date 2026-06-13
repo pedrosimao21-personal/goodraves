@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import ArtistDetailClient from './ArtistDetailClient'
 
+// Cache the server-rendered page shell for 1 hour (ISR)
+export const revalidate = 3600
+
 interface Props {
   params: Promise<{ id: string; name: string }>
 }

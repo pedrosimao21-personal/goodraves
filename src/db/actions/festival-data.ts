@@ -1,23 +1,19 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, sql, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   festivals,
   festivalArtists,
   festivalTimetableSlots,
   artists,
-  userFestivals,
-  userFestivalArtistRatings,
-  userArtistGlobal,
-  genres,
-  artistGenres as artistGenresTable,
 } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
 import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
+import { fetchUserDataForId } from "./get-initial-data";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -42,34 +38,36 @@ function formatFestivalWithLineup(
 }
 
 export async function getFestival(id: string) {
-  let [festival] = await db
-    .select()
-    .from(festivals)
-    .where(eq(festivals.id, id))
-    .limit(1);
+  // Fetch festival and lineup in parallel since they are independent
+  const [festivalRows, lineup] = await Promise.all([
+    db.select().from(festivals).where(eq(festivals.id, id)).limit(1),
+    fetchLineup(id),
+  ]);
+
+  let [festival] = festivalRows;
 
   if (!festival) {
     return await tryAutoImport(id);
   }
 
-  let lineup = await fetchLineup(id);
+  let currentLineup = lineup;
 
   // If the festival has no lineup, re-fetch from the original source to populate.
   // After the re-fetch, re-read the festival row so we pick up any imageUrl or
   // coordinate updates that PF/FF imports write via COALESCE on conflict.
-  if (lineup.length === 0) {
+  if (currentLineup.length === 0) {
     const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
     const raMatch = id.match(/^ra-(\d+)$/);
     const pfMatch = id.match(/^pf-(\d+)$/);
     if (ffMatch) {
       await fetchFFEvent(ffMatch[1]);
-      lineup = await fetchLineup(id);
+      currentLineup = await fetchLineup(id);
     } else if (raMatch) {
       await fetchRAEvent(raMatch[1]);
-      lineup = await fetchLineup(id);
+      currentLineup = await fetchLineup(id);
     } else if (pfMatch) {
       await fetchPFEvent(pfMatch[1]);
-      lineup = await fetchLineup(id);
+      currentLineup = await fetchLineup(id);
     }
 
     // Re-read the festival row to capture any imageUrl / lat/lng written by the re-fetch
@@ -105,7 +103,7 @@ export async function getFestival(id: string) {
     }
   }
 
-  return formatFestivalWithLineup(festival, lineup);
+  return formatFestivalWithLineup(festival, currentLineup);
 }
 
 /** Auto-import from RA or FestivalFans if the ID matches their patterns */
@@ -159,88 +157,7 @@ async function importAndReturn(
 // ── Get all user data (full state load) ────────────────
 export async function getFullUserData() {
   const userId = await requireAuth();
-
-  const [userFestivalsData, artistRatingsData, globalArtistData] = await Promise.all([
-    db
-      .select({
-        festivalId: userFestivals.festivalId,
-        rating: userFestivals.rating,
-        notes: userFestivals.notes,
-        name: festivals.name,
-        date: festivals.date,
-        venue: festivals.venue,
-        location: festivals.location,
-        latitude: festivals.latitude,
-        longitude: festivals.longitude,
-        imageUrl: festivals.imageUrl,
-        source: festivals.source,
-      })
-      .from(userFestivals)
-      .innerJoin(festivals, eq(userFestivals.festivalId, festivals.id))
-      .where(eq(userFestivals.userId, userId)),
-    db
-      .select()
-      .from(userFestivalArtistRatings)
-      .where(eq(userFestivalArtistRatings.userId, userId)),
-    db
-      .select()
-      .from(userArtistGlobal)
-      .where(eq(userArtistGlobal.userId, userId)),
-  ]);
-
-  const festivalIds = userFestivalsData.map((f) => f.festivalId);
-  let lineups: { festivalId: string; artistId: string; artistName: string }[] = [];
-  if (festivalIds.length > 0) {
-    lineups = await db
-      .select({
-        festivalId: festivalArtists.festivalId,
-        artistId: festivalArtists.artistId,
-        artistName: artists.name,
-      })
-      .from(festivalArtists)
-      .innerJoin(artists, eq(festivalArtists.artistId, artists.id))
-      .where(sql`${festivalArtists.festivalId} IN ${festivalIds}`);
-  }
-
-  const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
-  const artistGenreData = await fetchArtistGenreData(seenArtistIds);
-
-  return {
-    festivals: userFestivalsData,
-    artistRatings: artistRatingsData,
-    globalArtistData,
-    lineups,
-    artistGenres: artistGenreData,
-  };
-}
-
-/** Fetch genre data for a list of artist IDs */
-async function fetchArtistGenreData(artistIds: string[]) {
-  if (artistIds.length === 0) return [];
-
-  const rows = await db
-    .select({ id: artists.id, name: artists.name })
-    .from(artists)
-    .where(inArray(artists.id, artistIds));
-
-  const genreRows = await db
-    .select({ artistId: artistGenresTable.artistId, genreName: genres.name })
-    .from(artistGenresTable)
-    .innerJoin(genres, eq(artistGenresTable.genreId, genres.id))
-    .where(inArray(artistGenresTable.artistId, artistIds));
-
-  const genresByArtist = new Map<string, string[]>();
-  for (const row of genreRows) {
-    const list = genresByArtist.get(row.artistId) ?? [];
-    list.push(row.genreName);
-    genresByArtist.set(row.artistId, list);
-  }
-
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    genres: genresByArtist.get(r.id) ?? [],
-  }));
+  return fetchUserDataForId(userId);
 }
 
 // ── Timetable ──────────────────────────────────────────

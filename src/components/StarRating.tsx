@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useUserData } from '../context/UserDataContext'
 
-export default function StarRating({ artistId, eventId, readonly = false, size = 'md' }: {
+export default memo(function StarRating({ artistId, eventId, readonly = false, size = 'md' }: {
   artistId: string
   eventId?: string
   readonly?: boolean
@@ -47,4 +47,4 @@ export default function StarRating({ artistId, eventId, readonly = false, size =
       ))}
     </div>
   )
-}
+})

@@ -143,12 +143,6 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   const artistNotes: Record<string, string> = {}
   const festivalNotes: Record<string, string> = {}
 
-  const lineupByFestival: Record<string, string[]> = {}
-  for (const row of data.lineups) {
-    if (!lineupByFestival[row.festivalId]) lineupByFestival[row.festivalId] = []
-    lineupByFestival[row.festivalId].push(row.artistName)
-  }
-
   for (const f of data.festivals) {
     if (isFestivalPast(f.date)) attended.push(f.festivalId)
     else upcoming.push(f.festivalId)
@@ -162,7 +156,6 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
       longitude: f.longitude ?? undefined,
       imageUrl: f.imageUrl,
       source: f.source ?? undefined,
-      lineup: lineupByFestival[f.festivalId] ?? [],
     }
 
     if (f.rating) festivalRatings[f.festivalId] = f.rating

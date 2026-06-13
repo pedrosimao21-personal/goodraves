@@ -3,14 +3,12 @@
 import React, { useMemo, useRef } from 'react'
 import { useUserData } from '@/context/UserDataContext'
 import { normalizeLocation } from '@/utils/location-normalizer'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, Legend
-} from 'recharts'
 import dynamic from 'next/dynamic'
 import RaverPassport from '@/components/RaverPassport'
 
 const RaveMap = dynamic(() => import('@/components/RaveMap'), { ssr: false })
+const YearBarChart = dynamic(() => import('./InsightsCharts').then(m => ({ default: m.YearBarChart })), { ssr: false })
+const GenrePieChart = dynamic(() => import('./InsightsCharts').then(m => ({ default: m.GenrePieChart })), { ssr: false })
 
 export default function Insights() {
   const { attendedFestivals, getFestivalMeta, getArtistSeenCounts, artistMeta, loaded } = useUserData()
@@ -23,7 +21,7 @@ export default function Insights() {
   }, [attendedFestivals, getFestivalMeta])
 
   const chartDataYear = useMemo(() => {
-    const counts = {}
+    const counts: Record<string, number> = {}
     attendedEvents.forEach(e => {
       if (!e.date) return
       const year = e.date.substring(0, 4)
@@ -35,7 +33,7 @@ export default function Insights() {
   }, [attendedEvents])
 
   const topGenresData = useMemo(() => {
-    const counts = {}
+    const counts: Record<string, number> = {}
     const artistSeenCounts = getArtistSeenCounts()
 
     Object.entries(artistSeenCounts).forEach(([artistId, { count }]: [string, any]) => {
@@ -103,8 +101,6 @@ export default function Insights() {
     }
   }
 
-  const COLORS = ['#8b5cf6', '#3b82f6', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#fb7185', '#2dd4bf', '#a78bfa']
-
   if (!loaded) {
     return (
       <div className="page">
@@ -139,24 +135,7 @@ export default function Insights() {
           <div className="dashboard-card">
             <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Shows Per Year</h2>
             {chartDataYear.length > 0 ? (
-              <div style={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartDataYear}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                    <XAxis dataKey="year" stroke="#888" tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888" tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip
-                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                      contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', borderRadius: 8 }}
-                    />
-                    <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]}>
-                      {chartDataYear.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={'#8b5cf6'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <YearBarChart data={chartDataYear} />
             ) : (
               <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--text-muted)' }}>No data yet. Mark some past events as attended!</p>
@@ -167,32 +146,7 @@ export default function Insights() {
           <div className="dashboard-card">
             <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Most Listened Genres</h2>
             {topGenresData.length > 0 ? (
-              <div style={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topGenresData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="count"
-                      stroke="none"
-                    >
-                      {topGenresData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', borderRadius: 8, padding: '8px 12px' }}
-                      itemStyle={{ color: '#fff', fontSize: '0.9rem' }}
-                      formatter={(value, name) => [`${value} Performance${value > 1 ? 's' : ''}`, name]}
-                    />
-                    <Legend verticalAlign="bottom" height={48} iconType="circle" wrapperStyle={{ fontSize: '0.75rem', color: '#ccc', textTransform: 'capitalize' }}/>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              <GenrePieChart data={topGenresData} />
             ) : (
               <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--text-muted)' }}>No genre data available yet.</p>

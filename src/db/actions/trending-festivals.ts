@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { festivals } from "@/db/schema";
-import { gte, gt } from "drizzle-orm";
+import { gte, gt, and } from "drizzle-orm";
 
 const DEFAULT_LIMIT = 6;
 const RADIUS_KM = 100;
@@ -66,16 +66,16 @@ export async function getTrendingFestivals(
     })
     .from(festivals)
     .where(
-      // Upcoming AND has interest data
-      gte(festivals.date, todayStr)
+      and(
+        gte(festivals.date, todayStr),
+        gt(festivals.interestedCount, 0)
+      )
     )
     .orderBy(festivals.date)
-    .limit(500);
+    .limit(200);
 
-  // Filter to only festivals with interest, attach distance
-  const withInterest = rows
-    .filter((r) => (r.interestedCount ?? 0) > 0)
-    .map((row) => {
+  // Attach distance calculation
+  const withInterest = rows.map((row) => {
       let distanceKm: number | null = null;
       if (userCoords && row.latitude !== null && row.longitude !== null) {
         distanceKm = haversineKm(

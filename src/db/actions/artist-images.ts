@@ -35,7 +35,13 @@ export async function getArtistsWithImages(
 ): Promise<Record<string, { id: string; imageUrl: string | null; spotifyId: string | null } | null>> {
   if (!names.length) return {};
 
-  const rows = await db.select().from(artists).where(inArray(artists.name, names));
+  const rows = await db.select({
+    id: artists.id,
+    name: artists.name,
+    imageUrl: artists.imageUrl,
+    spotifyId: artists.spotifyId,
+    spotifyFetchedAt: artists.spotifyFetchedAt,
+  }).from(artists).where(inArray(artists.name, names));
   const byName = new Map(rows.map((r) => [r.name, r]));
 
   const needsFetch = names.filter((name) => {
@@ -63,9 +69,17 @@ export async function getArtistsWithImages(
   );
 }
 
+type ArtistImageRow = {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  spotifyId: string | null;
+  spotifyFetchedAt: Date | null;
+};
+
 async function fetchAndUpsertArtists(
   needsFetch: string[],
-  byName: Map<string, typeof artists.$inferSelect>
+  byName: Map<string, ArtistImageRow>
 ): Promise<void> {
   const withId = needsFetch
     .map((name) => ({ name, spotifyId: byName.get(name)?.spotifyId ?? null }))
@@ -99,24 +113,32 @@ async function fetchAndUpsertArtists(
   ];
 
   const upsertResults = await Promise.allSettled(
-    toUpsert.map(async ({ name, data }) => {
-      const spotifyFields = {
-        spotifyId: data?.id ?? null,
-        imageUrl: data?.image ?? null,
-        spotifyFetchedAt: now,
-      };
-
-      const [existing] = await db.select({ id: artists.id })
+    await (async () => {
+      // Batch lookup all names at once to avoid N+1 individual SELECTs
+      const lowerNames = toUpsert.map(({ name }) => name.toLowerCase());
+      const existingRows = await db.select({ id: artists.id, name: artists.name })
         .from(artists)
-        .where(sql`lower(${artists.name}) = lower(${name})`)
-        .limit(1);
+        .where(sql`lower(${artists.name}) IN ${lowerNames}`);
 
-      if (existing) {
-        return db.update(artists).set(spotifyFields).where(eq(artists.id, existing.id));
-      }
+      const existingByLower = new Map(
+        existingRows.map((r) => [r.name.toLowerCase(), r.id])
+      );
 
-      return db.insert(artists).values({ name, ...spotifyFields }).onConflictDoNothing();
-    })
+      return toUpsert.map(async ({ name, data }) => {
+        const spotifyFields = {
+          spotifyId: data?.id ?? null,
+          imageUrl: data?.image ?? null,
+          spotifyFetchedAt: now,
+        };
+
+        const existingId = existingByLower.get(name.toLowerCase());
+        if (existingId) {
+          return db.update(artists).set(spotifyFields).where(eq(artists.id, existingId));
+        }
+
+        return db.insert(artists).values({ name, ...spotifyFields }).onConflictDoNothing();
+      });
+    })()
   );
 
   upsertResults.forEach((r, i) => {

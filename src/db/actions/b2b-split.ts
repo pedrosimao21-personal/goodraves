@@ -247,19 +247,21 @@ export async function rateB2bSet(b2bSetId: string, rating: number) {
     rating: validRating,
   }));
 
-  for (const insert of ratingInserts) {
-    await db
-      .insert(userFestivalArtistRatings)
-      .values(insert)
-      .onConflictDoUpdate({
-        target: [
-          userFestivalArtistRatings.userId,
-          userFestivalArtistRatings.festivalId,
-          userFestivalArtistRatings.artistId,
-        ],
-        set: { rating: validRating },
-      });
-  }
+  await Promise.all(
+    ratingInserts.map((insert) =>
+      db
+        .insert(userFestivalArtistRatings)
+        .values(insert)
+        .onConflictDoUpdate({
+          target: [
+            userFestivalArtistRatings.userId,
+            userFestivalArtistRatings.festivalId,
+            userFestivalArtistRatings.artistId,
+          ],
+          set: { rating: validRating },
+        })
+    )
+  );
 }
 
 // ── Get B2B sets for a festival ───────────────────────────
@@ -268,7 +270,11 @@ export async function getB2bSetsForFestival(
   festivalId: string
 ): Promise<B2bSetWithMembers[]> {
   const sets = await db
-    .select()
+    .select({
+      id: festivalB2bSets.id,
+      festivalId: festivalB2bSets.festivalId,
+      originalArtistName: festivalB2bSets.originalArtistName,
+    })
     .from(festivalB2bSets)
     .where(eq(festivalB2bSets.festivalId, festivalId));
 
@@ -310,16 +316,21 @@ export async function getB2bSetsForFestival(
 async function ensureMemberArtists(
   names: string[]
 ): Promise<{ id: string; name: string }[]> {
+  // Batch lookup all names at once (case-insensitive)
+  const lowerNames = names.map((n) => n.toLowerCase());
+  const existingRows = await db
+    .select({ id: artists.id, name: artists.name })
+    .from(artists)
+    .where(sql`lower(${artists.name}) IN ${lowerNames}`);
+
+  const existingByLower = new Map(
+    existingRows.map((r) => [r.name.toLowerCase(), r])
+  );
+
   const results: { id: string; name: string }[] = [];
 
   for (const name of names) {
-    // Case-insensitive lookup
-    const [existing] = await db
-      .select({ id: artists.id, name: artists.name })
-      .from(artists)
-      .where(sql`lower(${artists.name}) = lower(${name})`)
-      .limit(1);
-
+    const existing = existingByLower.get(name.toLowerCase());
     if (existing) {
       results.push(existing);
       continue;

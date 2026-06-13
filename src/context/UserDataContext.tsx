@@ -72,10 +72,10 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const toggleFestival = useCallback(async (eventId: string, meta: any = null) => {
     if (!userId) { promptAuth(); return }
 
-    const isAdded = state.attendedFestivals.includes(eventId) || state.upcomingFestivals.includes(eventId)
-
+    let wasAdded = false
     setState(prev => {
       const alreadyAdded = prev.attendedFestivals.includes(eventId) || prev.upcomingFestivals.includes(eventId)
+      wasAdded = alreadyAdded
       if (alreadyAdded) {
         return {
           ...prev,
@@ -91,13 +91,13 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       return { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId], festivalMeta }
     })
 
-    if (!isAdded) {
+    if (!wasAdded) {
       if (meta) await upsertFestival(buildUpsertPayload(eventId, meta))
       await addAttendance(eventId)
     } else {
       await removeAttendance(eventId)
     }
-  }, [userId, state.attendedFestivals, state.upcomingFestivals, promptAuth])
+  }, [userId, promptAuth])
 
   const toggleSawArtist = useCallback(async (eventId: string, artistId: string, artistMeta: any = null) => {
     if (!userId) { promptAuth(); return }

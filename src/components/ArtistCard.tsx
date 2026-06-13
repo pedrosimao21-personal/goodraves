@@ -1,14 +1,15 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useState, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
 import StarRating from './StarRating'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
-import ArtistRenameModal from './ArtistRenameModal'
-import B2bSplitModal from './B2bSplitModal'
-import B2bCreateModal from './B2bCreateModal'
+
+const ArtistRenameModal = lazy(() => import('./ArtistRenameModal'))
+const B2bSplitModal = lazy(() => import('./B2bSplitModal'))
+const B2bCreateModal = lazy(() => import('./B2bCreateModal'))
 
 type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b'
 
@@ -127,28 +128,34 @@ const ArtistCard = memo(function ArtistCard({
       )}
 
       {menuState === 'rename' && (
-        <ArtistRenameModal
-          artistName={displayName}
-          onSave={handleRename}
-          onClose={closeMenu}
-        />
+        <Suspense fallback={null}>
+          <ArtistRenameModal
+            artistName={displayName}
+            onSave={handleRename}
+            onClose={closeMenu}
+          />
+        </Suspense>
       )}
 
       {menuState === 'split' && (
-        <B2bSplitModal
-          artistName={displayName}
-          onSave={handleSplit}
-          onClose={closeMenu}
-        />
+        <Suspense fallback={null}>
+          <B2bSplitModal
+            artistName={displayName}
+            onSave={handleSplit}
+            onClose={closeMenu}
+          />
+        </Suspense>
       )}
 
       {menuState === 'createB2b' && (
-        <B2bCreateModal
-          initiatingArtist={{ id: artist.id, name: displayName }}
-          availableArtists={availableArtistsForB2b}
-          onSave={handleCreateB2b}
-          onClose={closeMenu}
-        />
+        <Suspense fallback={null}>
+          <B2bCreateModal
+            initiatingArtist={{ id: artist.id, name: displayName }}
+            availableArtists={availableArtistsForB2b}
+            onSave={handleCreateB2b}
+            onClose={closeMenu}
+          />
+        </Suspense>
       )}
     </>
   )

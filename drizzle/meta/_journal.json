@@ -78,6 +78,13 @@
       "when": 1781367738377,
       "tag": "0019_overconfident_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1718280000000,
+      "tag": "0020_artist_name_lower_index",
+      "breakpoints": true
     }
   ]
 }

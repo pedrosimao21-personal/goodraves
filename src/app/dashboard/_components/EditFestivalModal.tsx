@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useUserData } from '@/context/UserDataContext'
 import { isAllowedImageHost } from '@/lib/imageHosts'
+import { getFestivalLineupNames } from '@/db/actions/get-initial-data'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
@@ -20,7 +21,17 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
   const [city, setCity] = useState(venueObj?.city ?? (typeof meta?.location === 'string' ? meta.location : '') ?? '')
   const [image, setImage] = useState(meta?.image ?? meta?.imageUrl ?? '')
   const [lineup, setLineup] = useState((meta?.lineup ?? []).join(', '))
+  const [lineupLoading, setLineupLoading] = useState(!meta?.lineup)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (meta?.lineup) return
+    setLineupLoading(true)
+    getFestivalLineupNames(eventId).then((names) => {
+      setLineup(names.join(', '))
+      setLineupLoading(false)
+    })
+  }, [eventId, meta?.lineup])
 
   if (!meta) return null
 
@@ -122,9 +133,10 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
             <label style={labelStyle}>Lineup (comma-separated)</label>
             <textarea
               style={{ ...inputStyle, resize: 'vertical', minHeight: 72 }}
-              value={lineup}
+              value={lineupLoading ? 'Loading lineup...' : lineup}
               onChange={e => setLineup(e.target.value)}
               placeholder="Artist 1, Artist 2, ..."
+              disabled={lineupLoading}
             />
           </div>
         </div>

@@ -280,46 +280,66 @@ export default function SearchSection() {
       setEvents(sorted)
       setSearched(true)
 
-      // Lazily fetch images for FF results that don't have one
+      // Batch image fetches: collect all resolved images then apply a single state update
+      const imagePromises: Promise<{ id: string; imageUrl: string } | null>[] = []
+
+      // FF results without images
       const ffWithoutImage = sorted.filter(
         (e: any) => !e.image && e.id?.startsWith('ff-')
       )
       for (const ff of ffWithoutImage) {
         const slug = ff.id.replace(/^ff-/, '')
-        fetchFFEventImageUrl(slug).then((imageUrl) => {
-          if (!imageUrl) return
-          setEvents((prev) =>
-            prev.map((e) => (e.id === ff.id ? { ...e, image: imageUrl } : e))
-          )
-        }).catch(() => { /* image fetch failed, tile stays without image */ })
+        imagePromises.push(
+          fetchFFEventImageUrl(slug)
+            .then((imageUrl) => imageUrl ? { id: ff.id, imageUrl } : null)
+            .catch(() => null)
+        )
       }
 
-      // Lazily fetch images for RA results that don't have one
+      // RA results without images
       const raWithoutImage = sorted.filter(
         (e: any) => !e.image && e.id?.startsWith('ra-')
       )
       for (const ra of raWithoutImage) {
         const raId = ra.id.replace(/^ra-/, '')
-        fetchRAEventImageUrl(raId).then((imageUrl) => {
-          if (!imageUrl) return
-          setEvents((prev) =>
-            prev.map((e) => (e.id === ra.id ? { ...e, image: imageUrl } : e))
-          )
-        }).catch(() => { /* image fetch failed, tile stays without image */ })
+        imagePromises.push(
+          fetchRAEventImageUrl(raId)
+            .then((imageUrl) => imageUrl ? { id: ra.id, imageUrl } : null)
+            .catch(() => null)
+        )
       }
 
-      // Lazily fetch images for PF results that don't have one
+      // PF results without images
       const pfWithoutImage = sorted.filter(
         (e: any) => !e.image && e.id?.startsWith('pf-')
       )
       for (const pf of pfWithoutImage) {
         const pfId = pf.id.replace(/^pf-/, '')
-        fetchPFEventImageUrl(pfId).then((imageUrl) => {
-          if (!imageUrl) return
-          setEvents((prev) =>
-            prev.map((e) => (e.id === pf.id ? { ...e, image: imageUrl } : e))
-          )
-        }).catch(() => { /* image fetch failed, tile stays without image */ })
+        imagePromises.push(
+          fetchPFEventImageUrl(pfId)
+            .then((imageUrl) => imageUrl ? { id: pf.id, imageUrl } : null)
+            .catch(() => null)
+        )
+      }
+
+      // Apply all resolved images in a single batch update
+      if (imagePromises.length > 0) {
+        Promise.allSettled(imagePromises).then((results) => {
+          const imageMap = new Map<string, string>()
+          for (const result of results) {
+            if (result.status === 'fulfilled' && result.value) {
+              imageMap.set(result.value.id, result.value.imageUrl)
+            }
+          }
+          if (imageMap.size > 0) {
+            setEvents((prev) =>
+              prev.map((e) => {
+                const img = imageMap.get(e.id)
+                return img ? { ...e, image: img } : e
+              })
+            )
+          }
+        })
       }
     } catch (err) {
       setError(err as Error)

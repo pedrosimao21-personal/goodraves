@@ -20,12 +20,16 @@ export async function isRateLimited(
 ): Promise<boolean> {
   const windowStart = new Date(Date.now() - windowMs);
 
-  // Count recent attempts and insert new one in a single round-trip
+  // Count recent attempts and insert new one in a single round-trip.
+  // Cleanup is scoped to the current identifier+action pair to avoid
+  // global table scans on every rate-limit check.
   const result = await db.execute(
     sql`
       WITH cleanup AS (
         DELETE FROM rate_limit_attempts
-        WHERE created_at < ${windowStart}
+        WHERE identifier = ${identifier}
+          AND action = ${action}
+          AND created_at < ${windowStart}
       ),
       recent AS (
         SELECT COUNT(*) AS cnt

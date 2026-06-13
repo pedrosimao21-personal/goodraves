@@ -54,8 +54,8 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         textDecoration: 'none',
         color: 'inherit',
       }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
     >
       {(displayEvent?.image || displayEvent?.imageUrl) ? (
         <Image src={(displayEvent.image || displayEvent.imageUrl)!} alt="" width={44} height={44} sizes="44px" style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />

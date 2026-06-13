@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
@@ -488,26 +488,23 @@ export default function FestivalDetail() {
                   const soloArtists = event.attractions.filter(
                     (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
                   )
+                  // Pre-compute available artists once (avoids O(n^2) per-item computation)
+                  const allSoloForB2b = soloArtists.map((a: any) => ({ id: a.id, name: a.name }))
                   return (
                     <>
                       {b2bSets.map(b2bSet => (
                         <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
                       ))}
-                      {soloArtists.map((artist: any) => {
-                          const availableArtistsForB2b = soloArtists
-                            .filter((a: any) => a.id !== artist.id)
-                            .map((a: any) => ({ id: a.id, name: a.name }))
-                          return (
+                      {soloArtists.map((artist: any) => (
                             <ArtistCard
                               key={artist.id}
                               artist={artist}
                               eventId={id}
                               spotifyData={spotifyData[artist.name]}
                               isPast={!isFuture}
-                              availableArtistsForB2b={availableArtistsForB2b}
+                              availableArtistsForB2b={allSoloForB2b}
                             />
-                          )
-                        })
+                        ))
                       }
                     </>
                   )

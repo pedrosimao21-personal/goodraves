@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
@@ -77,7 +77,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   )
 }
 
-export default function FestivalCard({ event }: { event: any }) {
+export default memo(function FestivalCard({ event }: { event: any }) {
   const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserData()
   
   const attended = isAttended(event.id)
@@ -221,4 +221,4 @@ export default function FestivalCard({ event }: { event: any }) {
       </div>
     </Link>
   )
-}
+})

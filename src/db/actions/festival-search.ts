@@ -10,6 +10,21 @@ import { searchFFEventsRaw, resolveFFSlug } from "@/services/festivalfans/client
 import { searchPFEventsRaw, resolvePFEventSlug } from "@/services/partyflock/client";
 import { parsePFSearchResults } from "@/services/partyflock/parser";
 
+const MAX_CACHE_ENTRIES = 50;
+
+function evictOldestIfNeeded(cache: Map<string, { data: any[]; ts: number }>) {
+  if (cache.size <= MAX_CACHE_ENTRIES) return;
+  let oldestKey: string | null = null;
+  let oldestTs = Infinity;
+  for (const [key, entry] of cache) {
+    if (entry.ts < oldestTs) {
+      oldestTs = entry.ts;
+      oldestKey = key;
+    }
+  }
+  if (oldestKey) cache.delete(oldestKey);
+}
+
 // ── DB search ──────────────────────────────────────────
 const SEARCH_RESULTS_LIMIT = 100;
 const FF_DEFAULT_COUNTRY = "Netherlands";
@@ -64,6 +79,7 @@ export async function searchRAEvents(query: string) {
     .filter(Boolean);
 
   raSearchCache.set(cacheKey, { data: mapped, ts: Date.now() });
+  evictOldestIfNeeded(raSearchCache);
   return mapped;
 }
 
@@ -116,6 +132,7 @@ export async function searchFFEvents(query: string) {
   );
 
   ffSearchCache.set(cacheKey, { data: results, ts: Date.now() });
+  evictOldestIfNeeded(ffSearchCache);
   return results;
 }
 
@@ -170,5 +187,6 @@ export async function searchPFEvents(query: string) {
   }));
 
   pfSearchCache.set(cacheKey, { data: mapped, ts: Date.now() });
+  evictOldestIfNeeded(pfSearchCache);
   return mapped;
 }

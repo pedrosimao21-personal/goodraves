@@ -140,8 +140,11 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
   const needsRAData = !row.raArtistId || isStaleRAEvents(row.raEventsFetchedAt);
 
   if (!needsLastfm && !needsSpotify && !needsRelatedArtists && !needsRAData) {
-    const data = await enrichWithSimilarImages(rowToArtistData(row));
-    data.genres = await fetchArtistGenres(row.id);
+    const [data, genres] = await Promise.all([
+      enrichWithSimilarImages(rowToArtistData(row)),
+      fetchArtistGenres(row.id),
+    ]);
+    data.genres = genres;
     return data;
   }
 
@@ -303,6 +306,16 @@ async function refreshLastfm(name: string) {
     if (similarNames.length) {
       const spotifyResults = await spotifySearchArtistsBatch(similarNames).catch(() => ({}) as Record<string, any>);
       const now = new Date();
+
+      // Batch lookup all similar artists at once to avoid N+1 queries
+      const lowerSimilarNames = similarNames.map((n: string) => n.toLowerCase());
+      const existingSimilar = await db.select({ id: artists.id, name: artists.name })
+        .from(artists)
+        .where(sql`lower(${artists.name}) IN ${lowerSimilarNames}`);
+      const existingByLower = new Map(
+        existingSimilar.map((r) => [r.name.toLowerCase(), r.id])
+      );
+
       await Promise.allSettled(
         similarNames.map(async (similarName: string) => {
           const sp = spotifyResults[similarName];
@@ -313,13 +326,9 @@ async function refreshLastfm(name: string) {
             spotifyFetchedAt: now,
           };
 
-          const [existing] = await db.select({ id: artists.id })
-            .from(artists)
-            .where(sql`lower(${artists.name}) = lower(${similarName})`)
-            .limit(1);
-
-          if (existing) {
-            return db.update(artists).set(spotifyFields).where(eq(artists.id, existing.id));
+          const existingId = existingByLower.get(similarName.toLowerCase());
+          if (existingId) {
+            return db.update(artists).set(spotifyFields).where(eq(artists.id, existingId));
           }
 
           return db.insert(artists).values({ name: similarName, ...spotifyFields }).onConflictDoNothing();
@@ -395,8 +404,11 @@ export async function getArtistDataSnapshot(id: string): Promise<ArtistData | nu
   const [row] = await db.select().from(artists).where(eq(artists.id, id)).limit(1);
   if (!row) return null;
 
-  const data = await enrichWithSimilarImages(rowToArtistData(row));
-  data.genres = await fetchArtistGenres(row.id);
+  const [data, genres] = await Promise.all([
+    enrichWithSimilarImages(rowToArtistData(row)),
+    fetchArtistGenres(row.id),
+  ]);
+  data.genres = genres;
   return data;
 }
 

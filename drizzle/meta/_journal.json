@@ -71,6 +71,13 @@
       "when": 1780585273426,
       "tag": "0018_typical_sir_ram",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781367738377,
+      "tag": "0019_overconfident_tigra",
+      "breakpoints": true
     }
   ]
 }

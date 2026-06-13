@@ -210,6 +210,13 @@ export const festivalTimetableSlots = pgTable(
   },
   (t) => [
     index("festival_timetable_slots_festival_id_idx").on(t.festivalId),
+    uniqueIndex("festival_timetable_slots_unique_idx").on(
+      t.festivalId,
+      t.artistId,
+      t.stageName,
+      t.startTime,
+      t.endTime,
+    ),
   ]
 );
 

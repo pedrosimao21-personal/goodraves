@@ -24,6 +24,33 @@ type RawArtist = {
 };
 
 /**
+ * Pattern matching time-range prefixes in plain-text RA lineup lines.
+ * Matches formats like "01:00 - 03:00 ", "01:00-03:00 | ", "20:00 - 22:00: ".
+ */
+const TIME_PREFIX_PATTERN = /^\d{2}:\d{2}\s*[-–]\s*\d{2}:\d{2}\s*[:|]?\s*/;
+
+/**
+ * Pattern matching entries that are pure junk (not valid artist names).
+ * Includes: lone punctuation, modifiers without a name, tab-separated stage data.
+ */
+const JUNK_ENTRY_PATTERN = /^(?:[&,!|.:\-–\s]+|\((?:LIVE|DJ SET|HYBRID|PA)\)|.*\t.*)$/i;
+
+/** Returns true if the name is a valid artist entry worth keeping. */
+function isValidArtistName(name: string): boolean {
+  if (name.length === 0) return false;
+  if (name.length > 200) return false;
+  if (JUNK_ENTRY_PATTERN.test(name)) return false;
+  // Pure time-only entries like "12:00-14:00" with no artist after
+  if (/^\d{2}:\d{2}\s*[-–]\s*\d{2}:\d{2}\s*$/.test(name)) return false;
+  return true;
+}
+
+/** Strip time-range prefix from a plain-text artist name if present. */
+function stripTimePrefix(name: string): string {
+  return name.replace(TIME_PREFIX_PATTERN, "").trim();
+}
+
+/**
  * Extract all artist tags and plain-text artist names from a single lineup line.
  * Returns raw artists in order of appearance, plus the text segments between them
  * for B2B connector detection.
@@ -44,9 +71,12 @@ function extractArtistsFromLine(line: string): {
     if (foundArtists.length > 0) {
       connectors.push(textBefore);
     } else if (textBefore && !/^hosted by/i.test(textBefore)) {
-      // Plain-text artist before the first tag — treat as a standalone artist
-      foundArtists.push({ name: textBefore, raArtistId: null });
-      connectors.push("");
+      // Plain-text artist before the first tag — strip time prefix and validate
+      const cleaned = stripTimePrefix(textBefore);
+      if (isValidArtistName(cleaned)) {
+        foundArtists.push({ name: cleaned, raArtistId: null });
+        connectors.push("");
+      }
     }
 
     const name = match[2].trim();
@@ -59,11 +89,14 @@ function extractArtistsFromLine(line: string): {
 
   const remaining = line.slice(lastIndex).replace(/<[^>]+>/g, "").trim();
   if (remaining && !/^hosted by/i.test(remaining)) {
-    if (foundArtists.length > 0) {
-      connectors.push(remaining);
-      foundArtists.push({ name: remaining, raArtistId: null });
-    } else {
-      foundArtists.push({ name: remaining, raArtistId: null });
+    const cleaned = stripTimePrefix(remaining);
+    if (isValidArtistName(cleaned)) {
+      if (foundArtists.length > 0) {
+        connectors.push(cleaned);
+        foundArtists.push({ name: cleaned, raArtistId: null });
+      } else {
+        foundArtists.push({ name: cleaned, raArtistId: null });
+      }
     }
   }
 
@@ -125,7 +158,11 @@ export function parseRALineup(
     const line = rawLine.trim();
     if (!line) continue;
 
-    const { artists: lineArtists, connectors } = extractArtistsFromLine(line);
+    // Strip time prefix from the raw line before extraction for plain-text lineups
+    const processedLine = hasArtistTags ? line : stripTimePrefix(line);
+    if (!processedLine) continue;
+
+    const { artists: lineArtists, connectors } = extractArtistsFromLine(processedLine);
     if (lineArtists.length === 0) continue;
 
     // When the lineup uses <artist> tags, plain-text-only lines are
@@ -136,6 +173,7 @@ export function parseRALineup(
     if (lineArtists.length >= 2 && isB2bLine(connectors)) {
       const members: string[] = [];
       for (const artist of lineArtists) {
+        if (!isValidArtistName(artist.name)) continue;
         if (!seen.has(artist.name)) {
           seen.add(artist.name);
           raArtistIds[artist.name] = artist.raArtistId;
@@ -143,10 +181,13 @@ export function parseRALineup(
         members.push(artist.name);
       }
 
-      const originalName = buildB2bOriginalName(members, connectors);
-      entries.push({ type: "b2b", originalName, members });
+      if (members.length >= 2) {
+        const originalName = buildB2bOriginalName(members, connectors);
+        entries.push({ type: "b2b", originalName, members });
+      }
     } else {
       for (const artist of lineArtists) {
+        if (!isValidArtistName(artist.name)) continue;
         if (seen.has(artist.name)) continue;
         seen.add(artist.name);
         raArtistIds[artist.name] = artist.raArtistId;

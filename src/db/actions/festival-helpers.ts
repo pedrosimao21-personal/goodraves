@@ -4,6 +4,7 @@ import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMem
 import { auth } from "../../../auth";
 import { MIN_RATING, MAX_RATING, ADMIN_USERNAMES } from "@/lib/constants";
 import { type B2bLineupEntry } from "@/services/lineup-types";
+import { normalizeArtistName } from "@/utils/text-normalizer";
 
 // Re-export shared constants so existing server-side imports keep working
 export {
@@ -50,16 +51,20 @@ export function validateRating(rating: number): number {
 
 /**
  * Ensure artist names exist in the artists table, then return a name->id map.
+ * Applies NFC normalization and entity decoding as a safety net.
  */
 export async function ensureArtistsAndGetIds(names: string[]): Promise<Record<string, string>> {
   if (names.length === 0) return {};
 
+  const normalizedNames = names.map(normalizeArtistName).filter((n) => n.length > 0);
+  if (normalizedNames.length === 0) return {};
+
   await db
     .insert(artists)
-    .values(names.map((name) => ({ name })))
+    .values(normalizedNames.map((name) => ({ name })))
     .onConflictDoNothing();
 
-  const lowerNames = names.map((n) => n.toLowerCase());
+  const lowerNames = normalizedNames.map((n) => n.toLowerCase());
   const rows = await db
     .select({ id: artists.id, name: artists.name })
     .from(artists)
@@ -67,10 +72,12 @@ export async function ensureArtistsAndGetIds(names: string[]): Promise<Record<st
 
   const map: Record<string, string> = {};
   for (const row of rows) {
-    // Map by the input name (case-preserving) so callers can look up
+    // Map by the original input name (case-preserving) so callers can look up
     // using the exact string they provided, even when the DB stores
     // a different casing.
-    const inputName = names.find((n) => n.toLowerCase() === row.name.toLowerCase());
+    const inputName = names.find(
+      (n) => normalizeArtistName(n).toLowerCase() === row.name.toLowerCase()
+    );
     if (inputName) {
       map[inputName] = row.id;
     }

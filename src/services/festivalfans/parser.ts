@@ -3,6 +3,7 @@
  */
 
 import { type LineupEntry, B2B_CONNECTOR_PATTERN } from "@/services/lineup-types";
+import { decodeHtmlEntities } from "@/utils/text-normalizer";
 
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
@@ -98,7 +99,8 @@ function extractSchemaOrgGeo(html: string): { latitude: number | null; longitude
 /** Extract artist name from a FestivalFans artist link tag. */
 function extractArtistFromLink(tag: string): string | null {
   const match = tag.match(/title="([^"]+)"/);
-  return match ? match[1].trim() : null;
+  if (!match) return null;
+  return decodeHtmlEntities(match[1]).trim();
 }
 
 /**
@@ -237,7 +239,7 @@ export function parseFFEventPage(html: string): ParsedFFEvent {
     const fallbackLinkRegex = /<a\s+href="https?:\/\/festivalfans\.nl\/artiest\/[^"]*"\s+title="([^"]+)"/g;
     let fallbackMatch;
     while ((fallbackMatch = fallbackLinkRegex.exec(line)) !== null) {
-      const artistName = fallbackMatch[1].trim();
+      const artistName = decodeHtmlEntities(fallbackMatch[1]).trim();
       if (!seenEntries.has(artistName)) {
         seenEntries.add(artistName);
         lineup.push({ type: "solo", name: artistName });

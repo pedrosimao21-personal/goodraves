@@ -4,6 +4,7 @@
 
 import { type LineupEntry, type TimetableSlot } from "@/services/lineup-types";
 import { normalizeCountryName } from "@/utils/location-normalizer";
+import { decodeHtmlEntities } from "@/utils/text-normalizer";
 
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
@@ -12,21 +13,6 @@ const DUTCH_MONTHS: Record<string, string> = {
 };
 
 const DUTCH_MONTH_NAMES = Object.keys(DUTCH_MONTHS).join("|");
-
-/** Decode HTML numeric entities (&#123; and &#x1a;) and common named entities. */
-function decodeHtmlEntities(text: string): string {
-  const NAMED_ENTITIES: Record<string, string> = {
-    amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
-    nbsp: "\u00A0", ndash: "\u2013", mdash: "\u2014",
-  };
-
-  return text.replace(/&(?:#(\d+)|#x([0-9a-fA-F]+)|(\w+));/g, (match, dec, hex, named) => {
-    if (dec) return String.fromCodePoint(parseInt(dec, 10));
-    if (hex) return String.fromCodePoint(parseInt(hex, 16));
-    if (named && NAMED_ENTITIES[named]) return NAMED_ENTITIES[named];
-    return match;
-  });
-}
 
 /** Parse a Dutch date string like "zaterdag 4 februari 2023 om 22:00" to YYYY-MM-DD. */
 function parseDutchDate(dateStr: string): string | null {

@@ -1,3 +1,5 @@
+export {};
+
 async function main() {
   const { db } = await import('../src/db/index.js');
   const { artists } = await import('../src/db/schema.js');

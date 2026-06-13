@@ -11,7 +11,7 @@ A web app for discovering electronic music festivals and raves, tracking what yo
 
 ### Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in the values:
+Copy `.env.example` to `.env` and fill in the values:
 
 | Variable | Purpose |
 |---|---|

@@ -150,8 +150,6 @@ export default function SearchFilters({
 }: SearchFiltersProps) {
   const isFiltered = hasActiveFilters(activeFilters)
 
-  if (filterOptions.years.length === 0) return null
-
   const handleYearSelect = useCallback(
     (value: string | null) => {
       onFilterChange({ ...activeFilters, year: value })
@@ -162,6 +160,9 @@ export default function SearchFilters({
   const handleRemoveYear = useCallback(() => {
     onFilterChange({ ...activeFilters, year: null })
   }, [activeFilters, onFilterChange])
+
+  // Hooks above must run on every render — keep this early return after them.
+  if (filterOptions.years.length === 0) return null
 
   return (
     <div className="search-filters">

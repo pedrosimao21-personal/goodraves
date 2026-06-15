@@ -22,7 +22,7 @@ export function PageHeader({ availableYears, selectedYear, onYearChange, sortMod
       </h1>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
-          Your personalized ranking of artists you've watched
+          Your personalized ranking of artists you&apos;ve watched
         </p>
         {availableYears.length > 0 && (
           <select

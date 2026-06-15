@@ -14,6 +14,14 @@ import {
 } from "@/services/spotify/client";
 import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm/client";
 import { fetchRArtistEvents, fetchRArtistByName, type RAUpcomingEvent } from "@/services/ra/client";
+import { requireAuth, enforceRateLimit } from "./festival-helpers";
+import {
+  MAX_ARTIST_NAME_LENGTH,
+  MAX_ENRICHMENT_BATCH_SIZE,
+  RATE_LIMIT_CACHE_MAX,
+  RATE_LIMIT_SEARCH_MAX,
+  RATE_LIMIT_WINDOW_MS,
+} from "@/lib/constants";
 
 const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
 const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
@@ -416,6 +424,9 @@ export async function getArtistDataSnapshot(id: string): Promise<ArtistData | nu
 // Used by the "Report wrong data" button on the artist page.
 
 export async function clearArtistCache(artistId: string): Promise<void> {
+  // Destructive global cache wipe — restrict to authenticated users and rate-limit.
+  await requireAuth();
+  await enforceRateLimit("cache-clear", RATE_LIMIT_CACHE_MAX, RATE_LIMIT_WINDOW_MS);
   await db.update(artists).set({
     spotifyId: null,
     imageUrl: null,
@@ -442,12 +453,25 @@ export async function clearArtistCache(artistId: string): Promise<void> {
 // Used when navigating to a similar artist that may not be in the DB yet.
 
 export async function getOrCreateArtistByName(name: string): Promise<{ id: string; name: string }> {
+  // Reachable from public (logged-out) artist pages, so this is intentionally
+  // not auth-gated. Validate input to prevent junk/oversized rows; abuse of the
+  // create path is further mitigated by rate limiting (see SECURITY_PLAN #6).
+  const trimmed = name?.trim() ?? "";
+  if (!trimmed || trimmed.length > MAX_ARTIST_NAME_LENGTH) {
+    throw new Error("Invalid artist name");
+  }
+  name = trimmed;
+
   const [existing] = await db.select({ id: artists.id, name: artists.name })
     .from(artists)
     .where(sql`lower(${artists.name}) = lower(${name})`)
     .limit(1);
 
   if (existing) return existing;
+
+  // Only new-artist creation is rate-limited; existing-artist lookups above are
+  // unthrottled so public navigation/enrichment is not degraded.
+  await enforceRateLimit("artist-create", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
 
   const [created] = await db
     .insert(artists)
@@ -477,6 +501,14 @@ export async function getOrCreateArtistByName(name: string): Promise<{ id: strin
 export async function enrichArtistNamesBatch(
   names: string[]
 ): Promise<Record<string, { name: string; image: string | null; genres: string[] }>> {
+  // Reachable from the public Top DJs page, so not auth-gated. Cap the batch
+  // size to bound outbound Spotify/Last.fm traffic (see SECURITY_PLAN #15);
+  // rate limiting (#6) further constrains abuse.
+  if (names.length > MAX_ENRICHMENT_BATCH_SIZE) {
+    throw new Error(`Batch size must not exceed ${MAX_ENRICHMENT_BATCH_SIZE}`);
+  }
+  // Always hits Spotify + Last.fm — rate-limit per caller.
+  await enforceRateLimit("enrich", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
   const results: Record<string, { name: string; image: string | null; genres: string[] }> = {};
 
   await Promise.all(

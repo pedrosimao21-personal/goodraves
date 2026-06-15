@@ -1,8 +1,10 @@
 import { db } from "@/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers } from "@/db/schema";
+import { headers } from "next/headers";
+import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers, users } from "@/db/schema";
 import { auth } from "../../../auth";
-import { MIN_RATING, MAX_RATING, ADMIN_USERNAMES } from "@/lib/constants";
+import { MIN_RATING, MAX_RATING } from "@/lib/constants";
+import { isRateLimited } from "@/db/rate-limit";
 import { type B2bLineupEntry } from "@/services/lineup-types";
 import { normalizeArtistName } from "@/utils/text-normalizer";
 
@@ -18,26 +20,59 @@ export {
 
 /** Verify the session and return the authenticated userId. Throws if not authenticated. */
 export async function requireAuth(): Promise<string> {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as string | undefined;
+  const userId = await getOptionalUserId();
   if (!userId) {
     throw new Error("Unauthorized");
   }
   return userId;
 }
 
+/**
+ * Return the authenticated userId, or null if there is no session.
+ * Use this (instead of requireAuth) where logged-out access is valid and should
+ * resolve to "no user" rather than throw — e.g. SSR hydration of optional data.
+ */
+export async function getOptionalUserId(): Promise<string | null> {
+  const session = await auth();
+  return ((session?.user as any)?.id as string | undefined) ?? null;
+}
+
 /** Verify the session and return the authenticated userId. Throws if not an admin user. */
 export async function requireAdmin(): Promise<string> {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as string | undefined;
-  const username = (session?.user as any)?.name as string | undefined;
+  const userId = await getOptionalUserId();
   if (!userId) {
     throw new Error("Unauthorized");
   }
-  if (!username || !ADMIN_USERNAMES.includes(username)) {
+  const [row] = await db
+    .select({ isAdmin: users.isAdmin })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!row?.isAdmin) {
     throw new Error("Forbidden");
   }
   return userId;
+}
+
+/**
+ * Enforce a per-caller rate limit on a server action. Identifies the caller by
+ * userId when authenticated, falling back to the request IP for public actions.
+ * Throws a user-facing error when the limit is exceeded.
+ */
+export async function enforceRateLimit(
+  action: string,
+  maxAttempts: number,
+  windowMs: number
+): Promise<void> {
+  const userId = await getOptionalUserId();
+  let identifier = userId ? `user:${userId}` : null;
+  if (!identifier) {
+    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim();
+    identifier = `ip:${ip || "unknown"}`;
+  }
+  if (await isRateLimited(identifier, action, maxAttempts, windowMs)) {
+    throw new Error("Too many requests. Please slow down and try again shortly.");
+  }
 }
 
 /** Clamp a rating to 1-5, or throw if invalid. */

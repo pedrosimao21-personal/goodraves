@@ -5,20 +5,30 @@ import {
   timestamp,
   integer,
   real,
+  boolean,
   primaryKey,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ── Users ──────────────────────────────────────────────
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  username: text("username").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  city: text("city"),
-  favoriteGenres: text("favorite_genres"), // comma-separated list, e.g. "Techno, House"
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    username: text("username").notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    city: text("city"),
+    favoriteGenres: text("favorite_genres"), // comma-separated list, e.g. "Techno, House"
+    isAdmin: boolean("is_admin").default(false).notNull(),
+  },
+  (t) => [
+    // Case-insensitive uniqueness: prevents "Maarten" and "maarten" coexisting.
+    uniqueIndex("users_username_lower_idx").on(sql`lower(${t.username})`),
+  ]
+);
 
 // ── Festivals ──────────────────────────────────────────
 export const festivals = pgTable("festivals", {

@@ -1,7 +1,6 @@
 'use client'
 
 export default function Error({
-  error,
   reset,
 }: {
   error: Error & { digest?: string }
@@ -12,7 +11,7 @@ export default function Error({
       <div style={{ fontSize: '3rem', marginBottom: 16 }}>⚠️</div>
       <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: 8 }}>Failed to load artist</h2>
       <p style={{ color: 'var(--text-muted)', marginBottom: 24, textAlign: 'center', maxWidth: 500 }}>
-        {error.message || 'Could not load artist details.'}
+        Could not load artist details. Try refreshing the page.
       </p>
       <button className="btn btn-primary" onClick={reset}>
         Try again

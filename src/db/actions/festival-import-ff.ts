@@ -3,7 +3,8 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchFFEventHtml } from "@/services/festivalfans/client";
 import { parseFFEventPage } from "@/services/festivalfans/parser";
 import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
@@ -43,6 +44,7 @@ export async function fetchFFEventImageUrl(slug: string): Promise<string | null>
 
 /** Force-reimport a FestivalFans.nl event (deletes existing lineup first) */
 export async function reimportFFEvent(slug: string): Promise<string | null> {
+  await requireAdmin();
   if (!slug) return null;
   const festivalId = `ff-${slug}`;
 
@@ -71,6 +73,9 @@ export async function fetchFFEvent(
       return festivalId;
     }
   }
+
+  // Past this point we hit festivalfans.nl and write a new festival.
+  await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
   const html = await fetchFFEventHtml(slug);
   if (!html) return null;

@@ -28,7 +28,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const [user] = await db
-          .select()
+          .select({
+            id: users.id,
+            username: users.username,
+            passwordHash: users.passwordHash,
+            isAdmin: users.isAdmin,
+          })
           .from(users)
           .where(eq(users.username, username))
           .limit(1);
@@ -38,7 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, name: user.username };
+        return { id: user.id, name: user.username, isAdmin: user.isAdmin } as any;
       },
     }),
   ],
@@ -49,12 +54,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        (token as any).isAdmin = (user as any).isAdmin ?? false;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        (session.user as any).isAdmin = (token as any).isAdmin ?? false;
       }
       return session;
     },

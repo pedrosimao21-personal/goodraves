@@ -3,7 +3,8 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists, artists } from "@/db/schema";
-import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS } from "./festival-helpers";
+import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS, enforceRateLimit } from "./festival-helpers";
+import { RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { searchRAEventsRaw } from "@/services/ra/client";
 import { mapRAEventToSearchResult } from "@/services/ra/parser";
 import { searchFFEventsRaw, resolveFFSlug } from "@/services/festivalfans/client";
@@ -73,6 +74,9 @@ export async function searchRAEvents(query: string) {
     return cached.data;
   }
 
+  // Only cache-misses reach the external API — rate-limit those.
+  await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
+
   const rawResults = await searchRAEventsRaw(query);
   const mapped = rawResults
     .map(mapRAEventToSearchResult)
@@ -94,6 +98,9 @@ export async function searchFFEvents(query: string) {
   if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS) {
     return cached.data;
   }
+
+  // Only cache-misses reach the external API — rate-limit those.
+  await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
 
   const rawResults = await searchFFEventsRaw(query);
 
@@ -147,6 +154,9 @@ export async function searchPFEvents(query: string) {
   if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS) {
     return cached.data;
   }
+
+  // Only cache-misses reach the external API — rate-limit those.
+  await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
 
   const html = await searchPFEventsRaw(query);
   if (!html) {

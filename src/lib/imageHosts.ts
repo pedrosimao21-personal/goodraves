@@ -1,6 +1,7 @@
 /**
- * Allowed image hostnames, kept in sync with next.config.ts `images.remotePatterns`.
- * Patterns starting with "*." match any subdomain.
+ * Allowed image hostnames. MUST be kept in sync with the `images.remotePatterns`
+ * list AND the CSP `img-src` directive in next.config.ts — when you add a host in
+ * one place, add it in all three. Patterns starting with "*." match any subdomain.
  */
 const ALLOWED_PATTERNS: Array<{ wildcard: boolean; host: string }> = [
   { wildcard: true,  host: 'scdn.co' },
@@ -11,6 +12,11 @@ const ALLOWED_PATTERNS: Array<{ wildcard: boolean; host: string }> = [
   { wildcard: false, host: 'upload.wikimedia.org' },
   { wildcard: false, host: 'i.imgur.com' },
   { wildcard: false, host: 'assets.awakenings.com' },
+  { wildcard: false, host: 'lastfm.freetls.fastly.net' },
+  { wildcard: false, host: 'festivalfans.nl' },
+  { wildcard: false, host: 'partyflock.nl' },
+  { wildcard: false, host: 'photo.partyflock.nl' },
+  { wildcard: false, host: 'static.partyflock.nl' },
 ]
 
 export function isAllowedImageHost(url: string): boolean {

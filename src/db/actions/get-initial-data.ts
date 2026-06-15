@@ -12,7 +12,7 @@ import {
   genres,
   artistGenres as artistGenresTable,
 } from "@/db/schema";
-import { auth } from "../../../auth";
+import { getOptionalUserId } from "./festival-helpers";
 
 /** Shared query logic for fetching all user data given a userId */
 export async function fetchUserDataForId(userId: string) {
@@ -111,8 +111,7 @@ async function fetchArtistGenreData(artistIds: string[]) {
  * Returns null if not authenticated.
  */
 export async function getInitialUserData() {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as string | undefined;
+  const userId = await getOptionalUserId();
   if (!userId) return null;
 
   return fetchUserDataForId(userId);

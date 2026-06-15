@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { searchFestivalsDB } from '@/db/actions/festival-search'
 import { getUserProfile, updateUserProfile } from '@/db/actions/profile'
+import { MAX_CITY_LENGTH, MAX_GENRES_LENGTH } from '@/lib/constants'
 
 function FestivalRow({ fest }: { fest: any }) {
   const href = `/festival/${fest.id}`
@@ -177,6 +178,7 @@ export default function ProfilePage() {
                     onChange={e => setLocationInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') saveLocation() }}
                     placeholder="e.g. Amsterdam"
+                    maxLength={MAX_CITY_LENGTH}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit', fontSize: '0.95rem' }}
                   />
                   <button
@@ -201,6 +203,7 @@ export default function ProfilePage() {
                     onChange={e => setGenreInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') saveGenres() }}
                     placeholder="e.g. Techno, House"
+                    maxLength={MAX_GENRES_LENGTH}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'inherit', fontSize: '0.95rem' }}
                   />
                   <button

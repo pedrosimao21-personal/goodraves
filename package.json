@@ -34,7 +34,7 @@
     "@types/ws": "^8.18.1",
     "drizzle-kit": "^0.31.6",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.5",
+    "eslint-config-next": "^15.5.19",
     "typescript": "^5.8.3"
   }
 }

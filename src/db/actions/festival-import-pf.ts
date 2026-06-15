@@ -3,7 +3,8 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists, festivalTimetableSlots } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { parsePFEventPage } from "@/services/partyflock/parser";
 import { flattenLineupNames, filterB2bEntries, type TimetableSlot } from "@/services/lineup-types";
@@ -69,6 +70,7 @@ export async function fetchPFEventImageUrl(partyId: string): Promise<string | nu
 
 /** Force-reimport a Partyflock event (deletes existing lineup first). */
 export async function reimportPFEvent(partyId: string): Promise<string | null> {
+  await requireAdmin();
   if (!partyId) return null;
   const festivalId = `pf-${partyId}`;
 
@@ -101,6 +103,9 @@ export async function fetchPFEvent(
       return festivalId;
     }
   }
+
+  // Past this point we hit partyflock.nl and write a new festival.
+  await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
   const html = await fetchPFEventHtml(partyId);
   if (!html) return null;

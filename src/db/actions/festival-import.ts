@@ -5,10 +5,12 @@ import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
 import {
   requireAuth,
+  enforceRateLimit,
   ensureArtistsAndGetIds,
   findExistingFestivalByNameDate,
   MAX_FESTIVAL_NAME_LENGTH,
 } from "./festival-helpers";
+import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 
 // ── Upsert a custom festival ──────────────────────────
 export async function upsertFestival(data: {
@@ -27,6 +29,7 @@ export async function upsertFestival(data: {
   lineup?: string[];
 }) {
   await requireAuth();
+  await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
   if (!data.id || !data.name || data.name.length > MAX_FESTIVAL_NAME_LENGTH) {
     throw new Error("Invalid festival data");

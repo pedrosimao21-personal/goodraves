@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
+import { MAX_CITY_LENGTH, MAX_GENRES_LENGTH } from "@/lib/constants";
 
 export type UserProfile = {
   id: string;
@@ -46,10 +47,18 @@ export async function updateUserProfile(data: {
   const updateFields: Partial<typeof users.$inferInsert> = {};
 
   if (data.city !== undefined) {
-    updateFields.city = data.city.trim() || null;
+    const trimmed = data.city.trim() || null;
+    if (trimmed && trimmed.length > MAX_CITY_LENGTH) {
+      throw new Error(`City must be at most ${MAX_CITY_LENGTH} characters`);
+    }
+    updateFields.city = trimmed;
   }
   if (data.favoriteGenres !== undefined) {
-    updateFields.favoriteGenres = data.favoriteGenres.trim() || null;
+    const trimmed = data.favoriteGenres.trim() || null;
+    if (trimmed && trimmed.length > MAX_GENRES_LENGTH) {
+      throw new Error(`Favorite genres must be at most ${MAX_GENRES_LENGTH} characters`);
+    }
+    updateFields.favoriteGenres = trimmed;
   }
 
   if (Object.keys(updateFields).length === 0) return;

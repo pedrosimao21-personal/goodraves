@@ -3,7 +3,8 @@
 import { db } from "@/db";
 import { eq, inArray, sql } from "drizzle-orm";
 import { artists, festivals, festivalArtists } from "@/db/schema";
-import { ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { parseRALineup } from "@/services/ra/parser";
 import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
@@ -42,6 +43,7 @@ export async function fetchRAEventImageUrl(raId: string): Promise<string | null>
 
 /** Force-reimport an RA event (deletes existing lineup first) */
 export async function reimportRAEvent(eventId: string): Promise<string | null> {
+  await requireAdmin();
   const id = String(eventId).replace(/\D/g, "");
   if (!id) return null;
   const festivalId = `ra-${id}`;
@@ -72,6 +74,9 @@ export async function fetchRAEvent(
       return festivalId;
     }
   }
+
+  // Past this point we hit ra.co and write a new festival — rate-limit imports.
+  await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
   const data = await fetchRAEventRaw(id);
   if (!data) return null;

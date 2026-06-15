@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     // possible transformation variants from the large Next.js defaults.
     imageSizes: [20, 44, 48, 56, 80, 120, 200],
     deviceSizes: [400, 640, 828, 1200],
+    // NOTE: keep this list in sync with the CSP `img-src` directive below AND
+    // with ALLOWED_PATTERNS in src/lib/imageHosts.ts — all three must agree.
     remotePatterns: [
       { protocol: 'https', hostname: '*.scdn.co' },           // Spotify CDN
       { protocol: 'https', hostname: 'i.scdn.co' },           // Spotify images
@@ -44,7 +46,10 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // 'unsafe-eval' is only needed by the dev bundler; drop it in production.
+              // 'unsafe-inline' is still required because Next's inline bootstrap
+              // scripts are not nonce-tagged here yet (see SECURITY_PLAN #7d/#7e).
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://images.universe.com https://*.ra.co https://ra.co https://upload.wikimedia.org https://i.imgur.com https://assets.awakenings.com https://*.tile.openstreetmap.org https://lastfm.freetls.fastly.net https://*.basemaps.cartocdn.com https://festivalfans.nl https://partyflock.nl https://photo.partyflock.nl https://static.partyflock.nl",

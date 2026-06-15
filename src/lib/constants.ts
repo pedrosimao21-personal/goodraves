@@ -2,9 +2,20 @@
 export const MAX_NOTES_LENGTH = 5000;
 export const MAX_QUERY_LENGTH = 200;
 export const MAX_FESTIVAL_NAME_LENGTH = 500;
+export const MAX_ARTIST_NAME_LENGTH = 300;
 export const MIN_RATING = 1;
 export const MAX_RATING = 5;
 export const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 
-/** Usernames with admin privileges for global data mutations. */
-export const ADMIN_USERNAMES: readonly string[] = ["Maarten", "pedrosimao21admin"];
+/** Max number of artist names accepted by enrichArtistNamesBatch in one call. */
+export const MAX_ENRICHMENT_BATCH_SIZE = 20;
+
+/** Max lengths for free-text profile fields. */
+export const MAX_CITY_LENGTH = 200;
+export const MAX_GENRES_LENGTH = 500;
+
+/** Per-caller rate limits for server actions (window + max attempts per category). */
+export const RATE_LIMIT_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+export const RATE_LIMIT_IMPORT_MAX = 30;
+export const RATE_LIMIT_SEARCH_MAX = 60;
+export const RATE_LIMIT_CACHE_MAX = 10;

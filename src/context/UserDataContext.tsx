@@ -23,7 +23,6 @@ import {
   getB2bSetsForFestival,
 } from '@/db/actions/festivals'
 import { renameArtist as renameArtistAction } from '@/db/actions/artist-rename'
-import { ADMIN_USERNAMES } from '@/lib/constants'
 
 import { isFestivalPast } from '@/lib/festival-date'
 import type { InitialUserData } from '@/db/actions/get-initial-data'
@@ -40,8 +39,7 @@ interface UserDataProviderProps {
 export function UserDataProvider({ children, initialData }: UserDataProviderProps) {
   const { data: session, status } = useSession()
   const userId = (session?.user as any)?.id as string | undefined
-  const username = (session?.user as any)?.name as string | undefined
-  const isAdmin = Boolean(username && ADMIN_USERNAMES.includes(username))
+  const isAdmin = Boolean((session?.user as any)?.isAdmin)
   const { promptAuth } = useAuthPrompt()
   const hasInitialData = initialData != null
   const [state, setState] = useState<UserDataState>(() =>

@@ -19,6 +19,7 @@ npm run db:generate  # Generate a migration from src/db/schema.ts changes
 npm run db:migrate   # Apply pending migrations
 npx tsx scripts/seed-db.ts          # Seed festivals from a generated data module (needs DATABASE_URL)
 npx tsx scripts/clear-artist-cache.ts  # Clear cached Spotify/Last.fm artist data
+npx tsx --env-file=.env scripts/import-pf-agenda.ts  # Manually run the daily Partyflock agenda import (backfill/ad-hoc)
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -30,8 +31,9 @@ Environment variables (`.env`, see `.env.example`): `AUTH_SECRET`, `DATABASE_URL
 
 **Data mutation = Server Actions, not API routes.** The app deliberately avoids REST
 endpoints for app data. Mutations and reads live as `"use server"` functions in
-`src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers and
-registration. Every server action must:
+`src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers,
+registration, and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
+`CRON_SECRET` bearer token — see `vercel.json`). Every server action must:
 1. Call `requireAuth()` (or `requireAdmin()`) from `festival-helpers.ts` to verify the session.
 2. Use the Drizzle query builder against `db` from `src/db/index.ts`.
 3. Return plain serializable objects.

@@ -9,6 +9,13 @@ const PF_BASE_URL = "https://partyflock.nl";
 const PF_USER_AGENT =
   "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
+/**
+ * Query string for the curated rave agenda (indoor/outdoor/beach, future, genre 3).
+ * Mirrors the saved Partyflock agenda search the daily import is built around.
+ */
+const PF_AGENDA_QUERY =
+  "enc=%F0%9F%A5%B0&LOCATIONTYPE%5B%5D=indoor&LOCATIONTYPE%5B%5D=outdoor&LOCATIONTYPE%5B%5D=beach&CB_WHEN=1&WHEN=future&CB_DAYTIME=1&CB_GIDS=1&GID%5B%5D=3";
+
 /** Fetch the Partyflock search page HTML for a given query. */
 export async function searchPFEventsRaw(
   query: string
@@ -63,6 +70,11 @@ export async function fetchPFEventHtml(
   partyId: string
 ): Promise<string | null> {
   return fetchPFPageHtml(`/party/${partyId}`);
+}
+
+/** Fetch the curated rave agenda search page HTML (future events listing). */
+export async function fetchPFAgendaHtml(): Promise<string | null> {
+  return fetchPFPageHtml(`/agenda/search?${PF_AGENDA_QUERY}`);
 }
 
 /** Fetch event HTML by slug (e.g. "the-crave-festival-nl") and extract the party ID. */

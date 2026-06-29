@@ -87,7 +87,35 @@ export async function reimportPFEvent(partyId: string): Promise<string | null> {
   return fetchPFEvent(partyId, { force: true });
 }
 
-/** Fetch a single Partyflock event by party ID and persist to DB. */
+/**
+ * Fetch a Partyflock event by party ID and persist it. Context-free: no auth,
+ * no rate limiting, no request scope — safe to call from scripts and cron jobs.
+ * Skips events that are already imported (unless `force`).
+ */
+export async function importPFEvent(
+  partyId: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
+  if (!partyId || !/^\d+$/.test(partyId)) return null;
+
+  const festivalId = `pf-${partyId}`;
+
+  if (!opts?.force) {
+    const hasExisting = await checkExistingLineup(festivalId);
+    if (hasExisting) {
+      await backfillMissingImage(festivalId, partyId);
+      return festivalId;
+    }
+  }
+
+  return importPFEventCore(partyId, festivalId, opts);
+}
+
+/**
+ * Fetch a single Partyflock event by party ID and persist to DB. Server-action
+ * entry point: rate-limited per caller. Internal callers (scripts/cron) should
+ * use `importPFEvent` instead to avoid the request-scoped rate limit.
+ */
 export async function fetchPFEvent(
   partyId: string,
   opts?: { force?: boolean }
@@ -107,6 +135,15 @@ export async function fetchPFEvent(
   // Past this point we hit partyflock.nl and write a new festival.
   await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
+  return importPFEventCore(partyId, festivalId, opts);
+}
+
+/** Fetch from partyflock.nl, parse, and persist the festival + lineup + timetable. */
+async function importPFEventCore(
+  partyId: string,
+  festivalId: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
   const html = await fetchPFEventHtml(partyId);
   if (!html) return null;
 

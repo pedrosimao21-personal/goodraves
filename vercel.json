@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/import-pf-agenda",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

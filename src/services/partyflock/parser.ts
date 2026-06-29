@@ -59,16 +59,16 @@ export function parsePFSearchResults(html: string): PFSearchResult[] {
     if (!primaryMatch) continue;
 
     const pfId = partyLinkMatch ? partyLinkMatch[1] : `event-${eventLinkMatch![1]}`;
-    const name = primaryMatch[2].trim();
+    const name = decodeHtmlEntities(primaryMatch[2].trim());
 
     const dateMatch = block.match(/<div class="small"><div>([^<]+)<\/div>/);
     const date = dateMatch ? parseDutchDate(dateMatch[1]) : null;
 
     const venueMatch = block.match(/<a href="\/location\/[^"]*">([^<]+)<\/a>/);
-    const venue = venueMatch ? venueMatch[1].trim() : null;
+    const venue = venueMatch ? decodeHtmlEntities(venueMatch[1].trim()) : null;
 
     const cityMatch = block.match(/<a href="\/city\/[^"]*">([^<]+)<\/a>/);
-    const location = cityMatch ? cityMatch[1].trim() : null;
+    const location = cityMatch ? decodeHtmlEntities(cityMatch[1].trim()) : null;
 
     const imageMatch = block.match(/data-lazy-style="background-image:\s*url\('([^']+)'\)"/);
     const imageUrl = imageMatch ? `https://partyflock.nl${imageMatch[1]}` : null;
@@ -265,12 +265,12 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
   const venueMatch = html.match(
     /<span[^>]*itemprop="location"[^>]*>[\s\S]*?<span itemprop="name">([^<]+)<\/span>/
   );
-  const venue = venueMatch ? venueMatch[1].trim() : null;
+  const venue = venueMatch ? decodeHtmlEntities(venueMatch[1].trim()) : null;
 
   const cityMatch = html.match(/<span itemprop="addressLocality">[\s\S]*?<a[^>]*>([^<]+)<\/a>/);
   const countryMatch = html.match(/<span itemprop="addressCountry">[\s\S]*?<a[^>]*>([^<]+)<\/a>/);
-  const city = cityMatch ? cityMatch[1].trim() : null;
-  const rawCountry = countryMatch ? countryMatch[1].trim() : null;
+  const city = cityMatch ? decodeHtmlEntities(cityMatch[1].trim()) : null;
+  const rawCountry = countryMatch ? decodeHtmlEntities(countryMatch[1].trim()) : null;
   const country = rawCountry ? normalizeCountryName(rawCountry) : null;
 
   let location: string | null = null;

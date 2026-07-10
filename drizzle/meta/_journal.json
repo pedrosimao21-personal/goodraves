@@ -99,6 +99,13 @@
       "when": 1781367738379,
       "tag": "0022_is_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1781367738380,
+      "tag": "0023_festival_timestamps",
+      "breakpoints": true
     }
   ]
 }

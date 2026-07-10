@@ -71,10 +71,12 @@ const ArtistCard = memo(function ArtistCard({
               className="artist-avatar"
               src={displayImage}
               alt={displayName}
-              width={48}
-              height={48}
+              // Must match the rendered .artist-avatar size (80px) so Next serves a
+              // retina-sharp variant instead of upscaling a 48px thumbnail.
+              width={80}
+              height={80}
               quality={85}
-              sizes="48px"
+              sizes="80px"
               style={{ objectFit: 'cover' }}
             />
           ) : (

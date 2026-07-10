@@ -25,3 +25,6 @@ export const PF_AGENDA_DAYS_AHEAD = 183; // ~6 months
 export const PF_AGENDA_REQUEST_DELAY_MS = 1500; // gap between successive partyflock requests
 export const PF_AGENDA_MAX_RETRIES = 3;
 export const PF_AGENDA_BACKOFF_BASE_MS = 1000; // exponential backoff base on failure
+
+/** Days-before-event checkpoints at which imported Partyflock festivals are re-fetched/refreshed. */
+export const PF_REFRESH_CHECKPOINT_DAYS = [7, 2] as const;

@@ -45,10 +45,11 @@ export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-
 export { splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet, getB2bSetsForFestival } from "./b2b-split";
 
 // Partyflock import
-export { reimportPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
-// Note: the daily agenda importer (festival-import-pf-agenda.ts) is intentionally NOT
-// re-exported here — it is a server-only cron/script entry point, and this barrel is
-// imported by client components, so pulling it in would leak next/headers into the client.
+export { reimportPFEvent, refreshPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
+// Note: the daily agenda importer (festival-import-pf-agenda.ts) and the scheduled refresh
+// orchestrator (festival-refresh-pf.ts) are intentionally NOT re-exported here — they are
+// server-only cron/script entry points, and this barrel is imported by client components, so
+// pulling them in would leak server code into the client bundle.
 
 // Admin re-import (clears and re-fetches lineup from source)
 export { reimportFestival } from "./festival-reimport";

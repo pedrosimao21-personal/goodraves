@@ -68,12 +68,8 @@ export async function fetchPFEventImageUrl(partyId: string): Promise<string | nu
   return parsed.imageUrl;
 }
 
-/** Force-reimport a Partyflock event (deletes existing lineup first). */
-export async function reimportPFEvent(partyId: string): Promise<string | null> {
-  await requireAdmin();
-  if (!partyId) return null;
-  const festivalId = `pf-${partyId}`;
-
+/** Delete a festival's lineup, B2B sets, and timetable (leaves the festival row intact). */
+async function clearPFFestivalRelations(festivalId: string): Promise<void> {
   await deleteB2bSets(festivalId);
 
   await db
@@ -83,8 +79,49 @@ export async function reimportPFEvent(partyId: string): Promise<string | null> {
   await db
     .delete(festivalTimetableSlots)
     .where(eq(festivalTimetableSlots.festivalId, festivalId));
+}
+
+/** Force-reimport a Partyflock event (deletes existing lineup first). */
+export async function reimportPFEvent(partyId: string): Promise<string | null> {
+  await requireAdmin();
+  if (!partyId) return null;
+  const festivalId = `pf-${partyId}`;
+
+  await clearPFFestivalRelations(festivalId);
 
   return fetchPFEvent(partyId, { force: true });
+}
+
+/**
+ * Re-fetch a Partyflock event and replace our stored copy with the current
+ * version — used by the scheduled refresh at the 7-day / 2-day checkpoints.
+ * Context-free (no auth, no rate limit) like `importPFEvent`.
+ *
+ * Fetch-first for safety: the page is parsed before anything is deleted, so a
+ * failed or empty fetch leaves the existing lineup/timetable untouched. The
+ * festival row is only ever upserted (never deleted), so user attendance and
+ * ratings — which reference the festival/artist directly, not the lineup join —
+ * are preserved.
+ */
+export async function refreshPFEvent(partyId: string): Promise<string | null> {
+  if (!partyId || !/^\d+$/.test(partyId)) return null;
+  const festivalId = `pf-${partyId}`;
+
+  const parsed = await fetchAndParsePFEvent(partyId);
+  // Only replace our stored copy when the fresh parse is actually complete. A
+  // page that yields a name but no date or an empty lineup (parser drift, a
+  // layout variant, or a lineup not yet announced) must NOT trigger the
+  // destructive delete+reimport below — otherwise we would wipe a good lineup /
+  // timetable or clobber the real date with today (persistPFEvent's date
+  // fallback). Bailing here leaves the existing data untouched.
+  if (!parsed?.name || !parsed.date || parsed.lineup.length === 0) return null;
+
+  await clearPFFestivalRelations(festivalId);
+
+  return persistPFEvent(festivalId, partyId, parsed, {
+    force: true,
+    skipNameDateDedupe: true,
+  });
 }
 
 /**
@@ -138,23 +175,47 @@ export async function fetchPFEvent(
   return importPFEventCore(partyId, festivalId, opts);
 }
 
-/** Fetch from partyflock.nl, parse, and persist the festival + lineup + timetable. */
-async function importPFEventCore(
-  partyId: string,
-  festivalId: string,
-  opts?: { force?: boolean }
-): Promise<string | null> {
+type ParsedPFEvent = ReturnType<typeof parsePFEventPage>;
+
+/** Fetch a Partyflock event page and parse it. Returns null if unavailable/invalid. */
+async function fetchAndParsePFEvent(partyId: string): Promise<ParsedPFEvent | null> {
   const html = await fetchPFEventHtml(partyId);
   if (!html) return null;
 
   const parsed = parsePFEventPage(html);
   if (!parsed.name) return null;
 
+  return parsed;
+}
+
+/** Fetch from partyflock.nl, parse, and persist the festival + lineup + timetable. */
+async function importPFEventCore(
+  partyId: string,
+  festivalId: string,
+  opts?: { force?: boolean }
+): Promise<string | null> {
+  const parsed = await fetchAndParsePFEvent(partyId);
+  if (!parsed) return null;
+
+  return persistPFEvent(festivalId, partyId, parsed, opts);
+}
+
+/** Persist a parsed Partyflock event (festival row + lineup + B2B + timetable). */
+async function persistPFEvent(
+  festivalId: string,
+  partyId: string,
+  parsed: ParsedPFEvent,
+  opts?: { force?: boolean; skipNameDateDedupe?: boolean }
+): Promise<string | null> {
+  if (!parsed.name) return null;
+
   const date = parsed.date ?? new Date().toISOString().slice(0, 10);
 
-  const existingId = await findExistingFestivalByNameDate(parsed.name, date);
-  if (existingId && existingId !== festivalId) {
-    return existingId;
+  if (!opts?.skipNameDateDedupe) {
+    const existingId = await findExistingFestivalByNameDate(parsed.name, date);
+    if (existingId && existingId !== festivalId) {
+      return existingId;
+    }
   }
 
   const festivalValues = {

@@ -24,7 +24,11 @@ function hasElectronicGenre(genres: string[]): boolean {
   )
 }
 const DEFAULT_SHOW_LIMIT = 5;
-const BATCH_MAX_IDS = 50;
+// Max individual /artists/{id} requests to run concurrently. Spotify's
+// "Get Several Artists" batch endpoint (/artists?ids=) now returns 403 for
+// this app, so we fetch each artist one at a time and cap the fan-out to
+// avoid tripping the 429 rate limiter on large lineups.
+const ARTIST_FETCH_CONCURRENCY = 8;
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
 const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
 const SPOTIFY_MARKET = "NL";
@@ -276,24 +280,33 @@ export async function spotifyGetRelatedArtists(spotifyId: string) {
 }
 
 /**
- * Fetch up to 50 artists by Spotify ID in a single API call using the
- * "Get Several Artists" batch endpoint.
- * Returns a map of spotifyId → normalized artist data.
+ * Fetch multiple artists by Spotify ID and return a map of
+ * spotifyId → normalized artist data.
+ *
+ * Implemented via individual "Get Artist" (/artists/{id}) requests rather than
+ * the "Get Several Artists" batch endpoint (/artists?ids=), which Spotify now
+ * returns 403 for on this app. Requests are fanned out in bounded-concurrency
+ * chunks; an individual failure is skipped so one bad ID can't sink the rest.
  */
 export async function spotifyGetArtistsBatch(
   ids: string[]
 ): Promise<Record<string, ReturnType<typeof normalizeArtist>>> {
   if (!ids.length) return {};
-  // Endpoint accepts max 50 IDs at a time
-  const chunks: string[][] = [];
-  for (let i = 0; i < ids.length; i += BATCH_MAX_IDS) chunks.push(ids.slice(i, i + BATCH_MAX_IDS));
 
   const results: Record<string, ReturnType<typeof normalizeArtist>> = {};
-  for (const chunk of chunks) {
-    const data = await apiFetch("/artists", { ids: chunk.join(",") });
-    for (const artist of data.artists ?? []) {
-      if (artist) results[artist.id] = normalizeArtist(artist);
-    }
+  for (let i = 0; i < ids.length; i += ARTIST_FETCH_CONCURRENCY) {
+    const chunk = ids.slice(i, i + ARTIST_FETCH_CONCURRENCY);
+    const settled = await Promise.allSettled(chunk.map((id) => spotifyGetArtist(id)));
+    settled.forEach((outcome, idx) => {
+      if (outcome.status === "fulfilled" && outcome.value?.id) {
+        results[chunk[idx]] = outcome.value;
+      } else if (outcome.status === "rejected") {
+        console.warn(
+          `[spotify] Failed to fetch artist ${chunk[idx]}:`,
+          outcome.reason instanceof Error ? outcome.reason.message : outcome.reason
+        );
+      }
+    });
   }
   return results;
 }

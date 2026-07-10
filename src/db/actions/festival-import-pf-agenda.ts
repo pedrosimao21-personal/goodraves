@@ -1,6 +1,7 @@
 /**
  * Daily Partyflock agenda import: scrape the curated rave agenda page and import
- * every event dated within the next week. Reuses the single-event import core
+ * every event dated within the next 6 months (PF_AGENDA_DAYS_AHEAD). Reuses the
+ * single-event import core
  * (`importPFEvent`, no auth/rate-limit) and adds inter-request delays + backoff
  * so a batch run stays gentle on partyflock.nl. Not a server action — invoked by
  * the cron route and the manual backfill script.

@@ -1,5 +1,5 @@
 /**
- * Manually run the Partyflock daily agenda import (imports the next week of
+ * Manually run the Partyflock daily agenda import (imports the next 6 months of
  * events). Useful for the initial backfill — which can take minutes and would
  * exceed the cron route's function timeout — and for ad-hoc re-runs.
  *

@@ -20,8 +20,8 @@ export const RATE_LIMIT_IMPORT_MAX = 30;
 export const RATE_LIMIT_SEARCH_MAX = 60;
 export const RATE_LIMIT_CACHE_MAX = 10;
 
-/** Daily Partyflock agenda import (scrapes the agenda page, imports the next week). */
-export const PF_AGENDA_DAYS_AHEAD = 7;
+/** Daily Partyflock agenda import (scrapes the agenda page, imports the next 6 months). */
+export const PF_AGENDA_DAYS_AHEAD = 183; // ~6 months
 export const PF_AGENDA_REQUEST_DELAY_MS = 1500; // gap between successive partyflock requests
 export const PF_AGENDA_MAX_RETRIES = 3;
 export const PF_AGENDA_BACKOFF_BASE_MS = 1000; // exponential backoff base on failure

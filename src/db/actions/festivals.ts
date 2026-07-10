@@ -3,7 +3,7 @@
  *
  * This file re-exports the public API from focused submodules:
  *   - festival-search:     DB / RA / FestivalFans search
- *   - festival-data:       getFestival, getFullUserData
+ *   - festival-data:       getFestival, getFestivalMeta, getFullUserData
  *   - festival-attendance: attendance, ratings, notes, artist toggles
  *   - festival-import:     upsert, batch import, RA/FF fetch & reimport
  *
@@ -14,7 +14,7 @@
 export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents } from "./festival-search";
 
 // Data reads
-export { getFestival, getFullUserData, getTimetable } from "./festival-data";
+export { getFestival, getFestivalMeta, getFullUserData, getTimetable } from "./festival-data";
 export type { TimetableStage, TimetableSlotRow } from "./festival-data";
 
 // User attendance & ratings

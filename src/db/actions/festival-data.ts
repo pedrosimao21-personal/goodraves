@@ -106,6 +106,27 @@ export async function getFestival(id: string) {
   return formatFestivalWithLineup(festival, currentLineup);
 }
 
+/**
+ * Lightweight festival read for page metadata (<title>, OpenGraph).
+ * Plain DB lookup only — no lineup fetch, auto-import, or image backfill —
+ * so it stays cheap and side-effect-free when Next generates metadata.
+ * Returns null if the festival isn't already in the DB.
+ */
+export async function getFestivalMeta(id: string) {
+  const [festival] = await db
+    .select({
+      name: festivals.name,
+      venue: festivals.venue,
+      date: festivals.date,
+      imageUrl: festivals.imageUrl,
+    })
+    .from(festivals)
+    .where(eq(festivals.id, id))
+    .limit(1);
+
+  return festival ?? null;
+}
+
 /** Auto-import from RA or FestivalFans if the ID matches their patterns */
 async function tryAutoImport(id: string) {
   const raMatch = id.match(/^ra-(\d+)$/);

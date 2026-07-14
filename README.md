@@ -29,8 +29,8 @@ npm run dev          # Start dev server
 npm run build        # Production build
 npm run start        # Start production server
 npm run lint         # Run ESLint
-npm run db:generate  # Generate a migration from schema changes
-npm run db:migrate   # Apply pending migrations
+npm run db:migrate            # Apply pending migrations
+npm run db:migrate:create -- <name>  # Scaffold a new SQL migration
 ```
 
 ### Seeding the Database
@@ -47,26 +47,30 @@ DATABASE_URL="postgres://..." npx tsx scripts/seed-db.ts
 
 ## Migrations
 
-Migrations are managed with [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview). The schema source of truth is `src/db/schema.ts`, and migration SQL files live in `./drizzle/`. Applied migrations are tracked in the `__drizzle_migrations` table in the database.
+Migrations are managed with [node-pg-migrate](https://salsita.github.io/node-pg-migrate/).
+Drizzle ORM (`src/db/schema.ts`) remains the query/type layer, but DDL lives as plain-SQL
+migrations in `./migrations/`, applied over `node-postgres` against the regular `DATABASE_URL`
+(run with `--no-lock`, giving real transactions over the pooled Neon endpoint). Applied
+migrations are tracked in the `pgmigrations` table. See [`migrations/README.md`](./migrations/README.md)
+for details, including the one-time baseline procedure.
 
 ### Creating a Migration
 
-Edit `src/db/schema.ts` with your schema changes, then generate a migration:
+Update `src/db/schema.ts` (ORM types) and scaffold a matching SQL migration:
 
 ```bash
-npm run db:generate
+npm run db:migrate:create -- <name>
 ```
 
-This diffs your schema against the last snapshot and produces a new SQL file in `./drizzle/`.
-
-For complex data migrations that can't be auto-generated (e.g. renaming columns with data backfill), write a SQL file manually in `./drizzle/` and update `./drizzle/meta/_journal.json`.
+Write DDL under `-- Up Migration` and a real `-- Down Migration`. Raw SQL — plpgsql functions,
+triggers, data backfills — is fully supported. There is no auto-diff between `schema.ts` and
+migrations; keep them in sync by hand.
 
 ### Running Migrations
 
 ```bash
-npm run db:migrate    # Apply pending migration files
-npx drizzle-kit push  # Push schema directly to DB (dev shortcut, no migration files)
-npx drizzle-kit studio # Open visual DB browser
+npm run db:migrate       # Apply pending migrations (up)
+npm run db:migrate:down  # Roll back the most recent migration
 ```
 
 ## Database Schema & Data Sources

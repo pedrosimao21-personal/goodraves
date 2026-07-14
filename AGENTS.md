@@ -174,14 +174,19 @@ The client uses `UserDataContext` for optimistic updates + server action calls.
 
 ## Database Migrations
 
-Migrations are managed with Drizzle Kit. The schema source of truth is `src/db/schema.ts`. Migration SQL files live in `./drizzle/`. Applied migrations are tracked in the `__drizzle_migrations` table.
+Migrations are managed with node-pg-migrate. Drizzle ORM (`src/db/schema.ts`) is the query/type
+layer; DDL lives as plain-SQL migrations in `./migrations/`, applied over `node-postgres`
+against the regular `DATABASE_URL` (run with `--no-lock`, giving real transactions over Neon's
+pooled endpoint). Applied migrations are tracked in the `pgmigrations` table. See
+`migrations/README.md` for the full workflow and the one-time baseline procedure.
 
 ### Workflow
 
-1. Edit `src/db/schema.ts` with schema changes
-2. Generate a migration: `npm run db:generate`
-3. Apply pending migrations: `npm run db:migrate`
+1. Edit `src/db/schema.ts` (ORM types) with the schema change.
+2. Scaffold a migration: `npm run db:migrate:create -- <name>`.
+3. Write DDL under `-- Up Migration` and a real `-- Down Migration` (plpgsql, triggers,
+   backfills are all plain SQL).
+4. Apply: `npm run db:migrate`.
 
-For complex migrations that can't be auto-generated (e.g. table renames, data backfills), write a SQL file manually in `./drizzle/` and add an entry to `./drizzle/meta/_journal.json`.
-
-**Do not use `drizzle-kit push`** for production changes — always generate and apply migration files so they are tracked.
+There is no auto-diff between `schema.ts` and migrations — keep them in sync by hand. Migrations
+run in real transactions over TCP, so a failed migration rolls back cleanly.

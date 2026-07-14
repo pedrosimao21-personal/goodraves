@@ -1,1 +1,0 @@
-ALTER TABLE "user_festivals" DROP COLUMN "status";

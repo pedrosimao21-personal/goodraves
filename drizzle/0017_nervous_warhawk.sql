@@ -1,1 +1,0 @@
-DROP TABLE "user_festival_b2b_set_ratings" CASCADE;

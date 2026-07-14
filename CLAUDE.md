@@ -15,8 +15,9 @@ Last.fm, Wikipedia) and caches the results in a Neon Postgres database via Drizz
 npm run dev          # Dev server
 npm run build        # Production build
 npm run lint         # ESLint (eslint-config-next). Linting gates merges — run before committing.
-npm run db:generate  # Generate a migration from src/db/schema.ts changes
-npm run db:migrate   # Apply pending migrations
+npm run db:migrate            # Apply pending migrations (node-pg-migrate, over DATABASE_URL)
+npm run db:migrate:down       # Roll back the most recent migration
+npm run db:migrate:create -- <name>  # Scaffold migrations/<timestamp>_<name>.sql
 npx tsx scripts/seed-db.ts          # Seed festivals from a generated data module (needs DATABASE_URL)
 npx tsx scripts/clear-artist-cache.ts  # Clear cached Spotify/Last.fm artist data
 npx tsx --env-file=.env scripts/import-pf-agenda.ts  # Manually run the daily Partyflock agenda import (backfill/ad-hoc)
@@ -73,12 +74,27 @@ JWT sessions, login rate-limited 10/15min via `rate-limit.ts`). `middleware.ts` 
 
 ## Database & migrations
 
-Schema source of truth: `src/db/schema.ts`. Migration SQL lives in `./drizzle/`; applied
-migrations tracked in `__drizzle_migrations`. Workflow: edit schema → `npm run db:generate`
-→ `npm run db:migrate`. For renames/backfills that can't auto-generate, hand-write the SQL
-in `./drizzle/` and add an entry to `./drizzle/meta/_journal.json`.
+Two distinct sources of truth, kept in sync **by hand**:
+- **ORM types / queries:** `src/db/schema.ts` (Drizzle ORM query builder over the neon-http
+  driver — see `src/db/index.ts`). Deeply embedded across `db/actions/`; unchanged by the
+  migration tooling.
+- **DDL:** plain-SQL migrations in `./migrations/`, applied with **node-pg-migrate** over
+  `node-postgres` against the regular `DATABASE_URL` (run with `--no-lock`). Applied migrations
+  tracked in the `pgmigrations` table.
 
-**Do not use `drizzle-kit push` for production changes** — always generate tracked migration files.
+node-pg-migrate gives real transactions over TCP — the fix for drizzle-kit, which was
+fundamentally broken here: the app's neon-http driver has no transaction support, so
+drizzle-kit's transactional migrator never worked and migrations were applied by hand,
+corrupting `__drizzle_migrations` and the old journal. Migrations run with `--no-lock` because
+node-pg-migrate's session advisory lock misbehaves over Neon's pooled (PgBouncer) endpoint;
+transactions themselves are unaffected, and the lock is unnecessary for manual single-operator
+migrations.
+
+Workflow: edit `schema.ts` (ORM types) **and** author a migration
+(`npm run db:migrate:create -- <name>`, write DDL under `-- Up Migration` + a real
+`-- Down Migration`) → `npm run db:migrate`. plpgsql/triggers/backfills are plain SQL. There is
+**no auto-diff** between `schema.ts` and migrations — keep them consistent yourself. See
+`migrations/README.md` for the full workflow and the one-time baseline procedure.
 
 Key tables: `festivals` (PK is text like `ra-2403879`; `source` is `"ra"|"custom"|"external"`),
 `artists`, `festival_artists` (lineup join), `user_festivals` (attendance + rating + notes),

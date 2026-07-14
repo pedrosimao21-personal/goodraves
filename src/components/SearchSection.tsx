@@ -120,7 +120,7 @@ export default function SearchSection() {
       // Check if the input is an RA event URL
       const raEventId = extractRAEventId(q)
       if (raEventId) {
-        const festivalId = await fetchRAEvent(raEventId)
+        const festivalId = await fetchRAEvent(raEventId, { force: true })
         if (festivalId) {
           router.push(`/festival/${festivalId}`)
           return
@@ -134,7 +134,7 @@ export default function SearchSection() {
       // Check if the input is a FestivalFans.nl event URL
       const ffSlug = extractFFSlugLocal(q)
       if (ffSlug) {
-        const festivalId = await fetchFFEvent(ffSlug)
+        const festivalId = await fetchFFEvent(ffSlug, { force: true })
         if (festivalId) {
           router.push(`/festival/${festivalId}`)
           return
@@ -154,7 +154,7 @@ export default function SearchSection() {
         }
       }
       if (pfPartyId) {
-        const festivalId = await fetchPFEvent(pfPartyId)
+        const festivalId = await fetchPFEvent(pfPartyId, { force: true })
         if (festivalId) {
           router.push(`/festival/${festivalId}`)
           return

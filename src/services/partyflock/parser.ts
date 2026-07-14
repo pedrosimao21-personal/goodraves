@@ -90,6 +90,8 @@ export interface ParsedPFEvent {
   timetable: TimetableSlot[];
   latitude: number | null;
   longitude: number | null;
+  interestedCount: number | null;
+  visitorsCount: number | null;
 }
 
 /**
@@ -247,6 +249,25 @@ function parsePFTimetable(tableHtml: string): TimetableSlot[] {
 }
 
 /** Parse a partyflock.nl event detail page to extract structured data. */
+/**
+ * Extract an attendance count from the party page. The count number sits in an
+ * `<a>` whose href fragment is `#visitors` (bezoekers) or `#maybevisitors`
+ * (geïnteresseerd); the same fragment also links a Dutch label, so we match the
+ * numeric variant only. Thousands separators (dots/commas/spaces) are stripped
+ * before parsing. Returns null when the count is absent so callers can preserve a
+ * previously stored value instead of overwriting it with 0.
+ */
+function parsePFCount(html: string, fragment: string): number | null {
+  const match = html.match(
+    new RegExp(`href="/party/\\d+/visitors#${fragment}">([\\d.,\\s\\u00a0]+)</a>`)
+  );
+  if (!match) return null;
+  const digits = match[1].replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const value = parseInt(digits, 10);
+  return isNaN(value) ? null : value;
+}
+
 export function parsePFEventPage(html: string): ParsedPFEvent {
   const h1Match = html.match(/<h1[^>]*itemprop="name"[^>]*>(?:<a[^>]*>)?([^<]+)/);
   const name = h1Match ? decodeHtmlEntities(h1Match[1].trim()) : null;
@@ -290,6 +311,9 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
   const latitude = latMatch ? parseFloat(latMatch[1]) || null : null;
   const longitude = lngMatch ? parseFloat(lngMatch[1]) || null : null;
 
+  const visitorsCount = parsePFCount(html, "visitors");
+  const interestedCount = parsePFCount(html, "maybevisitors");
+
   const lineup: LineupEntry[] = [];
   const seenEntries = new Set<string>();
   let timetable: TimetableSlot[] = [];
@@ -315,5 +339,18 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
     timetable = parsePFTimetable(lineupSection[1]);
   }
 
-  return { name, date, endDate, venue, location, imageUrl, lineup, timetable, latitude, longitude };
+  return {
+    name,
+    date,
+    endDate,
+    venue,
+    location,
+    imageUrl,
+    lineup,
+    timetable,
+    latitude,
+    longitude,
+    interestedCount,
+    visitorsCount,
+  };
 }

@@ -218,6 +218,15 @@ async function persistPFEvent(
     }
   }
 
+  // On a forced re-import, rebuild the lineup from scratch so dropped artists are
+  // removed and B2B sets aren't duplicated (createB2bSets always inserts). Runs
+  // only after a successful parse and once we're committed to this festival id,
+  // so a failed fetch never wipes a good lineup. User ratings/attendance survive:
+  // they key on (userId, festivalId, artistId), not the lineup join.
+  if (opts?.force) {
+    await clearPFFestivalRelations(festivalId);
+  }
+
   const festivalValues = {
     id: festivalId,
     name: parsed.name,
@@ -230,6 +239,8 @@ async function persistPFEvent(
     imageUrl: parsed.imageUrl,
     latitude: parsed.latitude,
     longitude: parsed.longitude,
+    interestedCount: parsed.interestedCount,
+    visitorsCount: parsed.visitorsCount,
   };
 
   if (opts?.force) {
@@ -248,6 +259,8 @@ async function persistPFEvent(
           latitude: festivalValues.latitude,
           longitude: festivalValues.longitude,
           sourceId: festivalValues.sourceId,
+          interestedCount: sql`COALESCE(${festivalValues.interestedCount}, ${festivals.interestedCount})`,
+          visitorsCount: sql`COALESCE(${festivalValues.visitorsCount}, ${festivals.visitorsCount})`,
         },
       });
   } else {
@@ -262,6 +275,8 @@ async function persistPFEvent(
           latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
           longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
           sourceId: sql`COALESCE(${festivalValues.sourceId}, ${festivals.sourceId})`,
+          interestedCount: sql`COALESCE(${festivalValues.interestedCount}, ${festivals.interestedCount})`,
+          visitorsCount: sql`COALESCE(${festivalValues.visitorsCount}, ${festivals.visitorsCount})`,
         },
       });
   }

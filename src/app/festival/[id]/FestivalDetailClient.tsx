@@ -51,6 +51,8 @@ function transformDbFestival(dbFestival: any) {
     venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
     location: dbFestival.location,
     imageUrl: dbFestival.imageUrl,
+    interestedCount: dbFestival.interestedCount ?? 0,
+    visitorsCount: dbFestival.visitorsCount ?? 0,
     attractions: dbFestival.lineup
       ? dbFestival.lineup.map((a: any) => ({ id: a.id, name: a.name }))
       : [],
@@ -261,6 +263,12 @@ export default function FestivalDetail() {
               </div>
             )}
             {event.genre && <span className="tag">{event.genre}</span>}
+            {event.interestedCount > 0 && (
+              <div className="festival-meta-chip">🔥 {event.interestedCount.toLocaleString()} interested</div>
+            )}
+            {event.visitorsCount > 0 && (
+              <div className="festival-meta-chip">👥 {event.visitorsCount.toLocaleString()} going</div>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>

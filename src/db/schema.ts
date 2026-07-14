@@ -44,6 +44,7 @@ export const festivals = pgTable("festivals", {
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
   interestedCount: integer("interested_count").default(0),
+  visitorsCount: integer("visitors_count").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [

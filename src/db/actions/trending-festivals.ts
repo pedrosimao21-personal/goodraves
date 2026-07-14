@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { festivals } from "@/db/schema";
-import { gte, gt, and } from "drizzle-orm";
+import { gte, gt, and, sql } from "drizzle-orm";
 
 const DEFAULT_LIMIT = 6;
 const RADIUS_KM = 100;
@@ -15,8 +15,14 @@ export type TrendingFestival = {
   location: string | null;
   imageUrl: string | null;
   interestedCount: number;
+  visitorsCount: number;
   distanceKm: number | null;
 };
+
+/** Combined social-proof score used to rank trending festivals across sources. */
+function trendingScore(row: { interestedCount: number; visitorsCount: number }): number {
+  return row.interestedCount + row.visitorsCount;
+}
 
 function toRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
@@ -63,12 +69,16 @@ export async function getTrendingFestivals(
       latitude: festivals.latitude,
       longitude: festivals.longitude,
       interestedCount: festivals.interestedCount,
+      visitorsCount: festivals.visitorsCount,
     })
     .from(festivals)
     .where(
       and(
         gte(festivals.date, todayStr),
-        gt(festivals.interestedCount, 0)
+        gt(
+          sql`COALESCE(${festivals.interestedCount}, 0) + COALESCE(${festivals.visitorsCount}, 0)`,
+          0
+        )
       )
     )
     .orderBy(festivals.date)
@@ -85,7 +95,12 @@ export async function getTrendingFestivals(
           row.longitude
         );
       }
-      return { ...row, distanceKm, interestedCount: row.interestedCount ?? 0 };
+      return {
+        ...row,
+        distanceKm,
+        interestedCount: row.interestedCount ?? 0,
+        visitorsCount: row.visitorsCount ?? 0,
+      };
     });
 
   // Nearby: within radius, sorted by interest then date
@@ -93,8 +108,8 @@ export async function getTrendingFestivals(
     const nearby = withInterest
       .filter((r) => r.distanceKm !== null && r.distanceKm <= RADIUS_KM)
       .sort((a, b) => {
-        if (b.interestedCount !== a.interestedCount) {
-          return b.interestedCount - a.interestedCount;
+        if (trendingScore(b) !== trendingScore(a)) {
+          return trendingScore(b) - trendingScore(a);
         }
         return a.date.localeCompare(b.date);
       });
@@ -112,8 +127,8 @@ export async function getTrendingFestivals(
     const cityMatches = withInterest
       .filter((r) => r.location?.toLowerCase().includes(cityLower))
       .sort((a, b) => {
-        if (b.interestedCount !== a.interestedCount) {
-          return b.interestedCount - a.interestedCount;
+        if (trendingScore(b) !== trendingScore(a)) {
+          return trendingScore(b) - trendingScore(a);
         }
         return a.date.localeCompare(b.date);
       });
@@ -128,8 +143,8 @@ export async function getTrendingFestivals(
   // Global fallback: top trending worldwide
   return withInterest
     .sort((a, b) => {
-      if (b.interestedCount !== a.interestedCount) {
-        return b.interestedCount - a.interestedCount;
+      if (trendingScore(b) !== trendingScore(a)) {
+        return trendingScore(b) - trendingScore(a);
       }
       return a.date.localeCompare(b.date);
     })

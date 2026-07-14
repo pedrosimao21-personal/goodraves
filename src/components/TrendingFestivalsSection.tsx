@@ -70,9 +70,17 @@ function FestivalRow({ festival }: { festival: TrendingFestival }) {
             </span>
           )}
 
-          <span className="trending-badge">
-            🔥 {festival.interestedCount.toLocaleString()} interested
-          </span>
+          {festival.interestedCount > 0 && (
+            <span className="trending-badge">
+              🔥 {festival.interestedCount.toLocaleString()} interested
+            </span>
+          )}
+
+          {festival.visitorsCount > 0 && (
+            <span className="trending-badge">
+              👥 {festival.visitorsCount.toLocaleString()} going
+            </span>
+          )}
         </div>
       </div>
     </Link>

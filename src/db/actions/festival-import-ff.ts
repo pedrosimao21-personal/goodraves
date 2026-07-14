@@ -90,6 +90,15 @@ export async function fetchFFEvent(
     return existingId;
   }
 
+  // On a forced re-import, rebuild the lineup from scratch so dropped artists are
+  // removed and B2B sets aren't duplicated. Runs only after a successful fetch and
+  // once committed to this festival id. Ratings/attendance survive (they key on
+  // (userId, festivalId, artistId), not the lineup join).
+  if (opts?.force) {
+    await deleteB2bSets(festivalId);
+    await db.delete(festivalArtists).where(eq(festivalArtists.festivalId, festivalId));
+  }
+
   const festivalValues = {
     id: festivalId,
     name: parsed.name,

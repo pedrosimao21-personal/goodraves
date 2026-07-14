@@ -27,6 +27,12 @@ There is **no test suite** in this repo — do not assume `npm test` exists.
 Environment variables (`.env`, see `.env.example`): `AUTH_SECRET`, `DATABASE_URL`,
 `LASTFM_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`.
 
+## Git workflow
+
+Commit and push **directly to `main`** — this is the preferred workflow. Do not create a
+feature branch or open a pull request unless the user explicitly asks for one. Committing
+and pushing still happens only when the user asks.
+
 ## Architecture
 
 **Data mutation = Server Actions, not API routes.** The app deliberately avoids REST

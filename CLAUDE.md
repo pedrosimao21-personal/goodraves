@@ -37,6 +37,11 @@ Commit and push **directly to `main`** — this is the preferred workflow. Do no
 feature branch or open a pull request unless the user explicitly asks for one. Committing
 and pushing still happens only when the user asks.
 
+Push as the personal GitHub account **`MRVDH`**, not the work account `MRVDH-DEPT`. Use the
+`/push` command — it switches accounts, commits, pushes, and restores the previous account.
+A PreToolUse guard (`.claude/hooks/guard-push-account.sh`) blocks any `git push` while
+`MRVDH-DEPT` is the active `gh` account.
+
 ## Keeping docs current
 
 When you change code, update the docs it's mirrored in — in the same change. A Stop

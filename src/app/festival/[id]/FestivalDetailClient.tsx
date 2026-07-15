@@ -183,7 +183,7 @@ export default function FestivalDetail() {
   }
 
   const handleAction = () => {
-    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, genre: event.genre, source: event.source }
+    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, source: event.source }
     toggleFestival(id, payload)
   }
 
@@ -276,7 +276,6 @@ export default function FestivalDetail() {
                 {event.venue.name}{event.venue.city ? `, ${event.venue.city}` : ''}{event.venue.country ? `, ${event.venue.country}` : ''}
               </div>
             )}
-            {event.genre && <span className="tag">{event.genre}</span>}
             {event.interestedCount > 0 && (
               <div className="festival-meta-chip">🔥 {event.interestedCount.toLocaleString()} interested</div>
             )}

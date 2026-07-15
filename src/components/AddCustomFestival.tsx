@@ -12,7 +12,6 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
   const [date, setDate] = useState('')
   const [venueName, setVenueName] = useState('')
   const [city, setCity] = useState('')
-  const [genre, setGenre] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [lineupText, setLineupText] = useState('')
   const [saved, setSaved] = useState(false)
@@ -29,7 +28,6 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
         name: venueName.trim() || null,
         city: city.trim() || null,
       },
-      genre: genre.trim() || null,
       image: imageUrl.trim() || null,
     }
 
@@ -146,18 +144,6 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
             style={inputStyle}
           />
         </div>
-      </div>
-
-      {/* Genre */}
-      <div>
-        <label style={labelStyle}>Genre</label>
-        <input
-          type="text"
-          value={genre}
-          onChange={e => setGenre(e.target.value)}
-          placeholder="e.g. Techno, House, Drum & Bass"
-          style={inputStyle}
-        />
       </div>
 
       {/* Image URL */}

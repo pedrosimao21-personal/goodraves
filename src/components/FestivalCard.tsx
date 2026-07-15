@@ -126,7 +126,6 @@ export default memo(function FestivalCard({ event }: { event: any }) {
       latitude: event.latitude ?? null,
       longitude: event.longitude ?? null,
       image: displayImage,
-      genre: event.genre,
       source: event.source,
     }
     toggleFestival(event.id, payload)
@@ -158,11 +157,6 @@ export default memo(function FestivalCard({ event }: { event: any }) {
 
       <div className="festival-card-body">
         <div className="festival-card-tags">
-          {event.genre && <span className="tag">{event.genre}</span>}
-          {event.subGenre && event.subGenre !== event.genre && (
-            <span className="tag tag-orange">{event.subGenre}</span>
-          )}
-          {event.ages && <span className="tag tag-purple">{event.ages}</span>}
           {attended && <span className="tag tag-green">✓ Attended</span>}
           {upcoming && <span className="tag" style={{ background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' }}>✓ Going</span>}
         </div>

@@ -18,9 +18,12 @@ npm run lint         # ESLint (eslint-config-next). Linting gates merges — run
 npm run db:migrate            # Apply pending migrations (node-pg-migrate, over DATABASE_URL)
 npm run db:migrate:down       # Roll back the most recent migration
 npm run db:migrate:create -- <name>  # Scaffold migrations/<timestamp>_<name>.sql
-npx tsx scripts/seed-db.ts          # Seed festivals from a generated data module (needs DATABASE_URL)
-npx tsx scripts/clear-artist-cache.ts  # Clear cached Spotify/Last.fm artist data
-npx tsx --env-file=.env scripts/import-pf-agenda.ts  # Manually run the daily Partyflock agenda import (backfill/ad-hoc)
+
+# Maintenance scripts (run with tsx; those hitting the DB need DATABASE_URL)
+npx tsx scripts/clear-artist-cache.ts               # Clear cached Spotify/Last.fm/RA artist data
+npx tsx scripts/cleanup-artist-data.ts [--dry-run]  # Fix encoding/junk artist records
+npx tsx --env-file=.env scripts/import-pf-agenda.ts    # Backfill/re-run the daily Partyflock agenda import
+npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock festival refresh (7-/2-day checkpoints)
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -33,6 +36,21 @@ Environment variables (`.env`, see `.env.example`): `AUTH_SECRET`, `DATABASE_URL
 Commit and push **directly to `main`** — this is the preferred workflow. Do not create a
 feature branch or open a pull request unless the user explicitly asks for one. Committing
 and pushing still happens only when the user asks.
+
+## Keeping docs current
+
+When you change code, update the docs it's mirrored in — in the same change. A Stop
+hook (`.claude/hooks/check-doc-sync.sh`) reminds you if you miss one.
+
+- Change `src/db/schema.ts` tables/columns → update the schema overview in `README.md`
+  and the key-tables list in this file.
+- Add/rename/remove a `scripts/` file or an npm script in `package.json` → update the
+  Commands block in this file (and `README.md` if it's a user-facing command).
+- Add an external image domain → both places in `next.config.ts` (see Conventions).
+- Change a coding convention → `AGENTS.md`.
+
+Prefer describing code over mirroring it (e.g. point at `schema.ts` rather than
+re-listing columns) so there's less to keep in sync.
 
 ## Architecture
 
@@ -103,8 +121,7 @@ Key tables: `festivals` (PK is text like `ra-2403879`; `source` is `"ra"|"custom
 
 ## Conventions
 
-`AGENTS.md` is the authoritative coding constitution and takes precedence over informal
-style. Enforced hard limits worth remembering: **files ≤ 300 lines**, **functions ≤ 3
+`AGENTS.md` holds the full coding conventions. Enforced hard limits worth remembering: **files ≤ 300 lines**, **functions ≤ 3
 levels of nesting**, single-responsibility per file, no magic numbers (extract to
 UPPER_SNAKE_CASE constants — many live in `src/lib/constants.ts`), no empty/log-only catch
 blocks, verb-first camelCase functions, `is`/`has`/`can`/`should` for booleans. The large

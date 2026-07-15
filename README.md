@@ -1,6 +1,6 @@
 # Goodraves
 
-A web app for discovering electronic music festivals and raves, tracking what you've attended, and rating the DJs you saw. Integrates with Spotify, Last.fm, MusicBrainz, and Wikipedia for event and artist discovery.
+A web app for discovering electronic music festivals and raves, tracking what you've attended, and rating the DJs you saw. Festival and artist data is enriched from Resident Advisor, FestivalFans, Partyflock, Spotify, Last.fm, and Wikipedia.
 
 ## Getting Started
 
@@ -33,16 +33,15 @@ npm run db:migrate            # Apply pending migrations
 npm run db:migrate:create -- <name>  # Scaffold a new SQL migration
 ```
 
-### Seeding the Database
+### Populating Data
 
-Festival data can be ingested from Resident Advisor scraper JSONL files:
+Festival and artist data is ingested through the import server actions in
+`src/db/actions/` (Resident Advisor, FestivalFans, Partyflock), driven from the app
+UI and the Partyflock agenda cron (`vercel.json`). For a manual backfill or ad-hoc run:
 
 ```bash
-# Convert JSONL files to a static JS data module
-node scripts/seed-ra-events.js --events "EventItem.jsonl" --lineups "EventLineupItem.jsonl"
-
-# Insert into the database
-DATABASE_URL="postgres://..." npx tsx scripts/seed-db.ts
+npx tsx --env-file=.env scripts/import-pf-agenda.ts     # Partyflock agenda backfill
+npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Refresh imported Partyflock festivals
 ```
 
 ## Migrations
@@ -73,108 +72,28 @@ npm run db:migrate       # Apply pending migrations (up)
 npm run db:migrate:down  # Roll back the most recent migration
 ```
 
-## Database Schema & Data Sources
+## Database Schema
 
-### `users`
+`src/db/schema.ts` is the source of truth for columns and types. Overview of the tables:
 
-| Column | Type | Data Source |
-|---|---|---|
-| `id` | uuid | System-generated |
-| `username` | text | User registration |
-| `password_hash` | text | bcrypt hash of user-provided password |
-| `created_at` | timestamptz | System-generated |
+| Table | Purpose |
+|---|---|
+| `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
+| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, or `"external"`. Includes Partyflock `interested_count`/`visitors_count` |
+| `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
+| `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
+| `festival_artists` | Lineup join between festivals and artists |
+| `festival_b2b_sets` / `festival_b2b_set_members` | Back-to-back sets split into their individual member artists |
+| `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering) |
+| `user_festivals` | A user's attendance/interest, with optional `rating` and `notes` |
+| `user_festival_artist_ratings` | Per-festival, per-artist performance ratings |
+| `user_artist_global` | A user's overall rating/notes for an artist |
+| `rate_limit_attempts` | Login rate limiting (10 attempts / 15 min per username) |
 
-### `festivals`
+### External data sources
 
-| Column | Type | Data Source |
-|---|---|---|
-| `id` | text | Format `ra-{raId}` from RA scraper, or custom ID |
-| `name` | text | **RA scraper** (`title`/`name`), **RA GraphQL API** (`event.title`), or user-created |
-| `date` | text | **RA scraper** (`date`/`startDate`), **RA GraphQL** (`event.startTime`), or user input. ISO `YYYY-MM-DD` |
-| `end_date` | text | **RA GraphQL API** (`event.endTime`) |
-| `location` | text | **RA scraper** (`city`/`venueCity`), **RA GraphQL** (`venue.area.name, venue.area.country.name`), or user input |
-| `venue` | text | **RA scraper** (`venue`/`venueName`), **RA GraphQL** (`venue.name`), or user input |
-| `latitude` | real | Not currently populated |
-| `longitude` | real | Not currently populated |
-| `source` | text | `"ra"`, `"custom"`, or `"external"` |
-| `source_id` | text | Raw RA event ID (e.g. `"2403879"`) |
-| `image_url` | text | **RA GraphQL API** (`event.images[0].filename`), or user input |
-
-### `artists`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `id` | uuid | System-generated |
-| `name` | text | **RA scraper** lineup arrays, **RA GraphQL** (`event.artists[].name`), or user-created |
-| `spotify_id` | text | **Spotify Search API** (`/v1/search?type=artist`) — cached |
-| `image_url` | text | **Spotify API** — artist image — cached |
-| `spotify_followers` | integer | **Spotify API** (`artist.followers.total`) — cached |
-| `spotify_albums` | text | **Spotify API** (`/v1/artists/{id}/albums`) — JSON string of album objects — cached |
-| `spotify_fetched_at` | timestamptz | Timestamp of last Spotify fetch. Stale after 60 days |
-| `lastfm_id` | text | **Last.fm API** (`artist.getinfo`) — MusicBrainz ID |
-| `lastfm_bio` | text | **Last.fm API** (`artist.bio.content`) — HTML-cleaned |
-| `lastfm_listeners` | integer | **Last.fm API** (`artist.stats.listeners`) |
-| `lastfm_playcount` | integer | **Last.fm API** (`artist.stats.playcount`) |
-| `lastfm_similar` | text | **Last.fm API** (`artist.similar.artist`) — JSON string of top 5 similar artists |
-| `lastfm_top_tracks` | text | **Last.fm API** (`artist.gettoptracks`) — JSON string of top 8 tracks |
-| `lastfm_fetched_at` | timestamptz | Timestamp of last Last.fm fetch. Stale after 7 days |
-
-### `genres`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `id` | uuid | System-generated |
-| `name` | text | **Last.fm API** (`artist.tags.tag[].name`) — normalized, lowercased, blacklist-filtered, and deduplicated |
-
-### `artist_genres`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `artist_id` | uuid | FK → `artists.id` |
-| `genre_id` | uuid | FK → `genres.id` |
-
-### `festival_artists`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `festival_id` | text | FK → `festivals.id`. From seed scripts, RA GraphQL fetch, or user festival creation |
-| `artist_id` | uuid | FK → `artists.id`. Resolved from artist name lookup |
-
-### `user_festivals`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `user_id` | uuid | FK → `users.id`. Authenticated user session |
-| `festival_id` | text | FK → `festivals.id`. User action |
-| `status` | text | User choice: `"attended"` or `"upcoming"` |
-| `rating` | integer | User input (1–5) |
-| `notes` | text | User input |
-| `created_at` | timestamptz | System-generated |
-
-### `user_festival_artist_ratings`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `user_id` | uuid | FK → `users.id`. Authenticated user session |
-| `festival_id` | text | FK → `festivals.id`. User action context |
-| `artist_id` | uuid | FK → `artists.id`. User action |
-| `rating` | integer | User input (1–5) |
-| `notes` | text | User input |
-
-### `user_artist_global`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `user_id` | uuid | FK → `users.id`. Authenticated user session |
-| `artist_id` | uuid | FK → `artists.id`. User action |
-| `rating` | integer | User input (1–5) |
-| `notes` | text | User input (max 5000 chars) |
-
-### `rate_limit_attempts`
-
-| Column | Type | Data Source |
-|---|---|---|
-| `id` | uuid | System-generated |
-| `identifier` | text | Username (login rate limiting) |
-| `action` | text | `"login"` |
-| `created_at` | timestamptz | System-generated. 10 attempts per 15 minutes per username |
+- **Resident Advisor** (GraphQL) — festivals, lineups, artist IDs, upcoming events, country.
+- **FestivalFans** / **Partyflock** — additional festival listings and interest/visitor counts.
+- **Spotify** — artist ID, image, followers, albums, related artists (cached).
+- **Last.fm** — MusicBrainz ID, bio, listeners/playcount, similar artists, top tracks, genre tags (cached).
+- **Wikipedia** — supplementary artist info.

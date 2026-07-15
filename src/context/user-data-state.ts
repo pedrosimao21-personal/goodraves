@@ -13,6 +13,7 @@ export interface FestivalMeta {
   sourceId?: string
   imageUrl?: string | null
   lineup?: string[]
+  genres?: string[]
   [key: string]: any
 }
 
@@ -156,6 +157,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
       longitude: f.longitude ?? undefined,
       imageUrl: f.imageUrl,
       source: f.source ?? undefined,
+      genres: f.genres ?? [],
     }
 
     if (f.rating) festivalRatings[f.festivalId] = f.rating

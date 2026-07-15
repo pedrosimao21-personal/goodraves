@@ -14,6 +14,7 @@ import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
 import { fetchUserDataForId } from "./user-data-query";
+import { fetchFestivalGenres } from "./festival-genres";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -29,19 +30,22 @@ async function fetchLineup(festivalId: string) {
 /** Format lineup rows into the response shape */
 function formatFestivalWithLineup(
   festival: typeof festivals.$inferSelect,
-  lineup: { artistId: string; artistName: string }[]
+  lineup: { artistId: string; artistName: string }[],
+  genres: string[]
 ) {
   return {
     ...festival,
     lineup: lineup.map((r) => ({ id: r.artistId, name: r.artistName })),
+    genres,
   };
 }
 
 export async function getFestival(id: string) {
   // Fetch festival and lineup in parallel since they are independent
-  const [festivalRows, lineup] = await Promise.all([
+  const [festivalRows, lineup, genres] = await Promise.all([
     db.select().from(festivals).where(eq(festivals.id, id)).limit(1),
     fetchLineup(id),
+    fetchFestivalGenres(id),
   ]);
 
   let [festival] = festivalRows;
@@ -51,6 +55,7 @@ export async function getFestival(id: string) {
   }
 
   let currentLineup = lineup;
+  let currentGenres = genres;
 
   // If the festival has no lineup, re-fetch from the original source to populate.
   // After the re-fetch, re-read the festival row so we pick up any imageUrl or
@@ -77,6 +82,9 @@ export async function getFestival(id: string) {
       .where(eq(festivals.id, id))
       .limit(1);
     if (refreshed) festival = refreshed;
+
+    // The re-fetch may have populated genres too, so re-read them.
+    currentGenres = await fetchFestivalGenres(id);
   }
 
   // Backfill missing image from the original source
@@ -103,7 +111,7 @@ export async function getFestival(id: string) {
     }
   }
 
-  return formatFestivalWithLineup(festival, currentLineup);
+  return formatFestivalWithLineup(festival, currentLineup, currentGenres);
 }
 
 /**
@@ -171,8 +179,11 @@ async function importAndReturn(
     .limit(1);
   if (!importedFestival) return null;
 
-  const lineup = await fetchLineup(festivalId);
-  return formatFestivalWithLineup(importedFestival, lineup);
+  const [lineup, genres] = await Promise.all([
+    fetchLineup(festivalId),
+    fetchFestivalGenres(festivalId),
+  ]);
+  return formatFestivalWithLineup(importedFestival, lineup, genres);
 }
 
 // ── Get all user data (full state load) ────────────────

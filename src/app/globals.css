@@ -1102,6 +1102,16 @@ img {
   color: var(--text-primary);
 }
 
+.festival-hero-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent-purple-light);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
 .festival-hero-title {
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 5vw, 3.5rem);
@@ -1132,6 +1142,14 @@ img {
   border: 1px solid var(--border);
   padding: 6px 14px;
   border-radius: var(--radius-full);
+}
+
+.festival-meta-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 /* =============================================

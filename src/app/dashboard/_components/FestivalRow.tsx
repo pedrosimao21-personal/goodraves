@@ -69,11 +69,14 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.93rem', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
           {displayEvent?.name ?? eventId}
         </div>
-        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', lineHeight: 1.4 }}>
+        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', lineHeight: 1.4, alignItems: 'center' }}>
           {displayEvent?.date && <span style={{ whiteSpace: 'nowrap' }}>{formatDate(displayEvent.date)}</span>}
           {displayEvent?.venue && typeof displayEvent.venue === 'object' && displayEvent.venue.city && (
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{displayEvent.venue.city}</span>
           )}
+          {displayEvent?.genres?.map((genre: string) => (
+            <span key={genre} className="tag">{genre}</span>
+          ))}
         </div>
       </div>
 

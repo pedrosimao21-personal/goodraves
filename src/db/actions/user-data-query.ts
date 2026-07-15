@@ -19,6 +19,7 @@ import {
   genres,
   artistGenres as artistGenresTable,
 } from "@/db/schema";
+import { fetchFestivalGenresByIds } from "./festival-genres";
 
 /** Shared query logic for fetching all user data given a userId. */
 export async function fetchUserDataForId(userId: string) {
@@ -62,10 +63,18 @@ export async function fetchUserDataForId(userId: string) {
     ]);
 
   const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
-  const artistGenreData = await fetchArtistGenreData(seenArtistIds);
+  const [artistGenreData, festivalGenresById] = await Promise.all([
+    fetchArtistGenreData(seenArtistIds),
+    fetchFestivalGenresByIds(userFestivalsData.map((f) => f.festivalId)),
+  ]);
+
+  const festivalsWithGenres = userFestivalsData.map((f) => ({
+    ...f,
+    genres: festivalGenresById.get(f.festivalId) ?? [],
+  }));
 
   return {
-    festivals: userFestivalsData,
+    festivals: festivalsWithGenres,
     artistRatings: artistRatingsData,
     globalArtistData,
     artistGenres: artistGenreData,

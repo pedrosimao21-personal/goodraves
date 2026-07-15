@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { festivals, festivalArtists, artists, artistGenres, genres, users, userArtistGlobal, userFestivalArtistRatings, userFestivals } from "@/db/schema";
+import { festivals, festivalArtists, artists, artistGenres, festivalGenres, genres, users, userArtistGlobal, userFestivalArtistRatings, userFestivals } from "@/db/schema";
 
 export const festivalArtistsRelations = relations(festivalArtists, ({one}) => ({
 	festival: one(festivals, {
@@ -14,6 +14,7 @@ export const festivalArtistsRelations = relations(festivalArtists, ({one}) => ({
 
 export const festivalsRelations = relations(festivals, ({many}) => ({
 	festivalArtists: many(festivalArtists),
+	festivalGenres: many(festivalGenres),
 	userFestivalArtistRatings: many(userFestivalArtistRatings),
 	userFestivals: many(userFestivals),
 }));
@@ -36,8 +37,20 @@ export const artistGenresRelations = relations(artistGenres, ({one}) => ({
 	}),
 }));
 
+export const festivalGenresRelations = relations(festivalGenres, ({one}) => ({
+	festival: one(festivals, {
+		fields: [festivalGenres.festivalId],
+		references: [festivals.id]
+	}),
+	genre: one(genres, {
+		fields: [festivalGenres.genreId],
+		references: [genres.id]
+	}),
+}));
+
 export const genresRelations = relations(genres, ({many}) => ({
 	artistGenres: many(artistGenres),
+	festivalGenres: many(festivalGenres),
 }));
 
 export const userArtistGlobalRelations = relations(userArtistGlobal, ({one}) => ({

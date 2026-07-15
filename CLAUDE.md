@@ -121,7 +121,9 @@ Workflow: edit `schema.ts` (ORM types) **and** author a migration
 
 Key tables: `festivals` (PK is text like `ra-2403879`; `source` is
 `"ra"|"custom"|"external"|"festivalfans"|"partyflock"`),
-`artists`, `festival_artists` (lineup join), `user_festivals` (attendance + rating + notes),
+`artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
+`festival_genres` (festival↔genre join, from the Partyflock genre estimate),
+`user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings`, `user_artist_global`, `festival_b2b_sets`/`_members`
 (splitting back-to-back DJ sets into individuals), `festival_timetable_slots`.
 

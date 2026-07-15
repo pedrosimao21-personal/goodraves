@@ -10,6 +10,7 @@ import { mapRAEventToSearchResult } from "@/services/ra/parser";
 import { searchFFEventsRaw, resolveFFSlug } from "@/services/festivalfans/client";
 import { searchPFEventsRaw, resolvePFEventSlug } from "@/services/partyflock/client";
 import { parsePFSearchResults } from "@/services/partyflock/parser";
+import { fetchFestivalGenresByIds } from "./festival-genres";
 
 const MAX_CACHE_ENTRIES = 50;
 
@@ -75,7 +76,12 @@ export async function searchFestivalsDB(query: string) {
     .orderBy(desc(festivals.date))
     .limit(SEARCH_RESULTS_LIMIT);
 
-  return results;
+  const genresByFestival = await fetchFestivalGenresByIds(results.map((r) => r.id));
+
+  return results.map((r) => ({
+    ...r,
+    genres: genresByFestival.get(r.id) ?? [],
+  }));
 }
 
 // ── RA search (with 5-minute cache) ────────────────────

@@ -81,6 +81,10 @@ function FestivalRow({ festival }: { festival: TrendingFestival }) {
               👥 {festival.visitorsCount.toLocaleString()} going
             </span>
           )}
+
+          {festival.genres?.map((genre) => (
+            <span key={genre} className="tag">{genre}</span>
+          ))}
         </div>
       </div>
     </Link>

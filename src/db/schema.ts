@@ -190,6 +190,23 @@ export const artistGenres = pgTable(
   ]
 );
 
+// ── Festival Genres (many-to-many join table) ──────────
+export const festivalGenres = pgTable(
+  "festival_genres",
+  {
+    festivalId: text("festival_id")
+      .notNull()
+      .references(() => festivals.id, { onDelete: "cascade" }),
+    genreId: uuid("genre_id")
+      .notNull()
+      .references(() => genres.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.festivalId, t.genreId] }),
+    index("festival_genres_genre_id_idx").on(t.genreId),
+  ]
+);
+
 // ── B2B Sets (grouped artists from split B2B imports) ──
 export const festivalB2bSets = pgTable("festival_b2b_sets", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -185,6 +185,7 @@ export default function SearchSection() {
         lineup: [],
         source: f.source ?? 'ra',
         image: f.imageUrl,
+        genres: f.genres ?? [],
       }))
       results.push(...mapped)
 

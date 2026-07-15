@@ -17,7 +17,7 @@ interface TimelineFestivalMeta {
   date?: string
   image?: string
   imageUrl?: string
-  genre?: string
+  genres?: string[]
   venue?: { name?: string; city?: string } | string
 }
 
@@ -159,7 +159,9 @@ const TimelineCard = React.memo(({ festivalId, meta, seenArtists, isUpcoming }: 
         </div>
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {meta.genre && <span className="tag">{meta.genre}</span>}
+          {meta.genres?.map((genre) => (
+            <span key={genre} className="tag">{genre}</span>
+          ))}
           {isUpcoming && (
             <span
               className="tag"

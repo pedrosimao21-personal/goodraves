@@ -157,6 +157,9 @@ export default memo(function FestivalCard({ event }: { event: any }) {
 
       <div className="festival-card-body">
         <div className="festival-card-tags">
+          {event.genres?.map((genre: string) => (
+            <span key={genre} className="tag">{genre}</span>
+          ))}
           {attended && <span className="tag tag-green">✓ Attended</span>}
           {upcoming && <span className="tag" style={{ background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' }}>✓ Going</span>}
         </div>

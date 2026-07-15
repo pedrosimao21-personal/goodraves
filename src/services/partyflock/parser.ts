@@ -92,6 +92,7 @@ export interface ParsedPFEvent {
   longitude: number | null;
   interestedCount: number | null;
   visitorsCount: number | null;
+  genres: string[];
 }
 
 /**
@@ -268,6 +269,42 @@ function parsePFCount(html: string, fragment: string): number | null {
   return isNaN(value) ? null : value;
 }
 
+/**
+ * Extract the concise genre summary Partyflock shows on a party page. It appears
+ * in one `<div class="block">` in one of two forms, both linking each genre to
+ * `/agenda/genre/<name>`:
+ *   - `schatting: <a>techno</a>, <a>house</a>` — an estimate (no announced lineup)
+ *   - `<a>techno</a> ×6, <a>house</a> ×3`       — aggregated from the lineup
+ * We scope to the first block that carries such links so we capture the summary
+ * without pulling in unrelated genre links. Names are lowercased/trimmed and
+ * de-duplicated. Returns [] when absent.
+ */
+function parsePFGenres(html: string): string[] {
+  const blockRegex = /<div class="block">([\s\S]*?)<\/div>\s*<\/div>/g;
+  let region: string | null = null;
+  let block;
+  while ((block = blockRegex.exec(html)) !== null) {
+    if (block[1].includes("/agenda/genre/")) {
+      region = block[1];
+      break;
+    }
+  }
+  if (!region) return [];
+
+  const anchorRegex = /href="\/agenda\/genre\/[^"]*">([^<]+)<\/a>/g;
+  const genres: string[] = [];
+  const seen = new Set<string>();
+  let match;
+  while ((match = anchorRegex.exec(region)) !== null) {
+    const name = decodeHtmlEntities(match[1].trim()).toLowerCase();
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      genres.push(name);
+    }
+  }
+  return genres;
+}
+
 export function parsePFEventPage(html: string): ParsedPFEvent {
   const h1Match = html.match(/<h1[^>]*itemprop="name"[^>]*>(?:<a[^>]*>)?([^<]+)/);
   const name = h1Match ? decodeHtmlEntities(h1Match[1].trim()) : null;
@@ -314,6 +351,8 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
   const visitorsCount = parsePFCount(html, "visitors");
   const interestedCount = parsePFCount(html, "maybevisitors");
 
+  const genres = parsePFGenres(html);
+
   const lineup: LineupEntry[] = [];
   const seenEntries = new Set<string>();
   let timetable: TimetableSlot[] = [];
@@ -352,5 +391,6 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
     longitude,
     interestedCount,
     visitorsCount,
+    genres,
   };
 }

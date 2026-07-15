@@ -8,6 +8,7 @@ import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { toIsoDate } from "@/lib/dates";
 import { parsePFEventPage } from "@/services/partyflock/parser";
+import { syncFestivalGenres } from "./festival-genres";
 import { type TimetableSlot } from "@/services/lineup-types";
 
 /** Insert timetable slots for a festival, mapping artist names to IDs. */
@@ -267,6 +268,8 @@ async function persistPFEvent(
       await insertTimetableSlots(festivalId, parsed.timetable, nameToId);
     }
   }
+
+  await syncFestivalGenres(festivalId, parsed.genres);
 
   return festivalId;
 }

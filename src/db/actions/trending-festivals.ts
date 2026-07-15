@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { festivals } from "@/db/schema";
 import { gte, gt, and, sql } from "drizzle-orm";
+import { fetchFestivalGenresByIds } from "./festival-genres";
 
 const DEFAULT_LIMIT = 6;
 const RADIUS_KM = 100;
@@ -17,7 +18,16 @@ export type TrendingFestival = {
   interestedCount: number;
   visitorsCount: number;
   distanceKm: number | null;
+  genres: string[];
 };
+
+/** Attach linked genres to the final trending rows via a single batch lookup. */
+async function attachGenres<T extends { id: string }>(
+  rows: T[]
+): Promise<(T & { genres: string[] })[]> {
+  const genresById = await fetchFestivalGenresByIds(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...r, genres: genresById.get(r.id) ?? [] }));
+}
 
 /** Combined social-proof score used to rank trending festivals across sources. */
 function trendingScore(row: { interestedCount: number; visitorsCount: number }): number {
@@ -115,9 +125,9 @@ export async function getTrendingFestivals(
       });
 
     if (nearby.length >= 3) {
-      return nearby
-        .slice(0, limit)
-        .map(({ latitude, longitude, ...rest }) => rest);
+      return attachGenres(
+        nearby.slice(0, limit).map(({ latitude, longitude, ...rest }) => rest)
+      );
     }
   }
 
@@ -134,20 +144,22 @@ export async function getTrendingFestivals(
       });
 
     if (cityMatches.length > 0) {
-      return cityMatches
-        .slice(0, limit)
-        .map(({ latitude, longitude, ...rest }) => rest);
+      return attachGenres(
+        cityMatches.slice(0, limit).map(({ latitude, longitude, ...rest }) => rest)
+      );
     }
   }
 
   // Global fallback: top trending worldwide
-  return withInterest
-    .sort((a, b) => {
-      if (trendingScore(b) !== trendingScore(a)) {
-        return trendingScore(b) - trendingScore(a);
-      }
-      return a.date.localeCompare(b.date);
-    })
-    .slice(0, limit)
-    .map(({ latitude, longitude, ...rest }) => rest);
+  return attachGenres(
+    withInterest
+      .sort((a, b) => {
+        if (trendingScore(b) !== trendingScore(a)) {
+          return trendingScore(b) - trendingScore(a);
+        }
+        return a.date.localeCompare(b.date);
+      })
+      .slice(0, limit)
+      .map(({ latitude, longitude, ...rest }) => rest)
+  );
 }

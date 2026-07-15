@@ -82,6 +82,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 | `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` |
 | `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
+| `festival_genres` | Festival↔genre join (from the Partyflock genre estimate) |
 | `festival_artists` | Lineup join between festivals and artists |
 | `festival_b2b_sets` / `festival_b2b_set_members` | Back-to-back sets split into their individual member artists |
 | `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering) |

@@ -55,6 +55,7 @@ function transformDbFestival(dbFestival: any) {
     imageUrl: dbFestival.imageUrl,
     interestedCount: dbFestival.interestedCount ?? 0,
     visitorsCount: dbFestival.visitorsCount ?? 0,
+    genres: dbFestival.genres ?? [],
     attractions: dbFestival.lineup
       ? dbFestival.lineup.map((a: any) => ({ id: a.id, name: a.name }))
       : [],
@@ -266,6 +267,10 @@ export default function FestivalDetail() {
             )}
           </div>
 
+          {event.genres?.length > 0 && (
+            <div className="festival-hero-eyebrow">{event.genres.join(' · ')}</div>
+          )}
+
           <h1 className="festival-hero-title">{event.name}</h1>
 
           <div className="festival-meta-row">
@@ -277,10 +282,10 @@ export default function FestivalDetail() {
               </div>
             )}
             {event.interestedCount > 0 && (
-              <div className="festival-meta-chip">🔥 {event.interestedCount.toLocaleString()} interested</div>
+              <span className="festival-meta-stat">🔥 {event.interestedCount.toLocaleString()} interested</span>
             )}
             {event.visitorsCount > 0 && (
-              <div className="festival-meta-chip">👥 {event.visitorsCount.toLocaleString()} going</div>
+              <span className="festival-meta-stat">👥 {event.visitorsCount.toLocaleString()} going</span>
             )}
           </div>
 

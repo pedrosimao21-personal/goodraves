@@ -4,9 +4,9 @@ import { useState, useEffect, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserData } from '../context/UserDataContext'
-import { spotifySearchArtist } from '@/services/spotify/client'
-import { getWikiImage } from '@/services/wikipedia/client'
+import { getFestivalCardImage } from '@/db/actions/festivals'
 import { formatDate } from '@/lib/format-date'
+import { parseLocalDate } from '@/lib/dates'
 
 function CalendarIcon() {
   return (
@@ -87,45 +87,31 @@ export default memo(function FestivalCard({ event }: { event: any }) {
   const artistCount = event.attractions?.length ?? 0
   
   // Check if event is in the future
-  const isFuture = event.date && new Date(event.date + 'T00:00:00') > new Date()
+  const isFuture = event.date && parseLocalDate(event.date) > new Date()
 
   // Spotify image fallback for events without images
   const [fallbackImage, setFallbackImage] = useState<string | null>(null)
   
   useEffect(() => {
     if (event.image) return
-    let cancelled = false
-    
-    const fetchWikiFallback = async () => {
-      if (cancelled) return
-      let img: string | null = null
-      // Try venue name first
-      if (event.venue?.name) {
-        try { img = await getWikiImage(event.venue.name) } catch { /* wiki image unavailable for venue */ }
-      }
-      // If no venue image found, try city name
-      if (!img && event.venue?.city) {
-        try { img = await getWikiImage(event.venue.city) } catch { /* wiki image unavailable for city */ }
-      }
-      if (!cancelled && img) setFallbackImage(img)
-    }
 
-    if (artistCount > 0) {
-      const mainArtist = event.attractions[0].name
-      ;(spotifySearchArtist(mainArtist) as unknown as Promise<any>)
-        .then((sp: any) => {
-          if (!cancelled) {
-            if (sp?.image) setFallbackImage(sp.image)
-            else fetchWikiFallback()
-          }
-        })
-        .catch(() => { if (!cancelled) fetchWikiFallback() })
-    } else {
-      fetchWikiFallback()
-    }
+    const mainArtist = artistCount > 0 ? event.attractions[0].name : null
+    const venueName = event.venue?.name ?? null
+    const city = event.venue?.city ?? null
+    // Nothing to look an image up from — don't fire the RPC (which also does a
+    // rate-limit DB write) for a card with no artist, venue, or city.
+    if (!mainArtist && !venueName && !city) return
+
+    let cancelled = false
+
+    // Single gated action: tries the main artist's Spotify image, then a
+    // Wikipedia thumbnail for the venue, then the city (server-side).
+    getFestivalCardImage({ mainArtist, venueName, city })
+      .then((img) => { if (!cancelled && img) setFallbackImage(img) })
+      .catch(() => { /* fallback image unavailable */ })
 
     return () => { cancelled = true }
-  }, [event.image, artistCount, event.attractions, event.venue?.city])
+  }, [event.image, artistCount, event.attractions, event.venue?.name, event.venue?.city])
 
   const displayImage = event.image || fallbackImage
 

@@ -1,4 +1,10 @@
-"use server";
+/**
+ * Wikipedia (pageimages) client.
+ *
+ * NOTE: plain server-only transport module — deliberately NOT `"use server"`
+ * (that would expose it as a public Server Action). Call only from
+ * `src/db/actions/*`.
+ */
 
 const THUMBNAIL_SIZE = 600;
 const CACHE_REVALIDATE_SECONDS = 86400;

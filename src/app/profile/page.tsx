@@ -67,22 +67,35 @@ export default function ProfilePage() {
         const city = profile.city ?? ''
         const genres = profile.favoriteGenres ?? ''
 
-        // Migrate localStorage → DB if DB is empty but localStorage has data
+        // Migrate localStorage → DB if DB is empty but localStorage has data.
+        // Only drop the localStorage copy once the DB write actually succeeds,
+        // otherwise a failed save would lose the data on both sides.
         if (!city && localCity) {
-          await updateUserProfile({ city: localCity }).catch(() => {})
-          localStorage.removeItem('user_location')
+          // Show the value in the field regardless, but only mark it "saved"
+          // (i.e. persisted to the account) once the DB write actually succeeds
+          // — otherwise the UI leaves it as an unsaved change the user can retry.
           setLocationInput(localCity)
-          setLocationSaved(localCity)
+          try {
+            await updateUserProfile({ city: localCity })
+            localStorage.removeItem('user_location')
+            setLocationSaved(localCity)
+          } catch (err) {
+            console.error('[profile] Failed to migrate city to DB; keeping localStorage copy:', err)
+          }
         } else {
           setLocationInput(city)
           setLocationSaved(city)
         }
 
         if (!genres && localGenres) {
-          await updateUserProfile({ favoriteGenres: localGenres }).catch(() => {})
-          localStorage.removeItem('user_genres')
           setGenreInput(localGenres)
-          setGenresSaved(localGenres)
+          try {
+            await updateUserProfile({ favoriteGenres: localGenres })
+            localStorage.removeItem('user_genres')
+            setGenresSaved(localGenres)
+          } catch (err) {
+            console.error('[profile] Failed to migrate genres to DB; keeping localStorage copy:', err)
+          }
           if (localGenres) loadTailoredShows(localGenres)
         } else {
           setGenreInput(genres)

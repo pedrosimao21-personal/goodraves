@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserData } from '@/context/UserDataContext'
+import { parseLocalDate } from '@/lib/dates'
 import TimelineCard from './TimelineCard'
 
 const MONTHS = [
@@ -22,7 +23,7 @@ function buildFestivalList(
     .map(id => {
       const meta = getFestivalMeta(id)
       const date = meta?.date ?? null
-      const parsedDate = date ? new Date(date + 'T00:00:00') : null
+      const parsedDate = date ? parseLocalDate(date) : null
       const year = parsedDate ? parsedDate.getFullYear() : null
       const month = parsedDate ? parsedDate.getMonth() + 1 : null
       const seenArtists = (seenArtistsMap[id] ?? []).map(aid => ({

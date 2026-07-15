@@ -51,13 +51,18 @@ export const festivals = pgTable("festivals", {
   uniqueIndex("festivals_name_date_idx").on(t.name, t.date),
   index("festivals_date_idx").on(t.date),
   index("festivals_source_idx").on(t.source),
+  index("festivals_interested_count_idx").on(sql`${t.interestedCount} DESC`),
+  // Trigram GIN indexes backing the leading-wildcard ILIKE free-text search.
+  index("festivals_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
+  index("festivals_venue_trgm_idx").using("gin", sql`${t.venue} gin_trgm_ops`),
+  index("festivals_location_trgm_idx").using("gin", sql`${t.location} gin_trgm_ops`),
 ]);
 
 // ── Artists ────────────────────────────────────────────
 // Defined before festival_artists so the FK reference resolves correctly.
 export const artists = pgTable("artists", {
   id: uuid("id").defaultRandom().primaryKey(),
-  name: text("name").notNull().unique(),
+  name: text("name").notNull(),
   // Spotify cache
   spotifyId: text("spotify_id"),
   imageUrl: text("image_url"),
@@ -83,7 +88,16 @@ export const artists = pgTable("artists", {
   countryCode: text("country_code"),    // ISO code, e.g. "BE", "DE", "UK"
   countryName: text("country_name"),    // Full name, e.g. "Belgium", "Germany"
 }, (t) => [
+  // Case-insensitive uniqueness on name (there is NO plain unique on name in
+  // prod). Artist inserts use onConflictDoNothing() with no explicit target and
+  // rely on this index to dedupe "Boris" / "boris".
+  uniqueIndex("artists_name_ci_unique").on(sql`lower(${t.name})`),
+  index("artists_name_lower_idx").on(sql`lower(${t.name})`),
+  // Partial index — only rows enriched from Resident Advisor carry a ra id.
+  index("artists_ra_artist_id_idx").on(t.raArtistId).where(sql`${t.raArtistId} IS NOT NULL`),
   index("artists_spotify_followers_idx").on(t.spotifyFollowers),
+  // Trigram GIN index backing the artist-name ILIKE match in festival search.
+  index("artists_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
 ]);
 
 // ── Festival Artists (lineup join table) ───────────────

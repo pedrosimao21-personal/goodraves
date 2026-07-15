@@ -11,7 +11,10 @@
  */
 
 // Search
-export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents } from "./festival-search";
+export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents, resolvePartyflockSlug } from "./festival-search";
+
+// Fallback card image (gated Spotify/Wikipedia proxy)
+export { getFestivalCardImage } from "./festival-card-image";
 
 // Data reads
 export { getFestival, getFestivalMeta, getFullUserData, getTimetable } from "./festival-data";
@@ -53,6 +56,3 @@ export { reimportPFEvent, refreshPFEvent, fetchPFEvent, fetchPFEventImageUrl } f
 
 // Admin re-import (clears and re-fetches lineup from source)
 export { reimportFestival } from "./festival-reimport";
-
-// FestivalFans slug extraction (re-exported from service for backward compat)
-export { extractFFSlug } from "@/services/festivalfans/client";

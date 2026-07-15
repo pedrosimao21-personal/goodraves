@@ -1,9 +1,13 @@
-"use server";
-
 /**
  * Resident Advisor GraphQL API client.
  * Handles all HTTP communication with ra.co/graphql.
+ *
+ * NOTE: plain server-only transport module — deliberately NOT `"use server"`
+ * (that would expose every function as a public Server Action). Call only from
+ * `src/db/actions/*`.
  */
+
+import { toIsoDate } from "@/lib/dates";
 
 const RA_GRAPHQL_URL = "https://ra.co/graphql";
 const RA_USER_AGENT = "Mozilla/5.0";
@@ -216,7 +220,7 @@ export async function fetchRArtistEvents(raArtistId: string): Promise<RAUpcoming
     const artistData = json?.data?.artist;
     if (!artistData) return [];
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = toIsoDate(new Date());
 
     return (artistData.events ?? [])
       .filter((e: any) => e?.id && e.date >= todayStr)
@@ -321,7 +325,7 @@ export async function fetchRArtistByName(artistName: string): Promise<RArtistDat
       return emptyResult;
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = toIsoDate(new Date());
 
     const events: RAUpcomingEvent[] = (artistData.events ?? [])
       .filter((e: any) => {

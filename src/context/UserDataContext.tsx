@@ -59,10 +59,17 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     if (userId === userIdRef.current && loaded) return
     userIdRef.current = userId
 
-    getFullUserData().then((data) => {
-      setState(transformDbData(data))
-      setLoaded(true)
-    })
+    getFullUserData()
+      .then((data) => {
+        setState(transformDbData(data))
+        setLoaded(true)
+      })
+      .catch((err) => {
+        // Don't leave the UI stuck on the loading skeleton forever — surface the
+        // failure and mark loaded so the app renders with whatever state we have.
+        console.error('[UserDataContext] Failed to load user data:', err)
+        setLoaded(true)
+      })
   }, [userId, status])
 
   // ── Mutation helpers ──

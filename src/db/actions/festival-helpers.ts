@@ -1,11 +1,12 @@
 import { db } from "@/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { headers } from "next/headers";
+import { getClientIp } from "@/lib/client-ip";
 import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers, users } from "@/db/schema";
 import { auth } from "../../../auth";
 import { MIN_RATING, MAX_RATING } from "@/lib/constants";
 import { isRateLimited } from "@/db/rate-limit";
-import { type B2bLineupEntry } from "@/services/lineup-types";
+import { type B2bLineupEntry, type LineupEntry, flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 import { normalizeArtistName } from "@/utils/text-normalizer";
 
 // Re-export shared constants so existing server-side imports keep working
@@ -67,8 +68,7 @@ export async function enforceRateLimit(
   const userId = await getOptionalUserId();
   let identifier = userId ? `user:${userId}` : null;
   if (!identifier) {
-    const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim();
-    identifier = `ip:${ip || "unknown"}`;
+    identifier = `ip:${getClientIp(await headers())}`;
   }
   if (await isRateLimited(identifier, action, maxAttempts, windowMs)) {
     throw new Error("Too many requests. Please slow down and try again shortly.");
@@ -190,4 +190,62 @@ export async function deleteB2bSets(festivalId: string): Promise<void> {
   await db
     .delete(festivalB2bSets)
     .where(eq(festivalB2bSets.festivalId, festivalId));
+}
+
+/**
+ * Backfill a festival's image when it was imported without one. Reads the
+ * current row, and only if it has no image calls `fetchImageUrl` (the
+ * source-specific fetch) and stores the result. Shared by every importer's
+ * "already exists, just top up the image" path.
+ */
+export async function backfillMissingImage(
+  festivalId: string,
+  fetchImageUrl: () => Promise<string | null>
+): Promise<void> {
+  const [row] = await db
+    .select({ imageUrl: festivals.imageUrl })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+
+  if (row?.imageUrl) return;
+
+  const imageUrl = await fetchImageUrl();
+  if (!imageUrl) return;
+
+  await db
+    .update(festivals)
+    .set({ imageUrl })
+    .where(eq(festivals.id, festivalId));
+}
+
+/**
+ * Persist a festival's lineup: ensure the artists exist, link them to the
+ * festival, and create any B2B sets. Returns the name→artistId map so callers
+ * can do source-specific follow-up work (e.g. RA's ra_artist_id backfill, PF's
+ * timetable slots) without re-querying. Assumes any prior lineup was already
+ * cleared by the caller on a forced re-import.
+ */
+export async function persistLineup(
+  festivalId: string,
+  lineupEntries: LineupEntry[]
+): Promise<Record<string, string>> {
+  const allNames = flattenLineupNames(lineupEntries);
+  if (allNames.length === 0) return {};
+
+  const nameToId = await ensureArtistsAndGetIds(allNames);
+
+  const rows = allNames
+    .filter((name) => nameToId[name])
+    .map((name) => ({ festivalId, artistId: nameToId[name] }));
+  if (rows.length > 0) {
+    await db.insert(festivalArtists).values(rows).onConflictDoNothing();
+  }
+
+  const b2bEntries = filterB2bEntries(lineupEntries);
+  if (b2bEntries.length > 0) {
+    await createB2bSets(festivalId, b2bEntries, nameToId);
+  }
+
+  return nameToId;
 }

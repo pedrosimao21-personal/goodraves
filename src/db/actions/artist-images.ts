@@ -7,13 +7,12 @@ import {
   spotifySearchArtist,
   spotifyGetArtistsBatch,
 } from "@/services/spotify/client";
-
-const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
+import { SPOTIFY_STALE_MS } from "@/lib/constants";
 
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
   const ms = fetchedAt instanceof Date ? fetchedAt.getTime() : new Date(fetchedAt).getTime();
-  return Date.now() - ms > TWO_MONTHS_MS;
+  return Date.now() - ms > SPOTIFY_STALE_MS;
 }
 
 type SpotifyResult = Awaited<ReturnType<typeof spotifySearchArtist>>;

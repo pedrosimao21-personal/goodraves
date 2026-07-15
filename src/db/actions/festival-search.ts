@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, sql } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { festivals, festivalArtists, artists } from "@/db/schema";
 import { MAX_QUERY_LENGTH, SEARCH_CACHE_TTL_MS, enforceRateLimit } from "./festival-helpers";
 import { RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
@@ -36,8 +36,13 @@ export async function searchFestivalsDB(query: string) {
   const escaped = query.replace(/[%_\\]/g, "\\$&");
   const pattern = `%${escaped}%`;
 
+  // The artist-name match is an EXISTS subquery rather than a join, so the main
+  // query never fans out one row per lineup artist (which previously forced a
+  // selectDistinctOn over the whole festivals⋈festival_artists⋈artists product).
+  // Combined with the pg_trgm GIN indexes (see migrations), each ILIKE '%q%' can
+  // use an index instead of a full scan.
   const results = await db
-    .selectDistinctOn([festivals.id], {
+    .select({
       id: festivals.id,
       name: festivals.name,
       date: festivals.date,
@@ -51,12 +56,23 @@ export async function searchFestivalsDB(query: string) {
       imageUrl: festivals.imageUrl,
     })
     .from(festivals)
-    .leftJoin(festivalArtists, eq(festivals.id, festivalArtists.festivalId))
-    .leftJoin(artists, eq(festivalArtists.artistId, artists.id))
     .where(
-      sql`${festivals.name} ILIKE ${pattern} OR ${festivals.venue} ILIKE ${pattern} OR ${festivals.location} ILIKE ${pattern} OR ${artists.name} ILIKE ${pattern}`
+      sql`${festivals.name} ILIKE ${pattern}
+        OR ${festivals.venue} ILIKE ${pattern}
+        OR ${festivals.location} ILIKE ${pattern}
+        OR EXISTS (
+          SELECT 1 FROM ${festivalArtists}
+          JOIN ${artists} ON ${artists.id} = ${festivalArtists.artistId}
+          WHERE ${festivalArtists.festivalId} = ${festivals.id}
+            AND ${artists.name} ILIKE ${pattern}
+        )`
     )
-    .orderBy(festivals.id, festivals.date)
+    // Newest first: with the SEARCH_RESULTS_LIMIT cap, a broad term (e.g. a city
+    // in venue/location) can match more than 100 rows. Ordering by date DESC
+    // keeps upcoming/recent editions and drops the oldest past ones, rather than
+    // the reverse. Past festivals are still searchable (no date floor) — just not
+    // when a single query overflows the cap.
+    .orderBy(desc(festivals.date))
     .limit(SEARCH_RESULTS_LIMIT);
 
   return results;
@@ -199,4 +215,15 @@ export async function searchPFEvents(query: string) {
   pfSearchCache.set(cacheKey, { data: mapped, ts: Date.now() });
   evictOldestIfNeeded(pfSearchCache);
   return mapped;
+}
+
+/**
+ * Resolve a Partyflock event slug (from a pasted /event/<slug> URL) to its
+ * numeric party ID. Gated wrapper around the transport client so this network
+ * call is only reachable as a rate-limited action, never as a raw endpoint.
+ */
+export async function resolvePartyflockSlug(slug: string): Promise<string | null> {
+  if (!slug || slug.length > MAX_QUERY_LENGTH) return null;
+  await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
+  return resolvePFEventSlug(slug);
 }

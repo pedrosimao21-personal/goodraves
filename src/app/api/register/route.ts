@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { isRateLimited } from "@/db/rate-limit";
+import { getClientIp } from "@/lib/client-ip";
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -13,7 +14,7 @@ const MIN_PASSWORD_LENGTH = 6;
 // bcrypt silently truncates input at 72 bytes; cap length to avoid a false sense
 // of added strength (and to bound hashing cost on absurdly long input).
 const MAX_PASSWORD_LENGTH = 128;
-const BCRYPT_SALT_ROUNDS = 10;
+const BCRYPT_SALT_ROUNDS = 12;
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = getClientIp(req.headers);
     if (await isRateLimited(ip, "register", RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },

@@ -3,33 +3,12 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists, festivalTimetableSlots } from "@/db/schema";
-import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
+import { toIsoDate } from "@/lib/dates";
 import { parsePFEventPage } from "@/services/partyflock/parser";
-import { flattenLineupNames, filterB2bEntries, type TimetableSlot } from "@/services/lineup-types";
-
-/** Fetch and store imageUrl for a festival that was imported without one. */
-async function backfillMissingImage(festivalId: string, partyId: string): Promise<void> {
-  const [row] = await db
-    .select({ imageUrl: festivals.imageUrl })
-    .from(festivals)
-    .where(eq(festivals.id, festivalId))
-    .limit(1);
-
-  if (row?.imageUrl) return;
-
-  const html = await fetchPFEventHtml(partyId);
-  if (!html) return;
-
-  const parsed = parsePFEventPage(html);
-  if (!parsed.imageUrl) return;
-
-  await db
-    .update(festivals)
-    .set({ imageUrl: parsed.imageUrl })
-    .where(eq(festivals.id, festivalId));
-}
+import { type TimetableSlot } from "@/services/lineup-types";
 
 /** Insert timetable slots for a festival, mapping artist names to IDs. */
 async function insertTimetableSlots(
@@ -140,7 +119,7 @@ export async function importPFEvent(
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
     if (hasExisting) {
-      await backfillMissingImage(festivalId, partyId);
+      await backfillMissingImage(festivalId, () => fetchPFEventImageUrl(partyId));
       return festivalId;
     }
   }
@@ -164,7 +143,7 @@ export async function fetchPFEvent(
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
     if (hasExisting) {
-      await backfillMissingImage(festivalId, partyId);
+      await backfillMissingImage(festivalId, () => fetchPFEventImageUrl(partyId));
       return festivalId;
     }
   }
@@ -209,7 +188,7 @@ async function persistPFEvent(
 ): Promise<string | null> {
   if (!parsed.name) return null;
 
-  const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+  const date = parsed.date ?? toIsoDate(new Date());
 
   if (!opts?.skipNameDateDedupe) {
     const existingId = await findExistingFestivalByNameDate(parsed.name, date);
@@ -282,21 +261,7 @@ async function persistPFEvent(
   }
 
   if (parsed.lineup.length > 0) {
-    const allNames = flattenLineupNames(parsed.lineup);
-    const nameToId = await ensureArtistsAndGetIds(allNames);
-    await db
-      .insert(festivalArtists)
-      .values(
-        allNames
-          .filter((artistName) => nameToId[artistName])
-          .map((artistName) => ({ festivalId, artistId: nameToId[artistName] }))
-      )
-      .onConflictDoNothing();
-
-    const b2bEntries = filterB2bEntries(parsed.lineup);
-    if (b2bEntries.length > 0) {
-      await createB2bSets(festivalId, b2bEntries, nameToId);
-    }
+    const nameToId = await persistLineup(festivalId, parsed.lineup);
 
     if (parsed.timetable.length > 0) {
       await insertTimetableSlots(festivalId, parsed.timetable, nameToId);

@@ -1,11 +1,19 @@
-"use server";
-
 /**
  * FestivalFans.nl API client.
  * Handles all HTTP communication with festivalfans.nl.
+ *
+ * NOTE: this is a plain server-only transport module — it is deliberately NOT a
+ * `"use server"` action module. Marking it `"use server"` would register every
+ * exported function as a public, unauthenticated Server Action endpoint (SSRF /
+ * quota abuse). Call these functions only from `src/db/actions/*`, which apply
+ * auth and rate limiting.
  */
 
 const FF_BASE_URL = "https://festivalfans.nl";
+const FF_HOST = "festivalfans.nl";
+// Slugs are lowercase alphanumerics + hyphens; reject anything else so a caller
+// can't smuggle path traversal or query params into the target URL.
+const FF_SLUG_RE = /^[a-z0-9-]+$/i;
 const FF_USER_AGENT =
   "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
@@ -52,6 +60,9 @@ export async function resolveFFSlug(url: string): Promise<string | null> {
     const permalink = url.startsWith("http")
       ? url
       : `${FF_BASE_URL}${url}`;
+    // SSRF guard: only ever issue requests to festivalfans.nl, regardless of
+    // what the caller passed. An absolute URL to any other host is rejected.
+    if (new URL(permalink).host !== FF_HOST) return null;
     const headRes = await fetch(permalink, {
       method: "HEAD",
       redirect: "manual",
@@ -71,6 +82,7 @@ export async function resolveFFSlug(url: string): Promise<string | null> {
 export async function fetchFFEventHtml(
   slug: string
 ): Promise<string | null> {
+  if (!FF_SLUG_RE.test(slug)) return null;
   try {
     const res = await fetch(`${FF_BASE_URL}/event/${slug}/`, {
       headers: {

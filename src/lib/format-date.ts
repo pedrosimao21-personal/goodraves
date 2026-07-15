@@ -1,3 +1,5 @@
+import { parseLocalDate } from './dates'
+
 const DATE_TBA = 'Date TBA'
 
 type DateFormatPreset = 'short' | 'long' | 'timeline'
@@ -13,6 +15,6 @@ export function formatDate(
   preset: DateFormatPreset = 'short'
 ): string {
   if (!dateStr) return DATE_TBA
-  const d = new Date(dateStr + 'T00:00:00')
+  const d = parseLocalDate(dateStr)
   return d.toLocaleDateString('en-US', FORMAT_OPTIONS[preset])
 }

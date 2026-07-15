@@ -91,9 +91,9 @@ server-side on first load. State-shaping helpers (`transformDbData`, `buildUpser
 live in `user-data-state.ts`; read selectors in `use-user-data-readers.ts`.
 
 **Auth:** NextAuth v5 (beta) Credentials provider in `auth.ts` (bcrypt password hashes,
-JWT sessions, login rate-limited 10/15min via `rate-limit.ts`). `middleware.ts` protects
-`/dashboard/*`. Admin actions are gated by username allowlist `ADMIN_USERNAMES` in
-`src/lib/constants.ts`.
+JWT sessions, login rate-limited per IP+username via `rate-limit.ts`). `middleware.ts` protects
+`/dashboard/*`. Admin actions are gated by the `users.isAdmin` boolean column, re-checked
+against the DB in `requireAdmin()` (`festival-helpers.ts`) on every admin action.
 
 ## Database & migrations
 
@@ -119,7 +119,8 @@ Workflow: edit `schema.ts` (ORM types) **and** author a migration
 **no auto-diff** between `schema.ts` and migrations — keep them consistent yourself. See
 `migrations/README.md` for the full workflow and the one-time baseline procedure.
 
-Key tables: `festivals` (PK is text like `ra-2403879`; `source` is `"ra"|"custom"|"external"`),
+Key tables: `festivals` (PK is text like `ra-2403879`; `source` is
+`"ra"|"custom"|"external"|"festivalfans"|"partyflock"`),
 `artists`, `festival_artists` (lineup join), `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings`, `user_artist_global`, `festival_b2b_sets`/`_members`
 (splitting back-to-back DJ sets into individuals), `festival_timetable_slots`.

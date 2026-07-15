@@ -3,33 +3,11 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
-import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchFFEventHtml } from "@/services/festivalfans/client";
+import { toIsoDate } from "@/lib/dates";
 import { parseFFEventPage } from "@/services/festivalfans/parser";
-import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
-
-/** Fetch and store imageUrl for a festival that was imported without one. */
-async function backfillMissingImage(festivalId: string, slug: string): Promise<void> {
-  const [row] = await db
-    .select({ imageUrl: festivals.imageUrl })
-    .from(festivals)
-    .where(eq(festivals.id, festivalId))
-    .limit(1);
-
-  if (row?.imageUrl) return;
-
-  const html = await fetchFFEventHtml(slug);
-  if (!html) return;
-
-  const parsed = parseFFEventPage(html);
-  if (!parsed.imageUrl) return;
-
-  await db
-    .update(festivals)
-    .set({ imageUrl: parsed.imageUrl })
-    .where(eq(festivals.id, festivalId));
-}
 
 /** Fetch only the og:image URL for a FestivalFans.nl event by slug. */
 export async function fetchFFEventImageUrl(slug: string): Promise<string | null> {
@@ -69,7 +47,7 @@ export async function fetchFFEvent(
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
     if (hasExisting) {
-      await backfillMissingImage(festivalId, slug);
+      await backfillMissingImage(festivalId, () => fetchFFEventImageUrl(slug));
       return festivalId;
     }
   }
@@ -83,7 +61,7 @@ export async function fetchFFEvent(
   const parsed = parseFFEventPage(html);
   if (!parsed.name) return null;
 
-  const date = parsed.date ?? new Date().toISOString().slice(0, 10);
+  const date = parsed.date ?? toIsoDate(new Date());
 
   const existingId = await findExistingFestivalByNameDate(parsed.name, date);
   if (existingId && existingId !== festivalId) {
@@ -147,23 +125,7 @@ export async function fetchFFEvent(
       });
   }
 
-  if (parsed.lineup.length > 0) {
-    const allNames = flattenLineupNames(parsed.lineup);
-    const nameToId = await ensureArtistsAndGetIds(allNames);
-    await db
-      .insert(festivalArtists)
-      .values(
-        allNames
-          .filter((name) => nameToId[name])
-          .map((name) => ({ festivalId, artistId: nameToId[name] }))
-      )
-      .onConflictDoNothing();
-
-    const b2bEntries = filterB2bEntries(parsed.lineup);
-    if (b2bEntries.length > 0) {
-      await createB2bSets(festivalId, b2bEntries, nameToId);
-    }
-  }
+  await persistLineup(festivalId, parsed.lineup);
 
   return festivalId;
 }

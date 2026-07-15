@@ -1,4 +1,10 @@
-"use server";
+/**
+ * Last.fm API client.
+ *
+ * NOTE: plain server-only transport module — deliberately NOT `"use server"`
+ * (that would expose every function as a public Server Action). Call only from
+ * `src/db/actions/*`.
+ */
 
 const BASE_URL = "https://ws.audioscrobbler.com/2.0/";
 const API_KEY = process.env.LASTFM_KEY;

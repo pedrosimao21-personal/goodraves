@@ -21,12 +21,11 @@ import {
   RATE_LIMIT_CACHE_MAX,
   RATE_LIMIT_SEARCH_MAX,
   RATE_LIMIT_WINDOW_MS,
+  SPOTIFY_STALE_MS,
+  LASTFM_STALE_MS,
+  RELATED_ARTISTS_STALE_MS,
+  RA_EVENTS_STALE_MS,
 } from "@/lib/constants";
-
-const TWO_MONTHS_MS = 1000 * 60 * 60 * 24 * 60;
-const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
-const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
-const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 
 // Keywords that indicate an artist is in the electronic music space.
 // Used to validate Last.fm data before storing it — prevents saving wrong
@@ -50,23 +49,23 @@ function isElectronicRelevant(bio: string, tags: string[]): boolean {
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
   const ms = fetchedAt instanceof Date ? fetchedAt.getTime() : new Date(fetchedAt).getTime();
-  return Date.now() - ms > TWO_MONTHS_MS;
+  return Date.now() - ms > SPOTIFY_STALE_MS;
 }
 
 function isStaleLastfm(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
   const ms = fetchedAt instanceof Date ? fetchedAt.getTime() : new Date(fetchedAt).getTime();
-  return Date.now() - ms > ONE_WEEK_MS;
+  return Date.now() - ms > LASTFM_STALE_MS;
 }
 
 function isStaleRelatedArtists(fetchedAt: Date | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - fetchedAt.getTime() > THIRTY_DAYS_MS;
+  return Date.now() - fetchedAt.getTime() > RELATED_ARTISTS_STALE_MS;
 }
 
 function isStaleRAEvents(fetchedAt: Date | null | undefined): boolean {
   if (!fetchedAt) return true;
-  return Date.now() - fetchedAt.getTime() > ONE_DAY_MS;
+  return Date.now() - fetchedAt.getTime() > RA_EVENTS_STALE_MS;
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -103,9 +102,39 @@ type LastfmTrack = { name: string; playcount: number; url: string | null; listen
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function parseJson<T>(value: string | null | undefined, fallback: T): T {
-  if (!value) return fallback;
-  try { return JSON.parse(value) as T; } catch { return fallback; }
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null;
+}
+
+// Shape guards for the cached JSON columns. Deliberately minimal — they check
+// the identifying required fields so a stale/schema-drifted blob can't flow to
+// the UI as if valid; optional/nullable fields are left to the consumer.
+const isSpotifyAlbum = (x: unknown): x is SpotifyAlbum =>
+  isRecord(x) && typeof x.id === "string" && typeof x.name === "string";
+const isRelatedArtist = (x: unknown): x is RelatedArtist =>
+  isRecord(x) && typeof x.id === "string" && typeof x.name === "string";
+const isLastfmSimilar = (x: unknown): x is LastfmSimilar =>
+  isRecord(x) && typeof x.name === "string";
+const isLastfmTrack = (x: unknown): x is LastfmTrack =>
+  isRecord(x) && typeof x.name === "string";
+const isRAUpcomingEvent = (x: unknown): x is RAUpcomingEvent =>
+  isRecord(x) && typeof x.id === "string" && typeof x.date === "string";
+
+/**
+ * Parse a cached JSON array column, dropping any element that fails its shape
+ * guard (and returning [] for null / parse errors / a non-array payload). This
+ * stops a stale or schema-drifted blob from reaching the UI as if valid — e.g.
+ * an old spotifyAlbums shape missing fields the artist page reads.
+ */
+function parseJsonArray<T>(
+  value: string | null | undefined,
+  isValid: (item: unknown) => item is T
+): T[] {
+  if (!value) return [];
+  let parsed: unknown;
+  try { parsed = JSON.parse(value); } catch { return []; }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(isValid);
 }
 
 function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
@@ -115,17 +144,17 @@ function rowToArtistData(row: typeof artists.$inferSelect): ArtistData {
     spotifyId: row.spotifyId ?? null,
     imageUrl: row.imageUrl ?? null,
     spotifyFollowers: row.spotifyFollowers ?? null,
-    spotifyAlbums: parseJson<SpotifyAlbum[]>(row.spotifyAlbums, []),
-    relatedArtists: parseJson<RelatedArtist[]>(row.relatedArtists, []),
+    spotifyAlbums: parseJsonArray(row.spotifyAlbums, isSpotifyAlbum),
+    relatedArtists: parseJsonArray(row.relatedArtists, isRelatedArtist),
     lastfmId: row.lastfmId ?? null,
     lastfmBio: row.lastfmBio ?? null,
     genres: [], // populated separately from artist_genres table
     lastfmListeners: row.lastfmListeners ?? null,
     lastfmPlaycount: row.lastfmPlaycount ?? null,
-    lastfmSimilar: parseJson<LastfmSimilar[]>(row.lastfmSimilar, []),
-    lastfmTopTracks: parseJson<LastfmTrack[]>(row.lastfmTopTracks, []),
+    lastfmSimilar: parseJsonArray(row.lastfmSimilar, isLastfmSimilar),
+    lastfmTopTracks: parseJsonArray(row.lastfmTopTracks, isLastfmTrack),
     raArtistId: row.raArtistId ?? null,
-    raUpcomingEvents: parseJson<RAUpcomingEvent[]>(row.raUpcomingEvents, []),
+    raUpcomingEvents: parseJsonArray(row.raUpcomingEvents, isRAUpcomingEvent),
     countryCode: row.countryCode ?? null,
     countryName: row.countryName ?? null,
   };

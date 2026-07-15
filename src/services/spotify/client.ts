@@ -1,4 +1,10 @@
-"use server";
+/**
+ * Spotify Web API client.
+ *
+ * NOTE: plain server-only transport module — deliberately NOT `"use server"`
+ * (that would expose every function, incl. the token flow, as a public Server
+ * Action and let anyone burn our API quota). Call only from `src/db/actions/*`.
+ */
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;

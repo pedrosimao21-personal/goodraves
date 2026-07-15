@@ -4,6 +4,7 @@
  */
 
 import { type RAEventRaw } from "./client";
+import { toIsoDate } from "@/lib/dates";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 import {
   type LineupEntry,
@@ -221,10 +222,10 @@ export function mapRAEventToSearchResult(e: RAEventRaw): RASearchResult | null {
   if (!e?.id) return null;
 
   const date = e.startTime
-    ? new Date(e.startTime).toISOString().slice(0, 10)
+    ? toIsoDate(new Date(e.startTime))
     : null;
   const endDate = e.endTime
-    ? new Date(e.endTime).toISOString().slice(0, 10)
+    ? toIsoDate(new Date(e.endTime))
     : null;
 
   const venueName = e.venue?.name ?? null;

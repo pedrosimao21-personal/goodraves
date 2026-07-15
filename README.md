@@ -79,7 +79,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 | Table | Purpose |
 |---|---|
 | `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
-| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, or `"external"`. Includes Partyflock `interested_count`/`visitors_count` |
+| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` |
 | `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
 | `festival_artists` | Lineup join between festivals and artists |

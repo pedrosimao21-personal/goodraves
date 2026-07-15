@@ -13,7 +13,7 @@ import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
 import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
 import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
-import { fetchUserDataForId } from "./get-initial-data";
+import { fetchUserDataForId } from "./user-data-query";
 
 // ── Get a single festival with its lineup ──────────────
 

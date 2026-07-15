@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { parseLocalDate } from '@/lib/dates'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 400
@@ -169,7 +170,7 @@ function HistoryView({
                   {fest.name}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {fest.date ? new Date(fest.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA'}
+                  {fest.date ? parseLocalDate(fest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date TBA'}
                 </div>
               </div>
               {setRating > 0 && <InlineStarRating rating={setRating} size="sm" />}

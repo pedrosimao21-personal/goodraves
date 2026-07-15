@@ -15,8 +15,8 @@ import {
   searchPFEvents,
   fetchPFEvent,
   fetchPFEventImageUrl,
+  resolvePartyflockSlug,
 } from '@/db/actions/festivals'
-import { resolvePFEventSlug } from '@/services/partyflock/client'
 import { type SearchFilters as SearchFiltersType, EMPTY_FILTERS } from '@/lib/search-filters'
 import {
   extractFilterOptions,
@@ -150,7 +150,7 @@ export default function SearchSection() {
       if (!pfPartyId) {
         const pfSlug = extractPFEventSlugLocal(q)
         if (pfSlug) {
-          pfPartyId = await resolvePFEventSlug(pfSlug)
+          pfPartyId = await resolvePartyflockSlug(pfSlug)
         }
       }
       if (pfPartyId) {

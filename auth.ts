@@ -4,10 +4,15 @@ import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { isRateLimited } from "@/db/rate-limit";
+import { getClientIp } from "@/lib/client-ip";
 
 const LOGIN_RATE_LIMIT_MAX = 10;
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+// Shorter than NextAuth's 30-day default — this app has an admin surface, and a
+// shorter session bounds how long a leaked/stale JWT stays valid.
+const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -22,8 +27,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!username || !password) return null;
 
-        // Rate limit login attempts per username
-        if (await isRateLimited(username, "login", LOGIN_RATE_LIMIT_MAX, LOGIN_RATE_LIMIT_WINDOW_MS)) {
+        // Rate limit login attempts per (IP, username). Keying on the username
+        // alone would let an attacker lock a victim out by burning their bucket
+        // with bad passwords from anywhere; combining with the caller's IP keeps
+        // the victim's own IP+username bucket clean. The IP-only limit in the
+        // /api/auth POST route additionally caps per-IP brute force.
+        const ip = getClientIp(await headers());
+        if (await isRateLimited(`${ip}:${username}`, "login", LOGIN_RATE_LIMIT_MAX, LOGIN_RATE_LIMIT_WINDOW_MS)) {
           throw new Error("Too many login attempts. Please try again later.");
         }
 
@@ -49,6 +59,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   pages: {
     signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
   },
   callbacks: {
     jwt({ token, user }) {

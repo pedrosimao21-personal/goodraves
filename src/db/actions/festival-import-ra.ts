@@ -3,32 +3,13 @@
 import { db } from "@/db";
 import { eq, inArray, sql } from "drizzle-orm";
 import { artists, festivals, festivalArtists } from "@/db/schema";
-import { requireAdmin, enforceRateLimit, ensureArtistsAndGetIds, checkExistingLineup, findExistingFestivalByNameDate, createB2bSets, deleteB2bSets } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchRAEventRaw } from "@/services/ra/client";
+import { toIsoDate } from "@/lib/dates";
 import { parseRALineup } from "@/services/ra/parser";
-import { flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 import { geocodeLocation } from "@/utils/geocoding";
-
-/** Fetch and store imageUrl for an RA event that was imported without one. */
-async function backfillMissingImage(festivalId: string, raId: string): Promise<void> {
-  const [row] = await db
-    .select({ imageUrl: festivals.imageUrl })
-    .from(festivals)
-    .where(eq(festivals.id, festivalId))
-    .limit(1);
-
-  if (row?.imageUrl) return;
-
-  const imageUrl = await fetchRAEventImageUrl(raId);
-  if (!imageUrl) return;
-
-  await db
-    .update(festivals)
-    .set({ imageUrl })
-    .where(eq(festivals.id, festivalId));
-}
 
 /** Fetch only the image URL for an RA event by numeric ID. */
 export async function fetchRAEventImageUrl(raId: string): Promise<string | null> {
@@ -70,7 +51,7 @@ export async function fetchRAEvent(
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);
     if (hasExisting) {
-      await backfillMissingImage(festivalId, id);
+      await backfillMissingImage(festivalId, () => fetchRAEventImageUrl(id));
       return festivalId;
     }
   }
@@ -82,10 +63,10 @@ export async function fetchRAEvent(
   if (!data) return null;
 
   const date = data.startTime
-    ? new Date(data.startTime).toISOString().slice(0, 10)
-    : new Date().toISOString().slice(0, 10);
+    ? toIsoDate(new Date(data.startTime))
+    : toIsoDate(new Date());
   const endDate = data.endTime
-    ? new Date(data.endTime).toISOString().slice(0, 10)
+    ? toIsoDate(new Date(data.endTime))
     : null;
 
   const venueName = data.venue?.name ?? null;
@@ -106,7 +87,6 @@ export async function fetchRAEvent(
     .map((a) => a?.name)
     .filter(Boolean) as string[];
   const { entries: lineupEntries, raArtistIds } = parseRALineup(data.lineup, artistsFallback);
-  const lineup = flattenLineupNames(lineupEntries);
 
   const festivalName = data.title ?? `RA Event ${id}`;
   const existingId = await findExistingFestivalByNameDate(festivalName, date);
@@ -177,8 +157,8 @@ export async function fetchRAEvent(
       });
   }
 
-  if (lineup.length > 0) {
-    const nameToId = await ensureArtistsAndGetIds(lineup);
+  if (lineupEntries.length > 0) {
+    await persistLineup(festivalId, lineupEntries);
 
     // Persist RA artist IDs for any entries that have them and are now in the DB.
     // Only update rows where ra_artist_id is currently null so we don't clobber
@@ -206,20 +186,6 @@ export async function fetchRAEvent(
               .where(eq(artists.id, row.id));
           })
       );
-    }
-
-    await db
-      .insert(festivalArtists)
-      .values(
-        lineup
-          .filter((name) => nameToId[name])
-          .map((name) => ({ festivalId, artistId: nameToId[name] }))
-      )
-      .onConflictDoNothing();
-
-    const b2bEntries = filterB2bEntries(lineupEntries);
-    if (b2bEntries.length > 0) {
-      await createB2bSets(festivalId, b2bEntries, nameToId);
     }
   }
 

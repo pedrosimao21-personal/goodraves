@@ -1,11 +1,17 @@
-"use server";
-
 /**
  * Partyflock.nl HTTP client.
  * Handles all HTTP communication with partyflock.nl.
+ *
+ * NOTE: this is a plain server-only transport module — deliberately NOT a
+ * `"use server"` action module (that would expose every function as a public,
+ * unauthenticated Server Action). Call it only from `src/db/actions/*`.
  */
 
 const PF_BASE_URL = "https://partyflock.nl";
+// A party id is digits only; a slug is lowercase alphanumerics + hyphens.
+// Validate both so a caller can't inject path traversal / query params.
+const PF_PARTY_ID_RE = /^\d+$/;
+const PF_SLUG_RE = /^[a-z0-9-]+$/i;
 const PF_USER_AGENT =
   "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
@@ -69,6 +75,7 @@ async function fetchPFPageHtml(path: string): Promise<string | null> {
 export async function fetchPFEventHtml(
   partyId: string
 ): Promise<string | null> {
+  if (!PF_PARTY_ID_RE.test(partyId)) return null;
   return fetchPFPageHtml(`/party/${partyId}`);
 }
 
@@ -81,6 +88,7 @@ export async function fetchPFAgendaHtml(): Promise<string | null> {
 export async function resolvePFEventSlug(
   slug: string
 ): Promise<string | null> {
+  if (!PF_SLUG_RE.test(slug)) return null;
   const html = await fetchPFPageHtml(`/event/${slug}`);
   if (!html) return null;
 

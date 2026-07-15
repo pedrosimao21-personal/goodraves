@@ -6,12 +6,14 @@ import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
 import { getFestival, reimportFestival, getTimetable, type TimetableStage } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
+import { IMAGE_ENRICH_CHUNK_SIZE } from '@/lib/constants'
 import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
 import FestivalNotes from './FestivalNotes'
 import TimetableView from './TimetableView'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
 import { formatDate } from '@/lib/format-date'
+import { parseLocalDate } from '@/lib/dates'
 import { getFestivalPlaylist, type FestivalPlaylistData } from '@/db/actions/festival-playlist'
 
 const STAR_COUNT = 5
@@ -128,18 +130,30 @@ export default function FestivalDetail() {
     if (event.attractions && event.attractions.length > 0) {
       const needsEnrich = event.attractions.filter((a: any) => !a.image).map((a: any) => a.name)
       if (needsEnrich.length > 0) {
-      ;(getArtistsWithImages(needsEnrich) as unknown as Promise<Record<string, any>>)
-      .then((data) => {
-        if (cancelled) return
-        const normalized: Record<string, any> = {}
-        for (const [name, entry] of Object.entries(data)) {
-          if (entry) normalized[name] = { id: entry.id, image: entry.imageUrl }
-        }
-        setSpotifyData(normalized)
-      })
-      .catch((err) => {
-        console.error('[festival] Failed to enrich artist images:', err)
-      })
+        // Enrich in small SEQUENTIAL chunks so images fill in progressively
+        // instead of appearing all-at-once after the whole lineup finishes. The
+        // per-name Spotify search is necessarily serial (parallel search gets
+        // 429-blocked), so chunking here only affects when results surface, not
+        // total work — and awaiting each chunk keeps requests sequential.
+        ;(async () => {
+          for (let i = 0; i < needsEnrich.length; i += IMAGE_ENRICH_CHUNK_SIZE) {
+            if (cancelled) return
+            const chunk = needsEnrich.slice(i, i + IMAGE_ENRICH_CHUNK_SIZE)
+            try {
+              const data = await getArtistsWithImages(chunk)
+              if (cancelled) return
+              setSpotifyData((prev) => {
+                const next = { ...prev }
+                for (const [name, entry] of Object.entries(data)) {
+                  if (entry) next[name] = { id: entry.id, image: entry.imageUrl }
+                }
+                return next
+              })
+            } catch (err) {
+              console.error('[festival] Failed to enrich artist images:', err)
+            }
+          }
+        })()
       }
     }
 
@@ -158,7 +172,7 @@ export default function FestivalDetail() {
     getTimetable(id).then(stages => setTimetableStages(stages)).catch(() => {})
   }, [id, loadB2bSets])
 
-  const isFuture = event?.date && new Date(event.date + 'T00:00:00') > new Date()
+  const isFuture = event?.date && parseLocalDate(event.date) > new Date()
   const attended = isAttended(id)
   const upcoming = isUpcoming(id)
   const seenCount = getSeenCount(id)

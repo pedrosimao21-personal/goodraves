@@ -6,6 +6,9 @@
  * `src/db/actions/*`.
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+import { withRetry } from "@/lib/retry";
+
 const BASE_URL = "https://ws.audioscrobbler.com/2.0/";
 const API_KEY = process.env.LASTFM_KEY;
 const PLACEHOLDER_KEY = "your_lastfm_api_key_here";
@@ -13,6 +16,7 @@ const MIN_BIO_PARAGRAPH_LENGTH = 10;
 const MAX_GENRE_TAGS = 5;
 const MAX_SIMILAR_ARTISTS = 5;
 const DEFAULT_TOP_TRACKS_LIMIT = 8;
+const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
 
 async function call(params: Record<string, any>) {
   if (!API_KEY || API_KEY === PLACEHOLDER_KEY) {
@@ -24,13 +28,13 @@ async function call(params: Record<string, any>) {
     ([k, v]) => url.searchParams.set(k, String(v))
   );
 
-  const res = await fetch(url, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`Last.fm error ${res.status}`);
-  const data = await res.json();
-  if (data.error) throw new Error(`Last.fm: ${data.message}`);
-  return data;
+  return withRetry(async () => {
+    const res = await fetchWithTimeout(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Last.fm error ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(`Last.fm: ${data.message}`);
+    return data;
+  }, RETRY_OPTIONS);
 }
 
 function extractTagNames(tags: string[]): string[] {

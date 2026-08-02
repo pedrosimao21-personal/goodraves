@@ -9,6 +9,10 @@
  * auth and rate limiting.
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+import { withRetry } from "@/lib/retry";
+
+const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
 const FF_BASE_URL = "https://festivalfans.nl";
 const FF_HOST = "festivalfans.nl";
 // Slugs are lowercase alphanumerics + hyphens; reject anything else so a caller
@@ -31,24 +35,26 @@ export async function searchFFEventsRaw(
   query: string
 ): Promise<FFSearchResult[]> {
   try {
-    const res = await fetch(`${FF_BASE_URL}/search.php`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-      },
-      body: `action=zoekbalk&search=${encodeURIComponent(query)}`,
-    });
+    return await withRetry(async () => {
+      const res = await fetchWithTimeout(`${FF_BASE_URL}/search.php`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: `action=zoekbalk&search=${encodeURIComponent(query)}`,
+      });
 
-    if (!res.ok) return [];
-    const json = await res.json();
+      if (!res.ok) throw new Error(`festivalfans.nl search returned ${res.status}`);
+      const json = await res.json();
 
-    if (!json.results || !Array.isArray(json.results)) return [];
+      if (!json.results || !Array.isArray(json.results)) return [];
 
-    return json.results.filter(
-      (r: any) => r.type !== "header" && r.url && r.title
-    );
+      return json.results.filter(
+        (r: any) => r.type !== "header" && r.url && r.title
+      );
+    }, RETRY_OPTIONS);
   } catch {
     return [];
   }
@@ -63,7 +69,7 @@ export async function resolveFFSlug(url: string): Promise<string | null> {
     // SSRF guard: only ever issue requests to festivalfans.nl, regardless of
     // what the caller passed. An absolute URL to any other host is rejected.
     if (new URL(permalink).host !== FF_HOST) return null;
-    const headRes = await fetch(permalink, {
+    const headRes = await fetchWithTimeout(permalink, {
       method: "HEAD",
       redirect: "manual",
     });
@@ -84,18 +90,20 @@ export async function fetchFFEventHtml(
 ): Promise<string | null> {
   if (!FF_SLUG_RE.test(slug)) return null;
   try {
-    const res = await fetch(`${FF_BASE_URL}/event/${slug}/`, {
-      headers: {
-        "User-Agent": FF_USER_AGENT,
-        Accept: "text/html",
-      },
-    });
-    if (!res.ok) {
-      throw new Error(
-        `festivalfans.nl returned ${res.status} for slug ${slug}`
-      );
-    }
-    return await res.text();
+    return await withRetry(async () => {
+      const res = await fetchWithTimeout(`${FF_BASE_URL}/event/${slug}/`, {
+        headers: {
+          "User-Agent": FF_USER_AGENT,
+          Accept: "text/html",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(
+          `festivalfans.nl returned ${res.status} for slug ${slug}`
+        );
+      }
+      return await res.text();
+    }, RETRY_OPTIONS);
   } catch (err) {
     console.error(
       `[festivalfans/client] Failed to fetch event ${slug}:`,

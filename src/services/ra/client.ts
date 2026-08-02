@@ -8,7 +8,10 @@
  */
 
 import { toIsoDate } from "@/lib/dates";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+import { withRetry } from "@/lib/retry";
 
+const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
 const RA_GRAPHQL_URL = "https://ra.co/graphql";
 const RA_USER_AGENT = "Mozilla/5.0";
 const RA_EVENTS_BASE_URL = "https://ra.co/events";
@@ -102,26 +105,28 @@ export type RAEventRaw = {
 /** Search RA events by title query. Returns raw GraphQL results. */
 export async function searchRAEventsRaw(query: string): Promise<RAEventRaw[]> {
   try {
-    const res = await fetch(RA_GRAPHQL_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": RA_USER_AGENT,
-        "Referer": RA_EVENTS_BASE_URL,
-      },
-      body: JSON.stringify({
-        query: SEARCH_EVENTS_QUERY,
-        variables: { title: { value: query } },
-      }),
-    });
+    return await withRetry(async () => {
+      const res = await fetchWithTimeout(RA_GRAPHQL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": RA_USER_AGENT,
+          "Referer": RA_EVENTS_BASE_URL,
+        },
+        body: JSON.stringify({
+          query: SEARCH_EVENTS_QUERY,
+          variables: { title: { value: query } },
+        }),
+      });
 
-    if (!res.ok) return [];
-    const json = await res.json();
-    const results = json?.data?.facetedSearch?.results ?? [];
+      if (!res.ok) throw new Error(`RA search returned ${res.status}`);
+      const json = await res.json();
+      const results = json?.data?.facetedSearch?.results ?? [];
 
-    return results
-      .map((r: any) => r?.data)
-      .filter((e: any) => e?.id) as RAEventRaw[];
+      return results
+        .map((r: any) => r?.data)
+        .filter((e: any) => e?.id) as RAEventRaw[];
+    }, RETRY_OPTIONS);
   } catch {
     return [];
   }
@@ -130,32 +135,31 @@ export async function searchRAEventsRaw(query: string): Promise<RAEventRaw[]> {
 /** Fetch a single RA event by numeric ID. Returns raw event data or null. */
 export async function fetchRAEventRaw(id: string): Promise<RAEventRaw | null> {
   try {
-    const res = await fetch(RA_GRAPHQL_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": RA_USER_AGENT,
-        "Referer": `${RA_EVENTS_BASE_URL}/${id}`,
-      },
-      body: JSON.stringify({
-        query: GET_EVENT_QUERY,
-        variables: { id },
-      }),
-    });
+    return await withRetry(async () => {
+      const res = await fetchWithTimeout(RA_GRAPHQL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": RA_USER_AGENT,
+          "Referer": `${RA_EVENTS_BASE_URL}/${id}`,
+        },
+        body: JSON.stringify({
+          query: GET_EVENT_QUERY,
+          variables: { id },
+        }),
+      });
 
-    if (!res.ok) {
-      console.error(`[ra/client] RA API returned ${res.status} for event ${id}`);
-      return null;
-    }
+      if (!res.ok) throw new Error(`RA API returned ${res.status} for event ${id}`);
 
-    const json = await res.json();
-    const data = json?.data?.event;
+      const json = await res.json();
+      const data = json?.data?.event;
 
-    if (!data && json?.errors) {
-      console.error(`[ra/client] RA GraphQL errors for event ${id}:`, json.errors);
-    }
+      if (!data && json?.errors) {
+        console.error(`[ra/client] RA GraphQL errors for event ${id}:`, json.errors);
+      }
 
-    return data ?? null;
+      return data ?? null;
+    }, RETRY_OPTIONS);
   } catch (err) {
     console.error(`[ra/client] Failed to fetch RA event ${id}:`, err);
     return null;
@@ -198,7 +202,7 @@ export type RAUpcomingEvent = {
  */
 export async function fetchRArtistEvents(raArtistId: string): Promise<RAUpcomingEvent[]> {
   try {
-    const res = await fetch(RA_GRAPHQL_URL, {
+    const res = await fetchWithTimeout(RA_GRAPHQL_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -298,26 +302,24 @@ export async function fetchRArtistByName(artistName: string): Promise<RArtistDat
 
   try {
     const slug = artistNameToSlug(artistName);
-    
-    const res = await fetch(RA_GRAPHQL_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": RA_USER_AGENT,
-        "Referer": `${RA_ARTIST_BASE_URL}/${slug}`,
-      },
-      body: JSON.stringify({
-        query: GET_ARTIST_BY_SLUG_QUERY,
-        variables: { slug },
-      }),
-    });
 
-    if (!res.ok) {
-      console.error(`[ra/client] RA API returned ${res.status} for artist slug ${slug}`);
-      return emptyResult;
-    }
+    const json = await withRetry(async () => {
+      const res = await fetchWithTimeout(RA_GRAPHQL_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": RA_USER_AGENT,
+          "Referer": `${RA_ARTIST_BASE_URL}/${slug}`,
+        },
+        body: JSON.stringify({
+          query: GET_ARTIST_BY_SLUG_QUERY,
+          variables: { slug },
+        }),
+      });
+      if (!res.ok) throw new Error(`RA API returned ${res.status} for artist slug ${slug}`);
+      return res.json();
+    }, RETRY_OPTIONS);
 
-    const json = await res.json();
     const artistData = json?.data?.artist;
     
     if (!artistData) {

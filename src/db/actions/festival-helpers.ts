@@ -164,23 +164,27 @@ export async function createB2bSets(
   b2bEntries: B2bLineupEntry[],
   nameToId: Record<string, string>
 ): Promise<void> {
-  for (const entry of b2bEntries) {
-    const memberIds = entry.members
-      .map((name) => nameToId[name])
-      .filter(Boolean);
+  const validEntries = b2bEntries
+    .map((entry) => ({
+      entry,
+      memberIds: entry.members.map((name) => nameToId[name]).filter(Boolean),
+    }))
+    .filter(({ memberIds }) => memberIds.length >= 2);
 
-    if (memberIds.length < 2) continue;
+  if (validEntries.length === 0) return;
 
-    const [b2bSet] = await db
-      .insert(festivalB2bSets)
-      .values({ festivalId, originalArtistName: entry.originalName })
-      .returning({ id: festivalB2bSets.id });
+  // Single multi-row insert, relying on Postgres preserving RETURNING order
+  // for a plain (no ON CONFLICT) multi-row INSERT to zip ids back to entries.
+  const b2bSetRows = await db
+    .insert(festivalB2bSets)
+    .values(validEntries.map(({ entry }) => ({ festivalId, originalArtistName: entry.originalName })))
+    .returning({ id: festivalB2bSets.id });
 
-    const memberInserts = memberIds.map((artistId, idx) => ({
-      b2bSetId: b2bSet.id,
-      artistId,
-      position: idx,
-    }));
+  const memberInserts = validEntries.flatMap(({ memberIds }, i) =>
+    memberIds.map((artistId, idx) => ({ b2bSetId: b2bSetRows[i].id, artistId, position: idx }))
+  );
+
+  if (memberInserts.length > 0) {
     await db.insert(festivalB2bSetMembers).values(memberInserts);
   }
 }

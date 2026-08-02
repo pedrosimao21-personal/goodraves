@@ -62,14 +62,14 @@ function transformDbFestival(dbFestival: any) {
   }
 }
 
-export default function FestivalDetail() {
+export default function FestivalDetail({ initialFestival = null }: { initialFestival?: any }) {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
   const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin } = useUserData()
 
-  const [event, setEvent] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [event, setEvent] = useState<any>(() => initialFestival ? transformDbFestival(initialFestival) : null)
+  const [loading, setLoading] = useState(!initialFestival)
   const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
   const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(null)
@@ -177,6 +177,19 @@ export default function FestivalDetail() {
   const attended = isAttended(id)
   const upcoming = isUpcoming(id)
   const seenCount = getSeenCount(id)
+
+  const b2bSetsForFestival = getB2bSets(id)
+  const { soloArtists, allSoloForB2b } = useMemo(() => {
+    if (!event) return { soloArtists: [], allSoloForB2b: [] }
+    const b2bMemberIds = new Set(b2bSetsForFestival.flatMap(s => s.members.map(m => m.artistId)))
+    const b2bOriginalNames = new Set(b2bSetsForFestival.map(s => s.originalArtistName.toLowerCase()))
+    const soloArtists = event.attractions.filter(
+      (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
+    )
+    // Pre-compute available artists once (avoids O(n^2) per-item computation)
+    const allSoloForB2b = soloArtists.map((a: any) => ({ id: a.id, name: a.name }))
+    return { soloArtists, allSoloForB2b }
+  }, [b2bSetsForFestival, event])
 
   function switchView(view: 'lineup' | 'timetable') {
     setLineupView(view)
@@ -507,34 +520,19 @@ export default function FestivalDetail() {
               <TimetableView stages={timetableStages} />
             ) : (
               <div className="grid-artists">
-                {(() => {
-                  const b2bSets = getB2bSets(id)
-                  const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
-                  const b2bOriginalNames = new Set(b2bSets.map(s => s.originalArtistName.toLowerCase()))
-                  const soloArtists = event.attractions.filter(
-                    (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
-                  )
-                  // Pre-compute available artists once (avoids O(n^2) per-item computation)
-                  const allSoloForB2b = soloArtists.map((a: any) => ({ id: a.id, name: a.name }))
-                  return (
-                    <>
-                      {b2bSets.map(b2bSet => (
-                        <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
-                      ))}
-                      {soloArtists.map((artist: any) => (
-                            <ArtistCard
-                              key={artist.id}
-                              artist={artist}
-                              eventId={id}
-                              spotifyData={spotifyData[artist.name]}
-                              isPast={!isFuture}
-                              availableArtistsForB2b={allSoloForB2b}
-                            />
-                        ))
-                      }
-                    </>
-                  )
-                })()}
+                {b2bSetsForFestival.map(b2bSet => (
+                  <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
+                ))}
+                {soloArtists.map((artist: any) => (
+                  <ArtistCard
+                    key={artist.id}
+                    artist={artist}
+                    eventId={id}
+                    spotifyData={spotifyData[artist.name]}
+                    isPast={!isFuture}
+                    availableArtistsForB2b={allSoloForB2b}
+                  />
+                ))}
               </div>
             )}
           </>

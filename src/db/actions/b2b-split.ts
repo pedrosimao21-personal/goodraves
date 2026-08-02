@@ -247,21 +247,17 @@ export async function rateB2bSet(b2bSetId: string, rating: number) {
     rating: validRating,
   }));
 
-  await Promise.all(
-    ratingInserts.map((insert) =>
-      db
-        .insert(userFestivalArtistRatings)
-        .values(insert)
-        .onConflictDoUpdate({
-          target: [
-            userFestivalArtistRatings.userId,
-            userFestivalArtistRatings.festivalId,
-            userFestivalArtistRatings.artistId,
-          ],
-          set: { rating: validRating },
-        })
-    )
-  );
+  await db
+    .insert(userFestivalArtistRatings)
+    .values(ratingInserts)
+    .onConflictDoUpdate({
+      target: [
+        userFestivalArtistRatings.userId,
+        userFestivalArtistRatings.festivalId,
+        userFestivalArtistRatings.artistId,
+      ],
+      set: { rating: sql`excluded.rating` },
+    });
 }
 
 // ── Get B2B sets for a festival ───────────────────────────
@@ -327,38 +323,40 @@ async function ensureMemberArtists(
     existingRows.map((r) => [r.name.toLowerCase(), r])
   );
 
-  const results: { id: string; name: string }[] = [];
+  const missingNames = names.filter((name) => !existingByLower.has(name.toLowerCase()));
 
-  for (const name of names) {
-    const existing = existingByLower.get(name.toLowerCase());
-    if (existing) {
-      results.push(existing);
-      continue;
-    }
-
-    // Create the artist
-    const [created] = await db
+  if (missingNames.length > 0) {
+    // Single batched insert, deduped on any unique violation (no explicit
+    // target — catches a concurrent request creating the same name first).
+    const createdRows = await db
       .insert(artists)
-      .values({ name })
+      .values(missingNames.map((name) => ({ name })))
       .onConflictDoNothing()
       .returning({ id: artists.id, name: artists.name });
 
-    if (created) {
-      results.push(created);
-      continue;
+    for (const row of createdRows) {
+      existingByLower.set(row.name.toLowerCase(), row);
     }
 
-    // Race condition fallback
-    const [raced] = await db
-      .select({ id: artists.id, name: artists.name })
-      .from(artists)
-      .where(sql`lower(${artists.name}) = lower(${name})`)
-      .limit(1);
-
-    results.push(raced);
+    // Race-condition fallback: any name still missing lost the race to
+    // another request — one more batched lookup to resolve them.
+    const stillMissing = missingNames.filter((name) => !existingByLower.has(name.toLowerCase()));
+    if (stillMissing.length > 0) {
+      const racedRows = await db
+        .select({ id: artists.id, name: artists.name })
+        .from(artists)
+        .where(sql`lower(${artists.name}) IN ${stillMissing.map((n) => n.toLowerCase())}`);
+      for (const row of racedRows) {
+        existingByLower.set(row.name.toLowerCase(), row);
+      }
+    }
   }
 
-  return results;
+  return names.map((name) => {
+    const found = existingByLower.get(name.toLowerCase());
+    if (!found) throw new Error(`Failed to resolve artist "${name}"`);
+    return found;
+  });
 }
 
 /**

@@ -174,18 +174,22 @@ export async function fetchRAEvent(
         .from(artists)
         .where(inArray(artists.name, artistNames));
 
-      await Promise.allSettled(
-        existingRows
-          .filter((row) => row.raArtistId === null)
-          .map((row) => {
-            const entry = namesWithRaId.find((e) => e.name === row.name);
-            if (!entry) return Promise.resolve();
-            return db
-              .update(artists)
-              .set({ raArtistId: entry.raArtistId })
-              .where(eq(artists.id, row.id));
-          })
-      );
+      const rowsToUpdate = existingRows
+        .filter((row) => row.raArtistId === null)
+        .map((row) => {
+          const entry = namesWithRaId.find((e) => e.name === row.name);
+          return entry ? { id: row.id, name: row.name, raArtistId: entry.raArtistId } : null;
+        })
+        .filter((r): r is { id: string; name: string; raArtistId: string } => r !== null);
+
+      if (rowsToUpdate.length > 0) {
+        // Single multi-row upsert keyed on id (conflict guaranteed — these ids
+        // were just read from the DB).
+        await db.insert(artists).values(rowsToUpdate).onConflictDoUpdate({
+          target: artists.id,
+          set: { raArtistId: sql`excluded.ra_artist_id` },
+        });
+      }
     }
   }
 

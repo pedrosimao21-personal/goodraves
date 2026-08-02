@@ -6,6 +6,8 @@
  * Action and let anyone burn our API quota). Call only from `src/db/actions/*`.
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
@@ -66,7 +68,7 @@ async function getAccessToken() {
     return tokenCache.get()!;
   }
 
-  const res = await fetch(SPOTIFY_TOKEN_URL, {
+  const res = await fetchWithTimeout(SPOTIFY_TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -96,7 +98,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   });
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -104,7 +106,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
   if (res.status === 401) {
     tokenCache.invalidate();
     const newToken = await getAccessToken();
-    const retry = await fetch(url, {
+    const retry = await fetchWithTimeout(url, {
       headers: { Authorization: `Bearer ${newToken}` },
     });
     if (!retry.ok) throw new Error(`Spotify error ${retry.status}`);
@@ -115,7 +117,7 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
     const retryAfter = parseInt(res.headers.get("Retry-After") ?? "1", 10);
     console.warn(`[spotify] Rate limited on ${path}; retrying after ${retryAfter}s`);
     await new Promise((r) => setTimeout(r, retryAfter * MS_PER_SECOND));
-    const retry = await fetch(url, {
+    const retry = await fetchWithTimeout(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!retry.ok) throw new Error(`Spotify error ${retry.status}`);

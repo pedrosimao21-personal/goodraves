@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getFestivalMeta } from '@/db/actions/festivals'
+import { getFestival, getFestivalMeta } from '@/db/actions/festivals'
 import FestivalDetailClient from './FestivalDetailClient'
 
 // Cache the server-rendered page shell for 1 hour (ISR)
@@ -33,6 +33,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function FestivalDetailPage() {
-  return <FestivalDetailClient />
+export default async function FestivalDetailPage({ params }: Props) {
+  const { id } = await params
+  const decodedId = decodeURIComponent(id)
+
+  // Server-fetch the public (non-user-specific) festival data so the initial
+  // HTML has real content instead of a loading skeleton (better LCP/SEO).
+  // Custom ("custom-…") festivals aren't in the festivals table and rely on
+  // client-side festivalMeta context, so they're left for the client fetch.
+  const initialFestival = decodedId.startsWith('custom-') ? null : await getFestival(decodedId)
+
+  return <FestivalDetailClient initialFestival={initialFestival} />
 }

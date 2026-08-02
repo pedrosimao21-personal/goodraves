@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { artists } from "@/db/schema";
 import {
   spotifySearchArtist,
@@ -111,40 +111,63 @@ async function fetchAndUpsertArtists(
       .map(({ name, fetch }) => ({ name, data: fetch.data })),
   ];
 
-  const upsertResults = await Promise.allSettled(
-    await (async () => {
-      // Batch lookup all names at once to avoid N+1 individual SELECTs
-      const lowerNames = toUpsert.map(({ name }) => name.toLowerCase());
-      const existingRows = await db.select({ id: artists.id, name: artists.name })
-        .from(artists)
-        .where(sql`lower(${artists.name}) IN ${lowerNames}`);
+  if (toUpsert.length) {
+    // Batch lookup all names at once to avoid N+1 individual SELECTs
+    const lowerNames = toUpsert.map(({ name }) => name.toLowerCase());
+    const existingRows = await db.select({ id: artists.id, name: artists.name })
+      .from(artists)
+      .where(sql`lower(${artists.name}) IN ${lowerNames}`);
 
-      const existingByLower = new Map(
-        existingRows.map((r) => [r.name.toLowerCase(), r.id])
-      );
+    const existingByLower = new Map(
+      existingRows.map((r) => [r.name.toLowerCase(), r.id])
+    );
 
-      return toUpsert.map(async ({ name, data }) => {
-        const spotifyFields = {
-          spotifyId: data?.id ?? null,
-          imageUrl: data?.image ?? null,
-          spotifyFetchedAt: now,
-        };
+    const updates = toUpsert.filter(({ name }) => existingByLower.has(name.toLowerCase()));
+    const inserts = toUpsert.filter(({ name }) => !existingByLower.has(name.toLowerCase()));
 
-        const existingId = existingByLower.get(name.toLowerCase());
-        if (existingId) {
-          return db.update(artists).set(spotifyFields).where(eq(artists.id, existingId));
-        }
-
-        return db.insert(artists).values({ name, ...spotifyFields }).onConflictDoNothing();
-      });
-    })()
-  );
-
-  upsertResults.forEach((r, i) => {
-    if (r.status === "rejected") {
-      console.error(`[artists] upsert failed for "${toUpsert[i].name}":`, r.reason);
+    // Known-existing rows: one multi-row upsert keyed on id (the conflict is
+    // guaranteed since these ids were just read from the DB).
+    if (updates.length) {
+      try {
+        await db.insert(artists).values(
+          updates.map(({ name, data }) => ({
+            id: existingByLower.get(name.toLowerCase())!,
+            name,
+            spotifyId: data?.id ?? null,
+            imageUrl: data?.image ?? null,
+            spotifyFetchedAt: now,
+          }))
+        ).onConflictDoUpdate({
+          target: artists.id,
+          set: {
+            spotifyId: sql`excluded.spotify_id`,
+            imageUrl: sql`excluded.image_url`,
+            spotifyFetchedAt: sql`excluded.spotify_fetched_at`,
+          },
+        });
+      } catch (err) {
+        console.error("[artists] batch update failed:", err instanceof Error ? err.message : err);
+      }
     }
-  });
+
+    // Brand-new names: one multi-row insert. No explicit conflict target so
+    // any unique violation (e.g. a concurrent request created the same
+    // case-insensitive name first) is silently deduped, same as before.
+    if (inserts.length) {
+      try {
+        await db.insert(artists).values(
+          inserts.map(({ name, data }) => ({
+            name,
+            spotifyId: data?.id ?? null,
+            imageUrl: data?.image ?? null,
+            spotifyFetchedAt: now,
+          }))
+        ).onConflictDoNothing();
+      } catch (err) {
+        console.error("[artists] batch insert failed:", err instanceof Error ? err.message : err);
+      }
+    }
+  }
 
   for (const { name, data } of toUpsert) {
     byName.set(name, {

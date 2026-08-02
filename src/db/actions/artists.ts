@@ -300,6 +300,24 @@ async function fetchArtistGenres(artistId: string): Promise<string[]> {
   return rows.map(r => r.name);
 }
 
+/** Batched form of fetchArtistGenres — one query for many artist ids. */
+async function fetchArtistGenresBatch(artistIds: string[]): Promise<Map<string, string[]>> {
+  if (!artistIds.length) return new Map();
+  const rows = await db
+    .select({ artistId: artistGenres.artistId, name: genres.name })
+    .from(artistGenres)
+    .innerJoin(genres, eq(artistGenres.genreId, genres.id))
+    .where(inArray(artistGenres.artistId, artistIds));
+
+  const byArtistId = new Map<string, string[]>();
+  for (const row of rows) {
+    const list = byArtistId.get(row.artistId);
+    if (list) list.push(row.name);
+    else byArtistId.set(row.artistId, [row.name]);
+  }
+  return byArtistId;
+}
+
 async function syncArtistGenres(artistId: string, tagNames: string[]): Promise<string[]> {
   if (!tagNames.length) return [];
 
@@ -353,24 +371,39 @@ async function refreshLastfm(name: string) {
         existingSimilar.map((r) => [r.name.toLowerCase(), r.id])
       );
 
-      await Promise.allSettled(
-        similarNames.map(async (similarName: string) => {
-          const sp = spotifyResults[similarName];
-          const spotifyFields = {
-            spotifyId: sp?.id ?? null,
-            imageUrl: sp?.image ?? null,
-            spotifyFollowers: sp?.followers ?? null,
-            spotifyFetchedAt: now,
-          };
+      const similarRows = similarNames.map((similarName: string) => ({
+        name: similarName,
+        spotifyId: spotifyResults[similarName]?.id ?? null,
+        imageUrl: spotifyResults[similarName]?.image ?? null,
+        spotifyFollowers: spotifyResults[similarName]?.followers ?? null,
+        spotifyFetchedAt: now,
+      }));
+      const updates = similarRows.filter((r) => existingByLower.has(r.name.toLowerCase()));
+      const inserts = similarRows.filter((r) => !existingByLower.has(r.name.toLowerCase()));
 
-          const existingId = existingByLower.get(similarName.toLowerCase());
-          if (existingId) {
-            return db.update(artists).set(spotifyFields).where(eq(artists.id, existingId));
-          }
+      // Known-existing rows: one multi-row upsert keyed on id.
+      if (updates.length) {
+        await db.insert(artists).values(
+          updates.map((r) => ({ ...r, id: existingByLower.get(r.name.toLowerCase())! }))
+        ).onConflictDoUpdate({
+          target: artists.id,
+          set: {
+            spotifyId: sql`excluded.spotify_id`,
+            imageUrl: sql`excluded.image_url`,
+            spotifyFollowers: sql`excluded.spotify_followers`,
+            spotifyFetchedAt: sql`excluded.spotify_fetched_at`,
+          },
+        }).catch((err) => {
+          console.error('[artists] similar-artist batch update failed:', err instanceof Error ? err.message : err);
+        });
+      }
 
-          return db.insert(artists).values({ name: similarName, ...spotifyFields }).onConflictDoNothing();
-        })
-      );
+      // Brand-new names: one multi-row insert, deduped on any unique violation.
+      if (inserts.length) {
+        await db.insert(artists).values(inserts).onConflictDoNothing().catch((err) => {
+          console.error('[artists] similar-artist batch insert failed:', err instanceof Error ? err.message : err);
+        });
+      }
     }
 
     // Store only name + url — images are resolved from the artists table at read time
@@ -407,14 +440,16 @@ async function refreshSpotify(name: string, existingSpotifyId: string | null) {
 
     console.log(`[artists] Spotify found for "${name}": ${spArtist.followers} followers, id=${spArtist.id}`);
 
-    const albums = await spotifyGetArtistAlbums(spArtist.id).catch((err) => {
-      console.error(`[spotify] Failed to fetch albums for "${spArtist.name}":`, err instanceof Error ? err.message : err);
-      return [] as any[];
-    });
-    const topTracks = await spotifyGetArtistTopTracks(spArtist.id).catch((err) => {
-      console.warn(`[spotify] Failed to fetch top tracks for "${spArtist.name}":`, err instanceof Error ? err.message : err);
-      return [] as any[];
-    });
+    const [albums, topTracks] = await Promise.all([
+      spotifyGetArtistAlbums(spArtist.id).catch((err) => {
+        console.error(`[spotify] Failed to fetch albums for "${spArtist.name}":`, err instanceof Error ? err.message : err);
+        return [] as any[];
+      }),
+      spotifyGetArtistTopTracks(spArtist.id).catch((err) => {
+        console.warn(`[spotify] Failed to fetch top tracks for "${spArtist.name}":`, err instanceof Error ? err.message : err);
+        return [] as any[];
+      }),
+    ]);
     albums.sort((a: any, b: any) => (b.releaseDate || '').localeCompare(a.releaseDate || ''));
 
     return { ...spArtist, albums, topTracks };
@@ -536,30 +571,54 @@ export async function enrichArtistNamesBatch(
   if (names.length > MAX_ENRICHMENT_BATCH_SIZE) {
     throw new Error(`Batch size must not exceed ${MAX_ENRICHMENT_BATCH_SIZE}`);
   }
-  // Always hits Spotify + Last.fm — rate-limit per caller.
   await enforceRateLimit("enrich", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
   const results: Record<string, { name: string; image: string | null; genres: string[] }> = {};
 
+  // Reuse cached artists rows (same staleness windows as getArtistData)
+  // instead of re-hitting Spotify/Last.fm for names already enriched
+  // elsewhere (e.g. via festival lineup imports).
+  const lowerNames = names.map((n) => n.toLowerCase());
+  const cachedRows = await db.select({
+    id: artists.id,
+    name: artists.name,
+    imageUrl: artists.imageUrl,
+    spotifyFetchedAt: artists.spotifyFetchedAt,
+    lastfmFetchedAt: artists.lastfmFetchedAt,
+  }).from(artists).where(sql`lower(${artists.name}) IN ${lowerNames}`);
+
+  const cachedByLower = new Map(cachedRows.map((r) => [r.name.toLowerCase(), r]));
+  const isFresh = (r: (typeof cachedRows)[number]) =>
+    !isStaleSpotify(r.spotifyFetchedAt) && !isStaleLastfm(r.lastfmFetchedAt);
+  const freshIds = cachedRows.filter(isFresh).map((r) => r.id);
+  const genresByArtistId = await fetchArtistGenresBatch(freshIds);
+
+  const needsFetch: string[] = [];
+  for (const name of names) {
+    const row = cachedByLower.get(name.toLowerCase());
+    if (row && isFresh(row)) {
+      results[name.toLowerCase()] = {
+        name,
+        image: row.imageUrl ?? null,
+        genres: genresByArtistId.get(row.id) ?? [],
+      };
+    } else {
+      needsFetch.push(name);
+    }
+  }
+
   await Promise.all(
-    names.map(async (name) => {
+    needsFetch.map(async (name) => {
       let image: string | null = null;
       let genres: string[] = [];
 
-      try {
-        const sp = await spotifySearchArtist(name);
-        if (sp) image = sp.image;
-      } catch {
-        // Spotify lookup failed
-      }
-
-      try {
-        const info = await lastfmGetArtistInfo(name);
-        if (info) {
-          genres = info.tags || [];
-          if (!image) image = info.image;
-        }
-      } catch {
-        // Last.fm lookup failed
+      const [sp, info] = await Promise.all([
+        spotifySearchArtist(name).catch(() => null),
+        lastfmGetArtistInfo(name).catch(() => null),
+      ]);
+      if (sp) image = sp.image;
+      if (info) {
+        genres = info.tags || [];
+        if (!image) image = info.image;
       }
 
       results[name.toLowerCase()] = { name, image, genres };

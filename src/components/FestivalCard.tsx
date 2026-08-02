@@ -3,7 +3,7 @@
 import { useState, useEffect, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useUserData } from '../context/UserDataContext'
+import { useUserDataActions } from '../context/UserDataContext'
 import { getFestivalCardImage } from '@/db/actions/festivals'
 import { formatDate } from '@/lib/format-date'
 import { parseLocalDate } from '@/lib/dates'
@@ -78,7 +78,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
 }
 
 export default memo(function FestivalCard({ event }: { event: any }) {
-  const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserDataActions()
   
   const attended = isAttended(event.id)
   const upcoming = isUpcoming(event.id)

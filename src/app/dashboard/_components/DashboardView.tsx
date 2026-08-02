@@ -52,10 +52,14 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
     setActiveTab(tab)
   }
 
-  const totalSeen = (Object.values(seenArtists) as string[][]).reduce((sum, arr) => sum + arr.length, 0)
-  const festivalRatingValues = attendedFestivals
-    .map(id => festivalRatings?.[id])
-    .filter((r): r is number => !!r && r > 0)
+  const totalSeen = useMemo(
+    () => (Object.values(seenArtists) as string[][]).reduce((sum, arr) => sum + arr.length, 0),
+    [seenArtists]
+  )
+  const festivalRatingValues = useMemo(
+    () => attendedFestivals.map(id => festivalRatings?.[id]).filter((r): r is number => !!r && r > 0),
+    [attendedFestivals, festivalRatings]
+  )
   const avgRatingAll = festivalRatingValues.length > 0
     ? (festivalRatingValues.reduce((a, b) => a + b, 0) / festivalRatingValues.length).toFixed(1)
     : null

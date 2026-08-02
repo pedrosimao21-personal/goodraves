@@ -4,16 +4,6 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Don't protect the register API (users need it to sign up)
-  if (pathname === "/api/register") {
-    return NextResponse.next();
-  }
-
-  // Don't protect auth routes
-  if (pathname.startsWith("/api/auth")) {
-    return NextResponse.next();
-  }
-
   // Protect dashboard routes — require authentication
   const isProtected = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
@@ -27,5 +17,8 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
+  // /api/auth and /api/register are excluded here (rather than checked and
+  // passed through inside the handler above) so NextAuth's auth() wrapper
+  // skips its session decode entirely for routes that never need it.
+  matcher: ["/dashboard/:path*", "/api/((?!auth|register).*)"],
 };

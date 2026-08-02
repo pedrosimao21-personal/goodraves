@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, memo } from 'react'
-import { useUserData } from '../context/UserDataContext'
+import { useUserDataActions } from '../context/UserDataContext'
 
 export default memo(function StarRating({ artistId, eventId, readonly = false, size = 'md' }: {
   artistId: string
@@ -9,7 +9,7 @@ export default memo(function StarRating({ artistId, eventId, readonly = false, s
   readonly?: boolean
   size?: 'sm' | 'md'
 }) {
-  const { getRating, setRating, getPerformanceRating, setPerformanceRating } = useUserData()
+  const { getRating, setRating, getPerformanceRating, setPerformanceRating } = useUserDataActions()
   const [hover, setHover] = useState(0)
   
   // Use performance rating if eventId is provided, else use global rating

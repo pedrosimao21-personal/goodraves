@@ -7,6 +7,10 @@
  * unauthenticated Server Action). Call it only from `src/db/actions/*`.
  */
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+import { withRetry } from "@/lib/retry";
+
+const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
 const PF_BASE_URL = "https://partyflock.nl";
 // A party id is digits only; a slug is lowercase alphanumerics + hyphens.
 // Validate both so a caller can't inject path traversal / query params.
@@ -27,18 +31,20 @@ export async function searchPFEventsRaw(
   query: string
 ): Promise<string | null> {
   try {
-    const url = `${PF_BASE_URL}/search?TERMS=${encodeURIComponent(query)}`;
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": PF_USER_AGENT,
-        Accept: "text/html",
-      },
-    });
-    if (!res.ok) return null;
+    return await withRetry(async () => {
+      const url = `${PF_BASE_URL}/search?TERMS=${encodeURIComponent(query)}`;
+      const res = await fetchWithTimeout(url, {
+        headers: {
+          "User-Agent": PF_USER_AGENT,
+          Accept: "text/html",
+        },
+      });
+      if (!res.ok) throw new Error(`partyflock.nl search returned ${res.status}`);
 
-    const buffer = await res.arrayBuffer();
-    const decoder = new TextDecoder("windows-1252");
-    return decoder.decode(buffer);
+      const buffer = await res.arrayBuffer();
+      const decoder = new TextDecoder("windows-1252");
+      return decoder.decode(buffer);
+    }, RETRY_OPTIONS);
   } catch {
     return null;
   }
@@ -47,21 +53,23 @@ export async function searchPFEventsRaw(
 /** Fetch the raw HTML of a partyflock.nl page by path (e.g. "/party/123"). */
 async function fetchPFPageHtml(path: string): Promise<string | null> {
   try {
-    const res = await fetch(`${PF_BASE_URL}${path}`, {
-      headers: {
-        "User-Agent": PF_USER_AGENT,
-        Accept: "text/html",
-      },
-    });
-    if (!res.ok) {
-      throw new Error(
-        `partyflock.nl returned ${res.status} for ${path}`
-      );
-    }
+    return await withRetry(async () => {
+      const res = await fetchWithTimeout(`${PF_BASE_URL}${path}`, {
+        headers: {
+          "User-Agent": PF_USER_AGENT,
+          Accept: "text/html",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(
+          `partyflock.nl returned ${res.status} for ${path}`
+        );
+      }
 
-    const buffer = await res.arrayBuffer();
-    const decoder = new TextDecoder("windows-1252");
-    return decoder.decode(buffer);
+      const buffer = await res.arrayBuffer();
+      const decoder = new TextDecoder("windows-1252");
+      return decoder.decode(buffer);
+    }, RETRY_OPTIONS);
   } catch (err) {
     console.error(
       `[partyflock/client] Failed to fetch ${path}:`,

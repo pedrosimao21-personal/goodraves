@@ -9,7 +9,7 @@ import nextTypescript from "eslint-config-next/typescript";
 const eslintConfig = [
   ...nextCoreWebVitals,
   ...nextTypescript,
-  { ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"] },
+  { ignores: [".next/**", "out/**", "build/**", "dist/**", "next-env.d.ts"] },
   {
     rules: {
       // The DB JSON-blob and external-API layers use `any` deliberately and

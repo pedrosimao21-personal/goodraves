@@ -3,7 +3,7 @@
 import { memo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useUserData } from '@/context/UserDataContext'
+import { useUserDataActions } from '@/context/UserDataContext'
 import type { B2bSetData } from '@/context/user-data-state'
 
 const STARS = [1, 2, 3, 4, 5]
@@ -16,7 +16,7 @@ interface B2bSetCardProps {
 }
 
 const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPast }: B2bSetCardProps) {
-  const { getPerformanceRating, rateB2bSet, unsplitB2bSet, isAdmin } = useUserData()
+  const { getPerformanceRating, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
   const firstMember = b2bSet.members[0]
   const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
   const [isRatingVisible, setIsRatingVisible] = useState(false)

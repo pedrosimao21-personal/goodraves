@@ -29,7 +29,14 @@ import type { InitialUserData } from '@/db/actions/get-initial-data'
 import type { FestivalMeta, UserDataState, UserDataContextType } from './user-data-state'
 import { DEFAULT_STATE, transformDbData, buildUpsertPayload } from './user-data-state'
 
-const UserDataContext = createContext<UserDataContextType | null>(null)
+// State (attendedFestivals, ratings, notes, ...) and actions (readers + mutators)
+// are split into two contexts. Actions rarely change identity (stable useCallback
+// refs, keyed only on userId/isAdmin), so components that only need to call
+// actions/readers — the bulk-rendered list items like ArtistCard/FestivalCard —
+// should use `useUserDataActions()` instead of `useUserData()` to avoid
+// re-rendering on every unrelated state mutation elsewhere in the app.
+const UserDataStateContext = createContext<(UserDataState & { loaded: boolean }) | null>(null)
+const UserDataActionsContext = createContext<Omit<UserDataContextType, keyof UserDataState | 'loaded'> | null>(null)
 
 interface UserDataProviderProps {
   children: React.ReactNode
@@ -346,9 +353,9 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   const readers = useUserDataReaders(state)
 
-  const contextValue = useMemo(() => ({
-    ...state,
-    loaded,
+  const stateValue = useMemo(() => ({ ...state, loaded }), [state, loaded])
+
+  const actionsValue = useMemo(() => ({
     isAdmin,
     toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
@@ -357,7 +364,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     updateFestivalMeta, batchEnrichArtists,
     splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
-    state, loaded, isAdmin,
+    isAdmin,
     toggleFestival, toggleSawArtist,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     readers,
@@ -367,14 +374,29 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   ])
 
   return (
-    <UserDataContext.Provider value={contextValue}>
-      {children}
-    </UserDataContext.Provider>
+    <UserDataStateContext.Provider value={stateValue}>
+      <UserDataActionsContext.Provider value={actionsValue}>
+        {children}
+      </UserDataActionsContext.Provider>
+    </UserDataStateContext.Provider>
   )
 }
 
-export function useUserData() {
-  const ctx = useContext(UserDataContext)
-  if (!ctx) throw new Error('useUserData must be used within UserDataProvider')
+/** Full state + actions. Re-renders on every state mutation — fine for
+ * page-level components, but avoid in bulk-rendered list items (use
+ * `useUserDataActions()` there instead when only actions/readers are needed). */
+export function useUserData(): UserDataContextType {
+  const state = useContext(UserDataStateContext)
+  const actions = useContext(UserDataActionsContext)
+  if (!state || !actions) throw new Error('useUserData must be used within UserDataProvider')
+  return useMemo(() => ({ ...state, ...actions }), [state, actions])
+}
+
+/** Actions + read helpers only, no raw state subscription. Stable across
+ * unrelated state mutations — use in components that don't need to re-render
+ * when other parts of the app's user data change (list items, cards). */
+export function useUserDataActions() {
+  const ctx = useContext(UserDataActionsContext)
+  if (!ctx) throw new Error('useUserDataActions must be used within UserDataProvider')
   return ctx
 }

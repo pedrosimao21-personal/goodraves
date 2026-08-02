@@ -90,9 +90,9 @@ export const artists = pgTable("artists", {
 }, (t) => [
   // Case-insensitive uniqueness on name (there is NO plain unique on name in
   // prod). Artist inserts use onConflictDoNothing() with no explicit target and
-  // rely on this index to dedupe "Boris" / "boris".
+  // rely on this index to dedupe "Boris" / "boris". This unique index also
+  // serves lookups, so no separate plain index on lower(name) is needed.
   uniqueIndex("artists_name_ci_unique").on(sql`lower(${t.name})`),
-  index("artists_name_lower_idx").on(sql`lower(${t.name})`),
   // Partial index — only rows enriched from Resident Advisor carry a ra id.
   index("artists_ra_artist_id_idx").on(t.raArtistId).where(sql`${t.raArtistId} IS NOT NULL`),
   index("artists_spotify_followers_idx").on(t.spotifyFollowers),
@@ -164,7 +164,12 @@ export const userFestivalArtistRatings = pgTable(
     rating: integer("rating"),
     notes: text("notes"),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistId] })]
+  (t) => [
+    primaryKey({ columns: [t.userId, t.festivalId, t.artistId] }),
+    // migrateRatingsToMembers (b2b-split.ts) filters by festivalId + artistId
+    // without userId, which can't use a leftmost prefix of the PK above.
+    index("user_festival_artist_ratings_festival_artist_idx").on(t.festivalId, t.artistId),
+  ]
 );
 
 // ── Genres ─────────────────────────────────────────────

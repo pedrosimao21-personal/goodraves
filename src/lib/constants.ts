@@ -43,6 +43,14 @@ export const LASTFM_STALE_MS = 7 * 24 * 60 * 60 * 1000;           // 7 days
 export const RELATED_ARTISTS_STALE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const RA_EVENTS_STALE_MS = 24 * 60 * 60 * 1000;            // 1 day
 
+/**
+ * Hard timeout for outbound fetches to external providers (RA, FestivalFans,
+ * Partyflock, Spotify, Last.fm, Wikipedia). These include HTML-scraped
+ * third-party endpoints with no SLA, so a hung socket must not be able to
+ * block a server action indefinitely.
+ */
+export const EXTERNAL_FETCH_TIMEOUT_MS = 10_000;
+
 /** Daily Partyflock agenda import (scrapes the agenda page, imports the next 6 months). */
 export const PF_AGENDA_DAYS_AHEAD = 183; // ~6 months
 export const PF_AGENDA_REQUEST_DELAY_MS = 1500; // gap between successive partyflock requests

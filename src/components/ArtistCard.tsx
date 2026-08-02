@@ -3,7 +3,7 @@
 import { memo, useState, lazy, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useUserData } from '../context/UserDataContext'
+import { useUserDataActions } from '../context/UserDataContext'
 import StarRating from './StarRating'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
 
@@ -26,7 +26,7 @@ const ArtistCard = memo(function ArtistCard({
   isPast?: boolean
   availableArtistsForB2b?: { id: string; name: string }[]
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin } = useUserData()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin } = useUserDataActions()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
   const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)

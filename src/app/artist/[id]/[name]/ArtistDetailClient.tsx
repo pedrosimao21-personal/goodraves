@@ -16,7 +16,7 @@ import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList } from './Art
 
 const MAX_TAGS = 8
 
-export default function ArtistDetail() {
+export default function ArtistDetail({ initialArtist = null }: { initialArtist?: ArtistData | null }) {
   const params = useParams()
   const router = useRouter()
   const artistId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
@@ -24,9 +24,9 @@ export default function ArtistDetail() {
   const artistName = decodeURIComponent(encodedName)
   const { getAverageArtistRating, getNotes, setNotes } = useUserData()
 
-  const [artist, setArtist] = useState<ArtistData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const [artist, setArtist] = useState<ArtistData | null>(initialArtist)
+  const [loading, setLoading] = useState(!initialArtist)
+  const [refreshing, setRefreshing] = useState(Boolean(initialArtist))
   const [notFound, setNotFound] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const [similarUrls, setSimilarUrls] = useState<Map<string, string>>(new Map())

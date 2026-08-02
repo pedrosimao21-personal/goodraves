@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useUserData } from '@/context/UserDataContext'
+import { useUserDataActions } from '@/context/UserDataContext'
 import { formatDate } from '@/lib/format-date'
 
 function getEventIcon(eventId: string): string {
@@ -18,7 +18,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   isUpcomingTab: boolean
   onEdit?: (id: string) => void
 }) => {
-  const { getSeenCount, getFestivalMeta } = useUserData()
+  const { getSeenCount, getFestivalMeta } = useUserDataActions()
 
   const displayEvent = getFestivalMeta(eventId)
   const seenCount = getSeenCount(eventId)

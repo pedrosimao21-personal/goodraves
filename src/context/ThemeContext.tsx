@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { type Theme, THEME_STORAGE_KEY, THEME_COLORS } from '@/lib/theme-constants'
 
 function syncThemeColorMeta(theme: Theme) {
@@ -21,26 +21,36 @@ export function useTheme() {
 }
 
 /**
- * Mirrors the `data-theme` attribute the no-flash inline script (see
- * layout.tsx) already set on <html> before hydration. Reading it here
- * (rather than localStorage/matchMedia again) keeps this the single source
- * of truth and avoids a hydration mismatch on the very first render, since
- * that script always runs first regardless of render timing.
+ * Prefers the `data-theme` attribute the no-flash inline script (see
+ * layout.tsx) sets on <html> before hydration. Falls back to reading
+ * localStorage/matchMedia directly (same logic as that script) in case the
+ * attribute didn't survive hydration — React's reconciliation of the root
+ * <html> element can drop attributes it doesn't itself manage, which would
+ * otherwise desync this state from the actual persisted preference.
  */
 function readInitialTheme(): Theme {
   if (typeof document === 'undefined') return 'dark'
-  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
+  const attr = document.documentElement.getAttribute('data-theme')
+  if (attr === 'light' || attr === 'dark') return attr
+  const stored = localStorage.getItem(THEME_STORAGE_KEY)
+  if (stored === 'light' || stored === 'dark') return stored
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(readInitialTheme)
 
+  // Self-heal: re-apply the attribute after mount in case hydration cleared
+  // the one the inline script set (see readInitialTheme above for why).
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    syncThemeColorMeta(theme)
+  }, [theme])
+
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next: Theme = prev === 'dark' ? 'light' : 'dark'
-      document.documentElement.setAttribute('data-theme', next)
       localStorage.setItem(THEME_STORAGE_KEY, next)
-      syncThemeColorMeta(next)
       return next
     })
   }, [])

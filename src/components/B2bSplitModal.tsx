@@ -84,7 +84,7 @@ export default function B2bSplitModal({ artistName, onSave, onClose }: B2bSplitM
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{
         position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center',
         padding: '0 0 env(safe-area-inset-bottom, 0)',
@@ -171,7 +171,7 @@ export default function B2bSplitModal({ artistName, onSave, onClose }: B2bSplitM
           )}
 
           {error && (
-            <p style={{ fontSize: '0.82rem', color: '#f87171', margin: 0 }}>{error}</p>
+            <p style={{ fontSize: '0.82rem', color: 'var(--error-text)', margin: 0 }}>{error}</p>
           )}
         </div>
 

@@ -3,39 +3,12 @@
 import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists, festivalTimetableSlots } from "@/db/schema";
-import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
+import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup, insertTimetableSlots } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { toIsoDate } from "@/lib/dates";
 import { parsePFEventPage } from "@/services/partyflock/parser";
 import { syncFestivalGenres } from "./festival-genres";
-import { type TimetableSlot } from "@/services/lineup-types";
-
-/** Insert timetable slots for a festival, mapping artist names to IDs. */
-async function insertTimetableSlots(
-  festivalId: string,
-  slots: TimetableSlot[],
-  nameToId: Record<string, string>
-): Promise<void> {
-  const rows = slots
-    .filter((slot) => nameToId[slot.artistName])
-    .map((slot) => ({
-      festivalId,
-      artistId: nameToId[slot.artistName],
-      stageName: slot.stageName,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      stageOrder: slot.stageOrder,
-      slotOrder: slot.slotOrder,
-    }));
-
-  if (rows.length === 0) return;
-
-  await db
-    .insert(festivalTimetableSlots)
-    .values(rows)
-    .onConflictDoNothing();
-}
 
 /** Fetch only the og:image URL for a Partyflock event by party ID. */
 export async function fetchPFEventImageUrl(partyId: string): Promise<string | null> {

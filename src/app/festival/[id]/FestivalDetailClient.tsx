@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
@@ -16,9 +16,11 @@ import { formatDate } from '@/lib/format-date'
 import { parseLocalDate } from '@/lib/dates'
 import { getFestivalPlaylist, type FestivalPlaylistData } from '@/db/actions/festival-playlist'
 
+const PfTimetableImportModal = lazy(() => import('./PfTimetableImportModal'))
+
 const STAR_COUNT = 5
-const STAR_COLOR_FILLED = '#fbbf24'
-const STAR_COLOR_EMPTY = 'rgba(255,255,255,0.2)'
+const STAR_COLOR_FILLED = 'var(--star-filled)'
+const STAR_COLOR_EMPTY = 'var(--star-empty)'
 
 function CalIcon() {
   return (
@@ -75,6 +77,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(null)
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showReimportConfirm, setShowReimportConfirm] = useState(false)
+  const [showPfImportModal, setShowPfImportModal] = useState(false)
   const [isReimporting, setIsReimporting] = useState(false)
   const [timetableStages, setTimetableStages] = useState<TimetableStage[]>([])
   const [lineupView, setLineupView] = useState<'lineup' | 'timetable'>(
@@ -168,9 +171,13 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
     return () => { cancelled = true }
   }, [event])
 
+  const refreshTimetable = () => {
+    getTimetable(id).then(stages => setTimetableStages(stages)).catch(() => {})
+  }
+
   useEffect(() => {
     loadB2bSets(id)
-    getTimetable(id).then(stages => setTimetableStages(stages)).catch(() => {})
+    refreshTimetable()
   }, [id, loadB2bSets])
 
   const isFuture = event?.date && parseLocalDate(event.date) > new Date()
@@ -243,8 +250,8 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   const pfExternalUrl = pfPartyId ? `https://partyflock.nl/party/${pfPartyId}` : null
   const isActive = isFuture ? upcoming : attended
   const actionLabelText = isFuture
-    ? (upcoming ? 'Going \u2713' : 'Mark as Going')
-    : (attended ? 'Attended \u2713' : 'Mark as Attended')
+    ? (upcoming ? 'Going' : 'Mark as Going')
+    : (attended ? 'Attended' : 'Mark as Attended')
 
   return (
     <div className="page">
@@ -306,7 +313,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
             <button
               id="detail-attend-btn"
               className={`attend-btn ${isActive ? 'attended' : ''}`}
-              style={Object.assign({ fontSize: '0.95rem', padding: '10px 20px' }, isFuture && upcoming ? { background: '#3b82f6', borderColor: '#3b82f6', color: '#fff' } : {})}
+              style={Object.assign({ fontSize: '0.95rem', padding: '10px 20px' }, isFuture && upcoming ? { background: 'var(--state-going)', borderColor: 'var(--state-going)', color: 'var(--color-white)' } : {})}
               onClick={handleAction}
             >
               <CheckIcon />
@@ -342,7 +349,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
               onClick={(e) => { if (e.target === e.currentTarget) setShowAdminMenu(false) }}
               style={{
                 position: 'fixed', inset: 0, zIndex: 1000,
-                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
                 display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                 padding: '0 0 env(safe-area-inset-bottom, 0)',
               }}
@@ -373,10 +380,22 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                   </button>
                 </div>
                 <button
+                  onClick={() => { setShowAdminMenu(false); setShowPfImportModal(true) }}
+                  style={{
+                    width: '100%', background: 'none', border: 'none',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.95rem', fontFamily: 'var(--font-sans)',
+                    padding: '16px 20px', textAlign: 'left', cursor: 'pointer',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  Link Partyflock Timetable
+                </button>
+                <button
                   onClick={() => { setShowAdminMenu(false); setShowReimportConfirm(true) }}
                   style={{
                     width: '100%', background: 'none', border: 'none',
-                    color: 'var(--accent-red, #ef4444)',
+                    color: 'var(--accent-red)',
                     fontSize: '0.95rem', fontFamily: 'var(--font-sans)',
                     padding: '16px 20px', textAlign: 'left', cursor: 'pointer',
                   }}
@@ -392,13 +411,24 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
             </div>
           )}
 
+          {/* Partyflock timetable import — admin only */}
+          {showPfImportModal && (
+            <Suspense fallback={null}>
+              <PfTimetableImportModal
+                festivalId={id}
+                onClose={() => setShowPfImportModal(false)}
+                onImported={refreshTimetable}
+              />
+            </Suspense>
+          )}
+
           {/* Re-import confirmation overlay — admin only */}
           {showReimportConfirm && (
             <div
               onClick={(e) => { if (e.target === e.currentTarget) setShowReimportConfirm(false) }}
               style={{
                 position: 'fixed', inset: 0, zIndex: 1000,
-                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+                background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
                 display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                 padding: '0 0 env(safe-area-inset-bottom, 0)',
               }}
@@ -444,7 +474,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                     <button
                       onClick={handleReimport}
                       className="btn btn-primary"
-                      style={{ flex: 2, background: 'var(--accent-red, #ef4444)', borderColor: 'var(--accent-red, #ef4444)' }}
+                      style={{ flex: 2, background: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}
                       disabled={isReimporting}
                     >
                       {isReimporting ? 'Re-importing…' : 'Re-import Festival'}
@@ -484,9 +514,9 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                     style={{
                       padding: '4px 12px',
                       borderRadius: 6,
-                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.12))',
-                      background: lineupView === 'lineup' ? 'var(--accent, rgba(255,255,255,0.15))' : 'transparent',
-                      color: lineupView === 'lineup' ? 'var(--text-primary, #fff)' : 'var(--text-muted)',
+                      border: '1px solid var(--border-subtle)',
+                      background: lineupView === 'lineup' ? 'var(--border-strong)' : 'transparent',
+                      color: lineupView === 'lineup' ? 'var(--text-primary)' : 'var(--text-muted)',
                       fontSize: '0.8rem',
                       fontWeight: lineupView === 'lineup' ? 600 : 400,
                       cursor: 'pointer',
@@ -501,9 +531,9 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                     style={{
                       padding: '4px 12px',
                       borderRadius: 6,
-                      border: '1px solid var(--border-subtle, rgba(255,255,255,0.12))',
-                      background: lineupView === 'timetable' ? 'var(--accent, rgba(255,255,255,0.15))' : 'transparent',
-                      color: lineupView === 'timetable' ? 'var(--text-primary, #fff)' : 'var(--text-muted)',
+                      border: '1px solid var(--border-subtle)',
+                      background: lineupView === 'timetable' ? 'var(--border-strong)' : 'transparent',
+                      color: lineupView === 'timetable' ? 'var(--text-primary)' : 'var(--text-muted)',
                       fontSize: '0.8rem',
                       fontWeight: lineupView === 'timetable' ? 600 : 400,
                       cursor: 'pointer',

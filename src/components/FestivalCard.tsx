@@ -36,15 +36,15 @@ const SOURCE_LABELS: Record<string, { label: string; color: string; bg: string }
   ra: { label: 'RA', color: 'var(--text-muted)', bg: 'transparent' },
   festivalfans: { label: 'FestivalFans', color: 'var(--text-muted)', bg: 'transparent' },
   partyflock: { label: 'Partyflock', color: 'var(--text-muted)', bg: 'transparent' },
-  custom: { label: 'Custom', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' },
-  external: { label: 'External', color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(139,92,246,0.1))' },
+  custom: { label: 'Custom', color: 'var(--text-muted)', bg: 'var(--tag-bg-muted)' },
+  external: { label: 'External', color: 'var(--text-muted)', bg: 'var(--tag-bg-purple)' },
 }
 
 function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean }) {
   const key = source ?? 'custom'
-  const config = SOURCE_LABELS[key] ?? { label: key, color: 'var(--text-muted)', bg: 'var(--bg-tertiary, rgba(107,114,128,0.1))' }
+  const config = SOURCE_LABELS[key] ?? { label: key, color: 'var(--text-muted)', bg: 'var(--tag-bg-muted)' }
 
-  const badgeStyle = { background: '#000', borderColor: 'rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '24px' }
+  const badgeStyle = { background: 'var(--color-black)', borderColor: 'var(--border-strong)', borderRadius: '6px', padding: '4px 6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '24px' }
 
   if (key === 'ra') {
     return (
@@ -71,7 +71,7 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   }
 
   return (
-    <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border, rgba(255,255,255,0.1))', fontSize: '0.65rem', padding: '1px 6px' }}>
+    <span className="tag" style={{ background: config.bg, color: config.color, borderColor: 'var(--border)', fontSize: '0.65rem', padding: '1px 6px' }}>
       {config.label}
     </span>
   )
@@ -134,9 +134,9 @@ export default memo(function FestivalCard({ event }: { event: any }) {
   const festivalHref = `/festival/${event.id}`
 
   const isActive = isFuture ? upcoming : attended
-  const actionLabelText = isFuture 
-    ? (upcoming ? 'Going ✓' : 'Mark as Going')
-    : (attended ? 'Attended ✓' : 'Mark as Attended')
+  const actionLabelText = isFuture
+    ? (upcoming ? 'Going' : 'Mark as Going')
+    : (attended ? 'Attended' : 'Mark as Attended')
 
   return (
     <Link href={festivalHref} className="festival-card fade-in">
@@ -161,7 +161,7 @@ export default memo(function FestivalCard({ event }: { event: any }) {
             <span key={genre} className="tag">{genre}</span>
           ))}
           {attended && <span className="tag tag-green">✓ Attended</span>}
-          {upcoming && <span className="tag" style={{ background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' }}>✓ Going</span>}
+          {upcoming && <span className="tag" style={{ background: 'var(--state-going)', color: 'var(--color-white)', borderColor: 'var(--state-going)' }}>✓ Going</span>}
         </div>
 
         <h3 className="festival-card-title">{event.name}</h3>
@@ -191,7 +191,7 @@ export default memo(function FestivalCard({ event }: { event: any }) {
           className={`attend-btn ${isActive ? 'attended' : ''}`} 
           onClick={handleAction} 
           id={`action-${event.id}`}
-          style={isFuture && upcoming ? { background: '#3b82f6', borderColor: '#3b82f6', color: '#fff' } : {}}
+          style={isFuture && upcoming ? { background: 'var(--state-going)', borderColor: 'var(--state-going)', color: 'var(--color-white)' } : {}}
         >
           <CheckIcon />
           <span className="attend-label">{actionLabelText}</span>

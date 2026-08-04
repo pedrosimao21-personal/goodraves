@@ -31,7 +31,7 @@ export default class ErrorBoundary extends React.Component<
           </p>
           {process.env.NODE_ENV === 'development' ? (
             <div style={{ background: 'var(--bg-card)', padding: 16, borderRadius: 8, width: '100%', maxWidth: 800, overflowX: 'auto', marginBottom: 24, border: '1px solid var(--border)' }}>
-              <p style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: 10 }}>{this.state.error && this.state.error.toString()}</p>
+              <p style={{ color: 'var(--accent-red)', fontWeight: 'bold', marginBottom: 10 }}>{this.state.error && this.state.error.toString()}</p>
               <pre style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
                 {this.state.errorInfo && this.state.errorInfo.componentStack}
               </pre>

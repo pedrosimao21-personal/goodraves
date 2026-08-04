@@ -56,3 +56,7 @@ export { reimportPFEvent, refreshPFEvent, fetchPFEvent, fetchPFEventImageUrl } f
 
 // Admin re-import (clears and re-fetches lineup from source)
 export { reimportFestival } from "./festival-reimport";
+
+// Admin Partyflock timetable import (for festivals whose own source has no timetable)
+export { importPFTimetableForFestival } from "./festival-timetable-import";
+export type { PFTimetableImportResult } from "./festival-timetable-import";

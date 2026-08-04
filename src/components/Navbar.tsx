@@ -12,8 +12,8 @@ const LogoIcon = () => (
     <circle cx="16" cy="16" r="10" stroke="url(#logoGrad)" strokeWidth="1.5" strokeDasharray="3 2" />
     <defs>
       <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#8b5cf6" />
-        <stop offset="100%" stopColor="#ec4899" />
+        <stop offset="0%" stopColor="var(--accent-purple)" />
+        <stop offset="100%" stopColor="var(--accent-pink)" />
       </linearGradient>
     </defs>
   </svg>
@@ -125,7 +125,7 @@ export default function Navbar() {
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border)',
                     borderRadius: 12,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    boxShadow: 'var(--shadow-dropdown)',
                     width: 175,
                     overflow: 'hidden',
                     display: 'flex',

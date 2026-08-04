@@ -43,6 +43,10 @@ export const festivals = pgTable("festivals", {
   source: text("source"), // "ra", "custom", "external", etc.
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
+  // Linked Partyflock party ID, used to import a timetable for a festival
+  // whose own source (RA/FestivalFans) doesn't provide one. Independent of
+  // `source`/`sourceId` — a festival can be RA-sourced and PF-linked at once.
+  pfPartyId: text("pf_party_id"),
   interestedCount: integer("interested_count").default(0),
   visitorsCount: integer("visitors_count").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

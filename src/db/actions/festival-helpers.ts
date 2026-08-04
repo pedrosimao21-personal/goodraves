@@ -2,12 +2,14 @@ import { db } from "@/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { getClientIp } from "@/lib/client-ip";
-import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers, users } from "@/db/schema";
+import { artists, festivals, festivalArtists, festivalB2bSets, festivalB2bSetMembers, festivalTimetableSlots, users } from "@/db/schema";
 import { auth } from "../../../auth";
 import { MIN_RATING, MAX_RATING } from "@/lib/constants";
 import { isRateLimited } from "@/db/rate-limit";
-import { type B2bLineupEntry, type LineupEntry, flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
+import { type B2bLineupEntry, type LineupEntry, type TimetableSlot, flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 import { normalizeArtistName } from "@/utils/text-normalizer";
+import { extractPFPartyId, fetchPFEventHtml } from "@/services/partyflock/client";
+import { parsePFEventPage } from "@/services/partyflock/parser";
 
 // Re-export shared constants so existing server-side imports keep working
 export {
@@ -252,4 +254,120 @@ export async function persistLineup(
   }
 
   return nameToId;
+}
+
+export type PFTimetableImportResult = {
+  stageCount: number;
+  slotCount: number;
+  newArtistCount: number;
+};
+
+/**
+ * Core Partyflock-timetable-import logic: fetch, verify, and persist. Shared
+ * by the admin server action (auth-gated — see festival-timetable-import.ts)
+ * and the backfill script (runs outside a request context, so it can't call
+ * requireAdmin/enforceRateLimit; that's a plain script run by the site owner
+ * with direct DATABASE_URL access, the same trust level as the other
+ * scripts in ./scripts).
+ *
+ * Verifies the Partyflock page's date matches the festival's stored date
+ * before importing, so a Partyflock series/event page (which can resolve to
+ * whichever edition PF currently considers current) can't silently attach
+ * the wrong timetable. Artists in the Partyflock timetable that aren't
+ * already in the lineup are created and added to it — case-insensitively
+ * matched via ensureArtistsAndGetIds, so e.g. Partyflock's "Dax J" resolves
+ * to the same artist as an existing RA-sourced "DAX J" row.
+ */
+export async function importPFTimetable(
+  festivalId: string,
+  partyflockUrl: string
+): Promise<PFTimetableImportResult> {
+  const [festival] = await db
+    .select({ id: festivals.id, date: festivals.date })
+    .from(festivals)
+    .where(eq(festivals.id, festivalId))
+    .limit(1);
+  if (!festival) {
+    throw new Error("Festival not found");
+  }
+
+  const partyId = await extractPFPartyId(partyflockUrl);
+  if (!partyId) {
+    throw new Error("Could not resolve a Partyflock party from that URL");
+  }
+
+  const html = await fetchPFEventHtml(partyId);
+  if (!html) {
+    throw new Error("Failed to fetch the Partyflock page");
+  }
+
+  const parsed = parsePFEventPage(html);
+  if (!parsed.date) {
+    throw new Error("Partyflock page has no date to verify against");
+  }
+  if (parsed.date !== festival.date) {
+    throw new Error(
+      `Partyflock date (${parsed.date}) doesn't match this festival's date (${festival.date}) — refusing to import a possibly wrong edition.`
+    );
+  }
+  if (parsed.timetable.length === 0) {
+    throw new Error("Partyflock page has no timetable to import");
+  }
+
+  const existingLineup = await db
+    .select({ artistId: festivalArtists.artistId })
+    .from(festivalArtists)
+    .where(eq(festivalArtists.festivalId, festivalId));
+  const existingArtistIds = new Set(existingLineup.map((r) => r.artistId));
+
+  const artistNames = [...new Set(parsed.timetable.map((slot) => slot.artistName))];
+  const nameToId = await ensureArtistsAndGetIds(artistNames);
+
+  const lineupRows = artistNames
+    .filter((name) => nameToId[name])
+    .map((name) => ({ festivalId, artistId: nameToId[name] }));
+  const newArtistCount = lineupRows.filter((r) => !existingArtistIds.has(r.artistId)).length;
+
+  if (lineupRows.length > 0) {
+    await db.insert(festivalArtists).values(lineupRows).onConflictDoNothing();
+  }
+
+  await insertTimetableSlots(festivalId, parsed.timetable, nameToId);
+
+  await db
+    .update(festivals)
+    .set({ pfPartyId: partyId })
+    .where(eq(festivals.id, festivalId));
+
+  return {
+    stageCount: new Set(parsed.timetable.map((slot) => slot.stageOrder)).size,
+    slotCount: parsed.timetable.length,
+    newArtistCount,
+  };
+}
+
+/** Insert timetable slots for a festival, mapping artist names to IDs. */
+export async function insertTimetableSlots(
+  festivalId: string,
+  slots: TimetableSlot[],
+  nameToId: Record<string, string>
+): Promise<void> {
+  const rows = slots
+    .filter((slot) => nameToId[slot.artistName])
+    .map((slot) => ({
+      festivalId,
+      artistId: nameToId[slot.artistName],
+      stageName: slot.stageName,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      stageOrder: slot.stageOrder,
+      slotOrder: slot.slotOrder,
+    }));
+
+  if (rows.length === 0) return;
+
+  await db
+    .insert(festivalTimetableSlots)
+    .values(rows)
+    .onConflictDoNothing();
 }

@@ -24,6 +24,7 @@ npx tsx scripts/clear-artist-cache.ts               # Clear cached Spotify/Last.
 npx tsx scripts/cleanup-artist-data.ts [--dry-run]  # Fix encoding/junk artist records
 npx tsx --env-file=.env scripts/import-pf-agenda.ts    # Backfill/re-run the daily Partyflock agenda import
 npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock festival refresh (7-/2-day checkpoints)
+npx tsx --env-file=.env scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -120,7 +121,8 @@ Workflow: edit `schema.ts` (ORM types) **and** author a migration
 `migrations/README.md` for the full workflow and the one-time baseline procedure.
 
 Key tables: `festivals` (PK is text like `ra-2403879`; `source` is
-`"ra"|"custom"|"external"|"festivalfans"|"partyflock"`),
+`"ra"|"custom"|"external"|"festivalfans"|"partyflock"`; optional `pf_party_id` links to a
+Partyflock party for timetable import, independent of `source`),
 `artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),

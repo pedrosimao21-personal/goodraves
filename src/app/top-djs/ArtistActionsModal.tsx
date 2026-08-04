@@ -38,7 +38,7 @@ export default function ArtistActionsModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
+        background: 'var(--overlay-scrim)',
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
@@ -187,8 +187,8 @@ function HistoryView({
 }
 
 const STAR_COUNT = 5
-const STAR_COLOR_FILLED = '#fbbf24'
-const STAR_COLOR_EMPTY = 'rgba(255,255,255,0.15)'
+const STAR_COLOR_FILLED = 'var(--star-filled)'
+const STAR_COLOR_EMPTY = 'var(--border-strong)'
 
 function InlineStarRating({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
   const fontSize = size === 'sm' ? '0.72rem' : '1rem'

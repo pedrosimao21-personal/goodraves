@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { SpotifyIcon } from '@/components/icons'
 
 const STAR_COUNT = 5
-const STAR_COLOR_FILLED = '#fbbf24'
-const STAR_COLOR_EMPTY = 'rgba(255,255,255,0.15)'
+const STAR_COLOR_FILLED = 'var(--star-filled)'
+const STAR_COLOR_EMPTY = 'var(--border-strong)'
 const MEDALS = ['\u{1F947}', '\u{1F948}', '\u{1F949}']
 
 export function PageHeader({ availableYears, selectedYear, onYearChange, sortMode, onSortModeChange }: {
@@ -61,7 +61,7 @@ export function PageHeader({ availableYears, selectedYear, onYearChange, sortMod
               fontFamily: 'var(--font-sans)',
               transition: 'background 200ms ease, color 200ms ease',
               background: sortMode === mode ? 'var(--accent)' : 'transparent',
-              color: sortMode === mode ? '#fff' : 'var(--text-muted)',
+              color: sortMode === mode ? 'var(--color-white)' : 'var(--text-muted)',
             }}
           >
             {label}
@@ -135,7 +135,7 @@ function ArtistRow({ artist, index, displayImage, hasSpotifyImage, onSelect }: {
       className="fade-in"
       style={{
         background: isTopThree ? 'var(--bg-card-hover)' : 'var(--bg-card)',
-        border: `1px solid ${isFirst ? 'rgba(251, 191, 36, 0.3)' : 'var(--border)'}`,
+        border: `1px solid ${isFirst ? 'var(--star-glow)' : 'var(--border)'}`,
         borderRadius: 14,
         padding: '16px 20px',
         display: 'flex',
@@ -148,7 +148,7 @@ function ArtistRow({ artist, index, displayImage, hasSpotifyImage, onSelect }: {
       }}
       onClick={onSelect}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = isFirst ? 'rgba(251, 191, 36, 0.3)' : 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = isFirst ? 'var(--star-glow)' : 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
       <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
         {isTopThree ? (

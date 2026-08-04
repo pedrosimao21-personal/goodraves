@@ -52,7 +52,7 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
     return (
       <div style={{
         background: 'var(--bg-card)',
-        border: '1px solid rgba(16, 185, 129, 0.4)',
+        border: '1px solid var(--accent-green-glow)',
         borderRadius: 16,
         padding: '32px',
         textAlign: 'center',
@@ -156,11 +156,11 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
           placeholder="e.g. https://example.com/fest-image.jpg"
           style={{
             ...inputStyle,
-            borderColor: imageUrl && !isAllowedImageHost(imageUrl) ? '#f87171' : undefined,
+            borderColor: imageUrl && !isAllowedImageHost(imageUrl) ? 'var(--error-text)' : undefined,
           }}
         />
         {imageUrl && !isAllowedImageHost(imageUrl) && (
-          <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#f87171' }}>
+          <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--error-text)' }}>
             This image host is not allowed. The image won&apos;t display.
           </p>
         )}

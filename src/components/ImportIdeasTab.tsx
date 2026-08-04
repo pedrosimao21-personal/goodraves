@@ -79,7 +79,7 @@ export default function ImportIdeasTab() {
                 fontSize: '0.7rem',
                 padding: '3px 8px',
                 borderRadius: 20,
-                background: 'rgba(139,92,246,0.15)',
+                background: 'var(--accent-purple-glow-15)',
                 color: 'var(--accent)',
                 fontWeight: 600,
                 textTransform: 'uppercase',

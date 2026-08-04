@@ -42,6 +42,7 @@ UI and the Partyflock agenda cron (`vercel.json`). For a manual backfill or ad-h
 ```bash
 npx tsx --env-file=.env scripts/import-pf-agenda.ts     # Partyflock agenda backfill
 npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Refresh imported Partyflock festivals
+npx tsx --env-file=.env scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one
 ```
 
 ## Migrations
@@ -79,7 +80,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 | Table | Purpose |
 |---|---|
 | `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
-| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` |
+| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` and an optional `pf_party_id` linking to a Partyflock party for timetable import, independent of `source` |
 | `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
 | `festival_genres` | Festival↔genre join (from the Partyflock genre estimate) |

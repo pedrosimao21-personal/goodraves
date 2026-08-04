@@ -31,7 +31,7 @@ export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onCreateB2b,
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{
         position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center',
         padding: '0 0 env(safe-area-inset-bottom, 0)',

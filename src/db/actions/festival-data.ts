@@ -203,6 +203,7 @@ export type TimetableStage = {
 export type TimetableSlotRow = {
   artistId: string;
   artistName: string;
+  artistImageUrl: string | null;
   startTime: string;
   endTime: string;
   slotOrder: number;
@@ -222,6 +223,7 @@ export async function getTimetable(festivalId: string): Promise<TimetableStage[]
       endTime: festivalTimetableSlots.endTime,
       artistId: artists.id,
       artistName: artists.name,
+      artistImageUrl: artists.imageUrl,
     })
     .from(festivalTimetableSlots)
     .innerJoin(artists, eq(festivalTimetableSlots.artistId, artists.id))
@@ -239,6 +241,7 @@ export async function getTimetable(festivalId: string): Promise<TimetableStage[]
     stage.slots.push({
       artistId: row.artistId,
       artistName: row.artistName,
+      artistImageUrl: row.artistImageUrl,
       startTime: row.startTime,
       endTime: row.endTime,
       slotOrder: row.slotOrder,

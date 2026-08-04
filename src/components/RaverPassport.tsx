@@ -3,6 +3,9 @@
 import React, { forwardRef } from 'react'
 import { normalizeLocation } from '@/utils/location-normalizer'
 
+// Colors here are deliberately hardcoded, not CSS custom properties: this
+// card is exported as a shareable image (see html2canvas in insights/page.tsx)
+// and is meant to look identical regardless of the viewer's site theme.
 const CARD_STYLE: React.CSSProperties = {
   background: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid rgba(255,255,255,0.08)',

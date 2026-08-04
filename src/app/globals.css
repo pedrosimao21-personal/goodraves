@@ -11,6 +11,7 @@
 
   --accent-purple: #8b5cf6;
   --accent-purple-light: #a78bfa;
+  --accent-purple-lighter: #c4b5fd;
   --accent-pink: #ec4899;
   --accent-orange: #f97316;
   --accent-cyan: #06b6d4;
@@ -26,6 +27,47 @@
 
   --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(139, 92, 246, 0.4);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-medium: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-focus: rgba(255, 255, 255, 0.25);
+
+  /* Additional semantic tokens — a mechanical sweep of hardcoded colors
+     across components, same values, grouped/named so a future light theme
+     only needs to override this file. Not used by RaverPassport.tsx (a
+     shareable/exportable card meant to look identical regardless of site
+     theme) or brand marks like the Spotify icon. */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --state-going: #3b82f6; /* "Going"/upcoming action state */
+  --accent-red: #ef4444; /* destructive actions */
+  --accent-red-bright: #ff4444; /* "Clear list" action */
+  --error-text: #f87171; /* inline form/validation error text */
+  --star-filled: #fbbf24; /* filled rating star */
+  --star-empty: rgba(255, 255, 255, 0.2);
+  --star-glow: rgba(251, 191, 36, 0.3);
+
+  --accent-amber: #f59e0b; /* chart palette */
+  --accent-indigo: #6366f1; /* chart palette */
+  --accent-rose: #fb7185; /* chart palette */
+  --accent-teal: #2dd4bf; /* chart palette */
+
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --overlay-scrim: rgba(0, 0, 0, 0.7);
+  --tag-bg-muted: rgba(107, 114, 128, 0.1);
+  --tag-bg-purple: rgba(139, 92, 246, 0.1);
+
+  --chart-tooltip-bg: #1e1e1e;
+  --chart-tooltip-border: #333;
+  --chart-axis-stroke: #888;
+  --chart-axis-text: #ccc;
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  --accent-purple-glow-12: rgba(139, 92, 246, 0.12);
+  --accent-purple-glow-15: rgba(139, 92, 246, 0.15);
+  --accent-purple-glow-25: rgba(139, 92, 246, 0.25);
+  --accent-green-glow: rgba(16, 185, 129, 0.4);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -2180,6 +2222,26 @@ img {
 }
 .pwa-reload-btn:hover {
   color: var(--text-primary);
+}
+
+/* =============================================
+   TIMETABLE — horizontal Gantt on desktop, vertical list on mobile.
+   Both trees render; the media query picks which is visible, so there's
+   no client-side viewport measurement or hydration mismatch.
+   ============================================= */
+.timetable-gantt-wrapper {
+  display: block;
+}
+.timetable-list-wrapper {
+  display: none;
+}
+@media (max-width: 639px) {
+  .timetable-gantt-wrapper {
+    display: none;
+  }
+  .timetable-list-wrapper {
+    display: block;
+  }
 }
 
 /* =============================================

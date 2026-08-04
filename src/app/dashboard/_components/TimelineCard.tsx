@@ -64,7 +64,7 @@ const ArtistChip = React.memo(({ artist }: { artist: TimelineArtist }) => (
     )}
     <span>{artist.name}</span>
     {artist.rating > 0 && (
-      <span style={{ color: '#fbbf24', fontSize: '0.75rem' }}>{artist.rating}★</span>
+      <span style={{ color: 'var(--star-filled)', fontSize: '0.75rem' }}>{artist.rating}★</span>
     )}
   </Link>
 ))
@@ -165,7 +165,7 @@ const TimelineCard = React.memo(({ festivalId, meta, seenArtists, isUpcoming }: 
           {isUpcoming && (
             <span
               className="tag"
-              style={{ background: '#3b82f6', color: '#fff', borderColor: '#3b82f6' }}
+              style={{ background: 'var(--state-going)', color: 'var(--color-white)', borderColor: 'var(--state-going)' }}
             >
               Upcoming
             </span>

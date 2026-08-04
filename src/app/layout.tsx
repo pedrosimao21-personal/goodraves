@@ -41,6 +41,9 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // Rendered into a <meta name="theme-color"> tag read by the browser before
+  // any CSS loads, so it can't reference a CSS custom property — keep this
+  // in sync with --bg-primary in globals.css by hand.
   themeColor: '#0d0d14',
 }
 

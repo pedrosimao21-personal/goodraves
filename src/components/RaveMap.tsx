@@ -8,8 +8,8 @@ const DEFAULT_ZOOM = 4
 const BASE_MARKER_RADIUS = 10
 const MARKER_RADIUS_GROWTH = 3
 const MAX_MARKER_RADIUS = 30
-const MARKER_FILL_COLOR = '#8b5cf6'
-const MARKER_BORDER_COLOR = '#c4b5fd'
+const MARKER_FILL_COLOR = 'var(--accent-purple)'
+const MARKER_BORDER_COLOR = 'var(--accent-purple-lighter)'
 const MARKER_FILL_OPACITY = 0.6
 const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
 

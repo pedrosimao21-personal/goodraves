@@ -1,10 +1,12 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useState, lazy, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useUserDataActions } from '@/context/UserDataContext'
 import type { B2bSetData } from '@/context/user-data-state'
+
+const B2bMembersModal = lazy(() => import('./B2bMembersModal'))
 
 const STARS = [1, 2, 3, 4, 5]
 
@@ -22,6 +24,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
   const [isRatingVisible, setIsRatingVisible] = useState(false)
   const [hover, setHover] = useState(0)
   const [showUnsplitConfirm, setShowUnsplitConfirm] = useState(false)
+  const [showMembersModal, setShowMembersModal] = useState(false)
   const hasRating = currentRating > 0
 
   const ariaDisplayName = b2bSet.members.map(m => m.artistName).join(' b2b ')
@@ -32,6 +35,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
       <Link
         href={`/artist/${m.artistId}/${encodeURIComponent(m.artistName)}`}
         style={{ color: 'inherit', textDecoration: 'none' }}
+        onClick={e => e.stopPropagation()}
         onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
         onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
       >
@@ -52,7 +56,11 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
 
   return (
     <>
-      <div className="artist-card fade-in" style={{ position: 'relative' }}>
+      <div
+        className="artist-card fade-in"
+        style={{ position: 'relative', cursor: 'pointer' }}
+        onClick={() => setShowMembersModal(true)}
+      >
         {/* B2B badge — top left corner */}
         <span style={{
           position: 'absolute',
@@ -139,7 +147,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
                     key={star}
                     className={`star ${(hover || currentRating) >= star ? 'filled' : ''}`}
                     style={{ fontSize: '1.3rem' }}
-                    onClick={() => handleSetRating(star)}
+                    onClick={(e) => { e.stopPropagation(); handleSetRating(star) }}
                     onMouseEnter={() => setHover(star)}
                     onMouseLeave={() => setHover(0)}
                     role="button"
@@ -152,7 +160,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
             ) : (
               <button
                 className="mark-seen-btn"
-                onClick={() => setIsRatingVisible(true)}
+                onClick={(e) => { e.stopPropagation(); setIsRatingVisible(true) }}
                 aria-label={`Mark ${ariaDisplayName} as seen`}
               >
                 Mark as seen
@@ -173,13 +181,23 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
         )}
       </div>
 
+      {showMembersModal && (
+        <Suspense fallback={null}>
+          <B2bMembersModal
+            b2bSet={b2bSet}
+            spotifyData={spotifyData}
+            onClose={() => setShowMembersModal(false)}
+          />
+        </Suspense>
+      )}
+
       {/* Unsplit confirmation overlay */}
       {showUnsplitConfirm && (
         <div
           onClick={(e) => { if (e.target === e.currentTarget) setShowUnsplitConfirm(false) }}
           style={{
             position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+            background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             padding: '0 0 env(safe-area-inset-bottom, 0)',
           }}

@@ -1,7 +1,41 @@
-import type { TimetableStage } from '@/db/actions/festivals'
+import type { TimetableStage, TimetableSlotRow } from '@/db/actions/festivals'
 
 // Minutes in a standard day — used to normalise overnight end times.
 const MINUTES_PER_DAY = 1440
+
+export type SlotGroup = {
+  startTime: string
+  endTime: string
+  slotOrder: number
+  artists: { artistId: string; artistName: string; artistImageUrl: string | null }[]
+}
+
+/** Group consecutive rows sharing the same time window into B2B slot groups. */
+export function groupSlotsByTime(slots: TimetableSlotRow[]): SlotGroup[] {
+  const groups: SlotGroup[] = []
+
+  for (const slot of slots) {
+    const last = groups[groups.length - 1]
+    const isSameWindow =
+      last &&
+      last.startTime === slot.startTime &&
+      last.endTime === slot.endTime &&
+      last.slotOrder === slot.slotOrder
+
+    if (isSameWindow) {
+      last.artists.push({ artistId: slot.artistId, artistName: slot.artistName, artistImageUrl: slot.artistImageUrl })
+    } else {
+      groups.push({
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        slotOrder: slot.slotOrder,
+        artists: [{ artistId: slot.artistId, artistName: slot.artistName, artistImageUrl: slot.artistImageUrl }],
+      })
+    }
+  }
+
+  return groups
+}
 
 /**
  * Convert an "HH:MM" string to minutes since midnight.

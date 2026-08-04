@@ -89,6 +89,9 @@ export default function Insights() {
       const el = passportCaptureRef.current as HTMLElement
       const prevOverflow = el.style.overflow
       el.style.overflow = 'visible'
+      // Fixed black canvas fill to match RaverPassport's own hardcoded dark
+      // gradient — this exported card is meant to look identical regardless
+      // of the viewer's site theme, so it intentionally doesn't use a token.
       const canvas = await html2canvas(el, { backgroundColor: '#000', scale: 3, useCORS: true, logging: false })
       el.style.overflow = prevOverflow
       const url = canvas.toDataURL('image/png')
@@ -173,7 +176,7 @@ export default function Insights() {
                       width: 28, height: 28,
                       borderRadius: '50%',
                       background: index === 0 ? 'var(--accent)' : 'var(--bg-glass)',
-                      color: index === 0 ? '#fff' : 'var(--text-primary)',
+                      color: index === 0 ? 'var(--color-white)' : 'var(--text-primary)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontWeight: 700, fontSize: '0.85rem'
                     }}>

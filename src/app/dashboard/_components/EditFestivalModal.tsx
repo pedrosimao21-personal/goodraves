@@ -7,7 +7,7 @@ import { getFestivalLineupNames } from '@/db/actions/get-initial-data'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
-const IMAGE_ERROR_COLOR = '#f87171'
+const IMAGE_ERROR_COLOR = 'var(--error-text)'
 const SAVED_FEEDBACK_DELAY_MS = 800
 
 export default function EditFestivalModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
@@ -72,7 +72,7 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{
         position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'flex-end',
         justifyContent: 'center',
         padding: '0 0 env(safe-area-inset-bottom, 0)',

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 
-const DEBOUNCE_SAVE_MS = 600
+const SAVED_MESSAGE_DURATION_MS = 2000
 
 export default function FestivalNotes({ eventId, notes, onSave }: {
   eventId: string
@@ -10,31 +10,64 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
   onSave: (eventId: string, notes: string) => Promise<void>
 }) {
   const [value, setValue] = useState(notes)
+  const [savedValue, setSavedValue] = useState(notes)
   const [saving, setSaving] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [justSaved, setJustSaved] = useState(false)
+  const savedMessageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => { setValue(notes) }, [notes])
+  useEffect(() => {
+    setValue(notes)
+    setSavedValue(notes)
+  }, [notes])
 
-  const debouncedSave = useCallback((text: string) => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(async () => {
-      setSaving(true)
-      await onSave(eventId, text)
-      setSaving(false)
-    }, DEBOUNCE_SAVE_MS)
-  }, [eventId, onSave])
+  const isDirty = value !== savedValue
+
+  // Warn before closing the tab / reloading with unsaved changes, since
+  // saving is now an explicit action rather than autosave-as-you-type.
+  useEffect(() => {
+    if (!isDirty) return
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  useEffect(() => {
+    return () => {
+      if (savedMessageTimerRef.current) clearTimeout(savedMessageTimerRef.current)
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value
-    setValue(text)
-    debouncedSave(text)
+    setValue(e.target.value)
   }
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    await onSave(eventId, value)
+    setSaving(false)
+    setSavedValue(value)
+    setJustSaved(true)
+    if (savedMessageTimerRef.current) clearTimeout(savedMessageTimerRef.current)
+    savedMessageTimerRef.current = setTimeout(() => setJustSaved(false), SAVED_MESSAGE_DURATION_MS)
+  }, [eventId, value, onSave])
 
   return (
     <div style={{ marginTop: 0, flex: 1, minWidth: 200 }}>
       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-        Notes
-        {saving && <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>Saving...</span>}
+        Personal Notes
+        {saving && (
+          <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>
+            Saving...
+          </span>
+        )}
+        {!saving && justSaved && (
+          <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>
+            Saved &#10003;
+          </span>
+        )}
       </div>
       <textarea
         value={value}
@@ -45,8 +78,8 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'var(--surface-hover)',
+          border: '1px solid var(--border-medium)',
           borderRadius: 8,
           padding: '6px 12px',
           color: 'var(--text-primary)',
@@ -56,9 +89,19 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
           outline: 'none',
           transition: 'border-color 150ms ease',
         }}
-        onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'}
-        onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+        onFocus={e => e.currentTarget.style.borderColor = 'var(--border-focus)'}
+        onBlur={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
       />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || saving}
+          className="btn btn-secondary btn-sm"
+          style={{ opacity: (!isDirty || saving) ? 0.5 : 1, cursor: (!isDirty || saving) ? 'default' : 'pointer' }}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+      </div>
     </div>
   )
 }

@@ -12,8 +12,8 @@ import TimelineView from './TimelineView'
 import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
 import type { TrendingFestival } from '@/db/actions/trending-festivals'
 
-const CLEAR_LIST_COLOR = '#ff4444'
-const UPCOMING_BG_COLOR = '#3b82f6'
+const CLEAR_LIST_COLOR = 'var(--accent-red-bright)'
+const UPCOMING_BG_COLOR = 'var(--state-going)'
 
 type ActiveTab = 'attended' | 'upcoming' | 'timeline'
 
@@ -146,7 +146,7 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
             onClick={() => switchToTab('upcoming')}
             style={
               activeTab === 'upcoming'
-                ? { background: UPCOMING_BG_COLOR, color: '#fff', borderColor: UPCOMING_BG_COLOR }
+                ? { background: UPCOMING_BG_COLOR, color: 'var(--color-white)', borderColor: UPCOMING_BG_COLOR }
                 : { border: '1px solid var(--border)', color: 'var(--text-primary)' }
             }
           >

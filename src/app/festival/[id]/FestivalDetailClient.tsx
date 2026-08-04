@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
 import { getFestival, reimportFestival, getTimetable, type TimetableStage } from '@/db/actions/festivals'
@@ -68,6 +68,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
+  const pathname = usePathname()
   const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin } = useUserData()
 
   const [event, setEvent] = useState<any>(() => initialFestival ? transformDbFestival(initialFestival) : null)
@@ -200,7 +201,12 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
 
   function switchView(view: 'lineup' | 'timetable') {
     setLineupView(view)
-    window.location.hash = view === 'timetable' ? 'timetable' : ''
+    // Use the router (not a raw `location.hash =` assignment) so this history
+    // entry is one Next's client router actually tracks — otherwise browser
+    // Back from a page navigated to from here updates the URL bar but the
+    // route content doesn't re-render. replace (not push) so switching tabs
+    // doesn't itself become a Back-button stop.
+    router.replace(`${pathname}${view === 'timetable' ? '#timetable' : ''}`, { scroll: false })
   }
 
   const handleAction = () => {

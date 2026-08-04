@@ -1,13 +1,32 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
+import { ThemeProvider } from '@/context/ThemeContext'
+import { THEME_STORAGE_KEY, THEME_COLORS } from '@/lib/theme-constants'
 import { getInitialUserData } from '@/db/actions/get-initial-data'
 import { auth } from '../../auth'
 import { Suspense } from 'react'
+
+// Runs before hydration so the correct theme (and matching browser-chrome
+// color) is set on first paint — no flash of the wrong theme.
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var stored = localStorage.getItem('${THEME_STORAGE_KEY}');
+    var theme = stored === 'light' || stored === 'dark'
+      ? stored
+      : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.setAttribute('data-theme', theme);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'light' ? '${THEME_COLORS.light}' : '${THEME_COLORS.dark}');
+  } catch (e) {}
+})();
+`
 
 const inter = Inter({
   subsets: ['latin'],
@@ -41,10 +60,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  // Rendered into a <meta name="theme-color"> tag read by the browser before
-  // any CSS loads, so it can't reference a CSS custom property — keep this
-  // in sync with --bg-primary in globals.css by hand.
-  themeColor: '#0d0d14',
+  // Static fallback for the pre-JS instant and non-JS clients; the inline
+  // script below immediately corrects this to the active theme's color
+  // (THEME_COLORS in lib/theme-constants.ts, kept in sync with --bg-primary
+  // in globals.css by hand).
+  themeColor: THEME_COLORS.dark,
 }
 
 export default async function RootLayout({
@@ -56,18 +76,21 @@ export default async function RootLayout({
   const session = await auth()
 
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
       <body>
-        <Providers session={session}>
-          <UserDataProvider initialData={initialData}>
-            <Navbar />
-            <ErrorBoundary>
-              <Suspense fallback={null}>
-                {children}
-              </Suspense>
-            </ErrorBoundary>
-          </UserDataProvider>
-        </Providers>
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeProvider>
+          <Providers session={session}>
+            <UserDataProvider initialData={initialData}>
+              <Navbar />
+              <ErrorBoundary>
+                <Suspense fallback={null}>
+                  {children}
+                </Suspense>
+              </ErrorBoundary>
+            </UserDataProvider>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   )

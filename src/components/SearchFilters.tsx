@@ -58,13 +58,18 @@ function CloseIcon() {
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
-    function handleMouseDown(event: MouseEvent) {
+    // pointerdown (not mousedown): on iOS Safari the synthetic mousedown from
+    // a tap can lag behind the real touch by enough to land after an
+    // in-between re-render, occasionally misjudging an in-menu tap as
+    // outside. pointerdown fires directly from the touch, before any mouse
+    // emulation, so it doesn't have that gap.
+    function handlePointerDown(event: PointerEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         onClose()
       }
     }
-    document.addEventListener('mousedown', handleMouseDown, true)
-    return () => document.removeEventListener('mousedown', handleMouseDown, true)
+    document.addEventListener('pointerdown', handlePointerDown, true)
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true)
   }, [ref, onClose])
 }
 

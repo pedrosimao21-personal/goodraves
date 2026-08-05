@@ -487,6 +487,8 @@ img {
   min-height: 36px;
   /* Ensure tappable area on mobile */
   -webkit-tap-highlight-color: transparent;
+  /* Skip iOS Safari's double-tap-to-zoom delay/gesture detection on this tap */
+  touch-action: manipulation;
 }
 
 .filter-dropdown-trigger:hover,
@@ -551,6 +553,8 @@ img {
   /* Ensure comfortable touch target */
   min-height: 40px;
   -webkit-tap-highlight-color: transparent;
+  /* Skip iOS Safari's double-tap-to-zoom delay/gesture detection on this tap */
+  touch-action: manipulation;
   width: 100%;
   background: transparent;
   border: none;

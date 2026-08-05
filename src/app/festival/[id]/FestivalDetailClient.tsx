@@ -283,9 +283,17 @@ export default function FestivalDetail({
     router.replace(`${pathname}${view === 'timetable' ? '#timetable' : ''}`, { scroll: false })
   }
 
-  const handleAction = () => {
+  const handleAction = async () => {
     const payload = { name: event.name, date: event.date, venue: event.venue, image: event.imageUrl, source: event.source }
-    toggleFestival(id, payload)
+    const finalId = await toggleFestival(id, payload)
+    // upsertFestival redirects to an existing row with the same name+date
+    // instead of creating a duplicate, so the attendance may have landed on a
+    // different id than the one in the URL. Follow it — otherwise this page
+    // keeps reading the old id, the button snaps back to "Mark as Going" and
+    // the vibe rating (also keyed by id) looks like it vanished.
+    if (finalId && finalId !== id) {
+      router.replace(`/festival/${finalId}`)
+    }
   }
 
   const handleMerged = async () => {

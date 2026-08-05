@@ -56,7 +56,14 @@ export interface UserDataContextType {
   loaded: boolean
   isAdmin: boolean
   // Mutations
-  toggleFestival: (eventId: string, meta?: any) => Promise<void>
+  /**
+   * Returns the festival id the attendance was actually recorded against.
+   * Usually `eventId`, but upsertFestival redirects to an existing row with
+   * the same name+date rather than creating a duplicate — callers rendering a
+   * specific festival must follow that id or they'll keep reading the old one
+   * and show the festival as un-attended. Returns null when not signed in.
+   */
+  toggleFestival: (eventId: string, meta?: any) => Promise<string | null>
   toggleSawArtist: (eventId: string, artistId: string, artistMeta?: any) => Promise<void>
   setRating: (artistId: string, rating: number) => Promise<void>
   setPerformanceRating: (eventId: string, artistId: string, rating: number) => Promise<void>

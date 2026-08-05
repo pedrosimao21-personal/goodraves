@@ -75,7 +75,7 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
 
 // ── Filter Dropdown (shared by Year and Country) ───────
 
-export type DropdownKey = 'year' | 'country'
+export type DropdownKey = 'year' | 'country' | 'timing'
 
 interface FilterDropdownProps {
   dropdownKey: DropdownKey
@@ -208,14 +208,44 @@ export default function SearchFilters({
     onFilterChange({ ...activeFilters, country: null })
   }, [activeFilters, onFilterChange])
 
+  const handleTimingSelect = useCallback(
+    (value: string | null) => {
+      onFilterChange({ ...activeFilters, timing: (value as SearchFilters['timing']) ?? null })
+    },
+    [activeFilters, onFilterChange],
+  )
+
+  const handleRemoveTiming = useCallback(() => {
+    onFilterChange({ ...activeFilters, timing: null })
+  }, [activeFilters, onFilterChange])
+
   const selectedCountryOption = filterOptions.countries.find((c) => c.value === activeFilters.country)
+  const selectedTimingOption = filterOptions.timings.find((t) => t.value === activeFilters.timing)
 
   // Hooks above must run on every render — keep this early return after them.
-  if (filterOptions.years.length === 0 && filterOptions.countries.length === 0) return null
+  if (
+    filterOptions.years.length === 0 &&
+    filterOptions.countries.length === 0 &&
+    filterOptions.timings.length === 0
+  ) return null
 
   return (
     <div className="search-filters">
       <div className="search-filters-row">
+        {filterOptions.timings.length > 0 && (
+          <FilterDropdown
+            dropdownKey="timing"
+            label="When"
+            ariaLabel="Upcoming or past filter"
+            options={filterOptions.timings}
+            selected={activeFilters.timing}
+            isOpen={openDropdown === 'timing'}
+            onToggle={onDropdownToggle}
+            onClose={onDropdownClose}
+            onSelect={handleTimingSelect}
+          />
+        )}
+
         {filterOptions.years.length > 0 && (
           <FilterDropdown
             dropdownKey="year"
@@ -243,6 +273,20 @@ export default function SearchFilters({
             onSelect={handleCountrySelect}
             renderOptionLabel={(option) => <CountryOptionLabel option={option} />}
           />
+        )}
+
+        {activeFilters.timing && (
+          <span className="filter-chip">
+            {selectedTimingOption?.label ?? activeFilters.timing}
+            <button
+              type="button"
+              className="filter-chip-remove"
+              onClick={handleRemoveTiming}
+              aria-label={`Remove filter: ${selectedTimingOption?.label ?? activeFilters.timing}`}
+            >
+              <CloseIcon />
+            </button>
+          </span>
         )}
 
         {activeFilters.year && (

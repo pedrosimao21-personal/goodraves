@@ -81,8 +81,8 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   // ── Mutation helpers ──
 
-  const toggleFestival = useCallback(async (eventId: string, meta: any = null) => {
-    if (!userId) { promptAuth(); return }
+  const toggleFestival = useCallback(async (eventId: string, meta: any = null): Promise<string | null> => {
+    if (!userId) { promptAuth(); return null }
 
     let wasAdded = false
     setState(prev => {
@@ -116,8 +116,10 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
           setState(prev => reconcileFestivalId(prev, eventId, finalId))
         }
         await addAttendance(finalId)
+        return finalId
       } else {
         await removeAttendance(eventId)
+        return eventId
       }
     } catch (err) {
       // The mutation didn't happen — undo the optimistic update.

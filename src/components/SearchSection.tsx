@@ -101,12 +101,20 @@ export default function SearchSection() {
   const filterOptions = useMemo(() => extractFilterOptions(events), [events])
   const filteredEvents = useMemo(() => applyFilters(events, filters), [events, filters])
 
-  // Sync filter changes back to the URL without pushing a new history entry
+  // Sync filter changes back to the URL for deep-linking/sharing.
+  //
+  // Uses history.replaceState, NOT router.replace: the latter is a real App
+  // Router navigation that re-fetches this route's RSC payload and re-renders
+  // page.tsx -> <Suspense><SearchSection/></Suspense>, remounting this
+  // component and resetting `events` to []. The search then re-ran and the
+  // freshly-filtered list was discarded — which is why applying a filter
+  // appeared to do nothing. history.replaceState updates the address bar
+  // without any navigation, so filter state survives.
   useEffect(() => {
     const baseParams = new URLSearchParams()
     if (initialQuery) baseParams.set('q', initialQuery)
     const params = buildFilterParams(baseParams, filters)
-    router.replace(`/?${params.toString()}`, { scroll: false })
+    window.history.replaceState({}, '', `/?${params.toString()}`)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 

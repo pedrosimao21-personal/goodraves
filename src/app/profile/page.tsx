@@ -235,19 +235,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <Link href="/insights" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ padding: 24, background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', transition: 'transform 200ms ease, border-color 200ms ease', cursor: 'pointer' }}
-                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'none' }}
-            >
-              <h3 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: '1.4rem' }}>📊</span> Personal Insights
-              </h3>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                View your festival activity, top genres, and interactive heatmaps.
-              </p>
-            </div>
-          </Link>
         </div>
 
         <h2 className="section-title" style={{ marginBottom: 16, fontSize: '1.5rem' }}>Tailored for You</h2>

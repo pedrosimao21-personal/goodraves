@@ -65,6 +65,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Discover', icon: <DiscoverIcon />, end: true },
   { to: '/dashboard', label: 'My Festivals', icon: <MyFestivalsIcon />, end: false },
   { to: '/top-djs', label: 'Top DJs', icon: <TopDjsIcon />, end: false },
+  { to: '/insights', label: 'Insights', icon: <ChartIcon />, end: false },
 ]
 
 export default function Navbar() {
@@ -155,14 +156,7 @@ export default function Navbar() {
                     >
                       Go to Profile
                     </Link>
-                    <Link 
-                      href="/insights" 
-                      onClick={() => setDropdownOpen(false)}
-                      style={{ padding: '12px 16px', color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}
-                    >
-                      <ChartIcon /> Your Insights
-                    </Link>
-                    <button 
+                    <button
                       onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: '/' }) }}
                       style={{ padding: '12px 16px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem' }}
                     >

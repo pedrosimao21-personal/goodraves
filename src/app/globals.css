@@ -1203,6 +1203,27 @@ img {
   border-color: var(--accent);
 }
 
+/* Undo for a mis-tap on "Mark as seen" — deliberately quieter than the
+   stars above it, since it's a secondary escape hatch, not the main action. */
+.mark-seen-cancel-btn {
+  display: block;
+  margin: 4px auto 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mark-seen-cancel-btn:hover {
+  color: var(--text-primary);
+}
+
 /* =============================================
    FESTIVAL DETAIL PAGE
    ============================================= */

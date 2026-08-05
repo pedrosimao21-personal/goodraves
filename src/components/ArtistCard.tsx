@@ -95,7 +95,21 @@ const ArtistCard = memo(function ArtistCard({
         {isPast && (
           <div style={{ position: 'relative', zIndex: 1 }}>
             {hasRating || isStarRatingVisible ? (
-              <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
+              <>
+                <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
+                {/* Escape hatch for a mis-tap: only while the stars were opened
+                    manually and nothing has been rated yet, so there is no
+                    saved rating to undo — just hide the stars again. */}
+                {isStarRatingVisible && !hasRating && (
+                  <button
+                    className="mark-seen-cancel-btn"
+                    onClick={() => setIsStarRatingVisible(false)}
+                    aria-label={`Cancel marking ${displayName} as seen`}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 className="mark-seen-btn"

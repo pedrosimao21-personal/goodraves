@@ -56,8 +56,17 @@ function CloseIcon() {
 // *inside* the ref'd element the handler does nothing, so option
 // buttons inside the dropdown always fire their own onClick first.
 
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () => void) {
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, isOpen: boolean, onClose: () => void) {
   useEffect(() => {
+    // Every FilterDropdown mounts this hook, all sharing one `openDropdown`
+    // state. Without the `isOpen` check, a CLOSED dropdown's own listener
+    // still fires on any tap outside its own (invisible) container — which
+    // includes a tap on an option inside a DIFFERENT, currently-open
+    // dropdown — and calls the shared onClose, closing that other dropdown
+    // out from under the tap before its option's click can land. Only the
+    // dropdown that is actually open should ever react to an outside tap.
+    if (!isOpen) return
+
     // pointerdown (not mousedown): on iOS Safari the synthetic mousedown from
     // a tap can lag behind the real touch by enough to land after an
     // in-between re-render, occasionally misjudging an in-menu tap as
@@ -70,7 +79,7 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
     }
     document.addEventListener('pointerdown', handlePointerDown, true)
     return () => document.removeEventListener('pointerdown', handlePointerDown, true)
-  }, [ref, onClose])
+  }, [ref, isOpen, onClose])
 }
 
 // ── Filter Dropdown (shared by Year and Country) ───────
@@ -103,7 +112,7 @@ function FilterDropdown({
   renderOptionLabel,
 }: FilterDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  useClickOutside(containerRef, onClose)
+  useClickOutside(containerRef, isOpen, onClose)
 
   const handleOptionClick = useCallback((value: string) => {
     // Clicking the already-selected option deselects it

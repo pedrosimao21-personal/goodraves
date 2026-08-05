@@ -1,6 +1,14 @@
 /** Shared validation constants used by both client and server code. */
 export const MAX_NOTES_LENGTH = 5000;
 export const MAX_QUERY_LENGTH = 200;
+/**
+ * Shortest query the DB festival search accepts. pg_trgm indexes words as
+ * 3-character trigrams, so a 1- or 2-character `ILIKE '%q%'` can't use the
+ * trigram indexes at all — it degrades into a sequential scan over every
+ * festival (and every artist name) to return an essentially arbitrary slice of
+ * the newest 100 rows. External-source search is unaffected.
+ */
+export const MIN_SEARCH_QUERY_LENGTH = 3;
 export const MAX_FESTIVAL_NAME_LENGTH = 500;
 export const MAX_ARTIST_NAME_LENGTH = 300;
 export const MIN_RATING = 1;
@@ -42,6 +50,16 @@ export const SPOTIFY_STALE_MS = 60 * 24 * 60 * 60 * 1000;         // ~60 days
 export const LASTFM_STALE_MS = 7 * 24 * 60 * 60 * 1000;           // 7 days
 export const RELATED_ARTISTS_STALE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const RA_EVENTS_STALE_MS = 24 * 60 * 60 * 1000;            // 1 day
+
+/**
+ * Re-check windows for the on-demand backfills in getFestival(). A festival with
+ * no announced lineup — or no image at its source — used to re-run a full
+ * external import on every page view because "missing" was the only trigger.
+ * These windows are short enough to pick up a lineup announcement the same day
+ * and long enough that browsing a not-yet-announced festival costs one DB read.
+ */
+export const LINEUP_RECHECK_STALE_MS = 6 * 60 * 60 * 1000;        // 6 hours
+export const IMAGE_RECHECK_STALE_MS = 6 * 60 * 60 * 1000;         // 6 hours
 
 /**
  * Hard timeout for outbound fetches to external providers (RA, FestivalFans,

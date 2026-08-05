@@ -213,6 +213,8 @@ export type RASearchResult = {
   endDate: string | null;
   venue: string | null;
   location: string | null;
+  /** Already normalized to English; RA itself reports it in English anyway. */
+  country: string | null;
   imageUrl: string | null;
   lineup: string[];
 };
@@ -247,6 +249,7 @@ export function mapRAEventToSearchResult(e: RAEventRaw): RASearchResult | null {
     endDate,
     venue: venueName,
     location,
+    country: countryName,
     imageUrl: e.images?.[0]?.filename ?? null,
     lineup: lineupEntryNames(parseRALineup(e.lineup, artistsFallback)),
   };

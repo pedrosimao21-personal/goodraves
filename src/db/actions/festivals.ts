@@ -17,8 +17,9 @@ export { searchFestivalsDB, searchRAEvents, searchFFEvents, searchPFEvents, reso
 export { getFestivalCardImage } from "./festival-card-image";
 
 // Data reads
-export { getFestival, getFestivalMeta, getFullUserData, getTimetable } from "./festival-data";
-export type { TimetableStage, TimetableSlotRow } from "./festival-data";
+export { getFestival, getFestivalMeta, getFullUserData } from "./festival-data";
+export { getTimetable } from "./festival-timetable";
+export type { TimetableStage, TimetableSlotRow, TimetableData } from "./festival-timetable";
 
 // User attendance & ratings
 export {
@@ -60,3 +61,10 @@ export { reimportFestival } from "./festival-reimport";
 // Admin Partyflock timetable import (for festivals whose own source has no timetable)
 export { importPFTimetableForFestival } from "./festival-timetable-import";
 export type { PFTimetableImportResult } from "./festival-timetable-import";
+
+// Admin duplicate-festival merge (hard merge — see festival-merge.ts)
+export { mergeFestivals, getMergeRedirectTarget } from "./festival-merge";
+export type { MergeResult } from "./festival-merge";
+// Note: mergeFestivalsCore is intentionally NOT re-exported here — it skips
+// requireAdmin (like importPFTimetable), so only scripts/dedupe-festivals.ts
+// should import it directly from ./festival-merge.

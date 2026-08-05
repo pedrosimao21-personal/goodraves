@@ -77,6 +77,12 @@ export async function fetchFFEvent(
     await db.delete(festivalArtists).where(eq(festivalArtists.festivalId, festivalId));
   }
 
+  // FestivalFans is Netherlands-only — parseFFEventPage already hardcodes
+  // "Netherlands" onto `location` when there's a city, so mirror that here
+  // rather than re-deriving it from the joined string.
+  const countryName = parsed.location ? "Netherlands" : null;
+  const countryCode = parsed.location ? "NL" : null;
+
   const festivalValues = {
     id: festivalId,
     name: parsed.name,
@@ -84,6 +90,8 @@ export async function fetchFFEvent(
     endDate: parsed.endDate,
     venue: parsed.venue,
     location: parsed.location,
+    countryCode,
+    countryName,
     source: "festivalfans" as const,
     sourceId: slug,
     imageUrl: parsed.imageUrl,
@@ -103,6 +111,8 @@ export async function fetchFFEvent(
           endDate: festivalValues.endDate,
           venue: festivalValues.venue,
           location: festivalValues.location,
+          countryCode: festivalValues.countryCode,
+          countryName: festivalValues.countryName,
           imageUrl: festivalValues.imageUrl,
           latitude: festivalValues.latitude,
           longitude: festivalValues.longitude,
@@ -117,6 +127,8 @@ export async function fetchFFEvent(
         target: festivals.id,
         set: {
           endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
+          countryCode: sql`COALESCE(${festivalValues.countryCode}, ${festivals.countryCode})`,
+          countryName: sql`COALESCE(${festivalValues.countryName}, ${festivals.countryName})`,
           imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
           latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
           longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,

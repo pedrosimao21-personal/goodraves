@@ -5,7 +5,6 @@ import { eq } from "drizzle-orm";
 import {
   festivals,
   festivalArtists,
-  festivalTimetableSlots,
   artists,
 } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
@@ -15,6 +14,10 @@ import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
 import { fetchUserDataForId } from "./user-data-query";
 import { fetchFestivalGenres } from "./festival-genres";
+import {
+  LINEUP_RECHECK_STALE_MS,
+  IMAGE_RECHECK_STALE_MS,
+} from "@/lib/constants";
 
 // ── Get a single festival with its lineup ──────────────
 
@@ -40,6 +43,85 @@ function formatFestivalWithLineup(
   };
 }
 
+type FestivalSourceRef = { provider: "ff" | "ra" | "pf"; sourceId: string };
+
+/** Parse the origin provider and its own event id out of a festival ID. */
+function parseFestivalSourceRef(id: string): FestivalSourceRef | null {
+  const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
+  if (ffMatch) return { provider: "ff", sourceId: ffMatch[1] };
+
+  const raMatch = id.match(/^ra-(\d+)$/);
+  if (raMatch) return { provider: "ra", sourceId: raMatch[1] };
+
+  const pfMatch = id.match(/^pf-(\d+)$/);
+  if (pfMatch) return { provider: "pf", sourceId: pfMatch[1] };
+
+  return null;
+}
+
+/** Re-import a full event (lineup, image, coordinates) from its origin source. */
+function reimportFromSource(ref: FestivalSourceRef): Promise<string | null> {
+  if (ref.provider === "ff") return fetchFFEvent(ref.sourceId);
+  if (ref.provider === "ra") return fetchRAEvent(ref.sourceId);
+  return fetchPFEvent(ref.sourceId);
+}
+
+/** Fetch only the event image from its origin source. */
+function fetchImageFromSource(ref: FestivalSourceRef): Promise<string | null> {
+  if (ref.provider === "ff") return fetchFFEventImageUrl(ref.sourceId);
+  if (ref.provider === "ra") return fetchRAEventImageUrl(ref.sourceId);
+  return fetchPFEventImageUrl(ref.sourceId);
+}
+
+/**
+ * True when a backfill has never been attempted, or the last attempt is older
+ * than its re-check window. A missing lineup/image on its own is not enough:
+ * the source may simply have nothing yet, and retrying on every view means
+ * re-scraping the origin forever.
+ */
+function isRecheckDue(checkedAt: Date | null, staleMs: number): boolean {
+  if (!checkedAt) return true;
+  return Date.now() - checkedAt.getTime() > staleMs;
+}
+
+/**
+ * Re-import the lineup from the origin source, then stamp `lineupCheckedAt` and
+ * return the updated row in one round trip. The returned row also carries any
+ * imageUrl / lat / lng the re-import wrote via COALESCE on conflict.
+ */
+async function reimportLineupAndStamp(id: string, ref: FestivalSourceRef) {
+  await reimportFromSource(ref);
+
+  const [refreshed] = await db
+    .update(festivals)
+    .set({ lineupCheckedAt: new Date() })
+    .where(eq(festivals.id, id))
+    .returning();
+
+  const [lineup, genres] = await Promise.all([
+    fetchLineup(id),
+    fetchFestivalGenres(id),
+  ]);
+
+  return { refreshed, lineup, genres };
+}
+
+/**
+ * Backfill a missing image from the origin source. `imageCheckedAt` is stamped
+ * whether or not an image came back, so a source with no image isn't re-scraped
+ * on the next view.
+ */
+async function backfillImageAndStamp(id: string, ref: FestivalSourceRef) {
+  const imageUrl = await fetchImageFromSource(ref);
+
+  await db
+    .update(festivals)
+    .set(imageUrl ? { imageUrl, imageCheckedAt: new Date() } : { imageCheckedAt: new Date() })
+    .where(eq(festivals.id, id));
+
+  return imageUrl;
+}
+
 export async function getFestival(id: string) {
   // Fetch festival and lineup in parallel since they are independent
   const [festivalRows, lineup, genres] = await Promise.all([
@@ -56,59 +138,30 @@ export async function getFestival(id: string) {
 
   let currentLineup = lineup;
   let currentGenres = genres;
+  const sourceRef = parseFestivalSourceRef(id);
 
-  // If the festival has no lineup, re-fetch from the original source to populate.
-  // After the re-fetch, re-read the festival row so we pick up any imageUrl or
-  // coordinate updates that PF/FF imports write via COALESCE on conflict.
-  if (currentLineup.length === 0) {
-    const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
-    const raMatch = id.match(/^ra-(\d+)$/);
-    const pfMatch = id.match(/^pf-(\d+)$/);
-    if (ffMatch) {
-      await fetchFFEvent(ffMatch[1]);
-      currentLineup = await fetchLineup(id);
-    } else if (raMatch) {
-      await fetchRAEvent(raMatch[1]);
-      currentLineup = await fetchLineup(id);
-    } else if (pfMatch) {
-      await fetchPFEvent(pfMatch[1]);
-      currentLineup = await fetchLineup(id);
-    }
+  // A festival with no lineup gets re-fetched from its original source, but only
+  // once per re-check window — an unannounced lineup is the normal case and used
+  // to trigger a full external import on every single page view.
+  const shouldRefetchLineup =
+    currentLineup.length === 0 &&
+    isRecheckDue(festival.lineupCheckedAt, LINEUP_RECHECK_STALE_MS);
 
-    // Re-read the festival row to capture any imageUrl / lat/lng written by the re-fetch
-    const [refreshed] = await db
-      .select()
-      .from(festivals)
-      .where(eq(festivals.id, id))
-      .limit(1);
-    if (refreshed) festival = refreshed;
-
-    // The re-fetch may have populated genres too, so re-read them.
-    currentGenres = await fetchFestivalGenres(id);
+  if (sourceRef && shouldRefetchLineup) {
+    const result = await reimportLineupAndStamp(id, sourceRef);
+    if (result.refreshed) festival = result.refreshed;
+    currentLineup = result.lineup;
+    currentGenres = result.genres;
   }
 
-  // Backfill missing image from the original source
-  if (!festival.imageUrl) {
-    const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
-    const raMatch = id.match(/^ra-(\d+)$/);
-    const pfMatch = id.match(/^pf-(\d+)$/);
-    let imageUrl: string | null = null;
+  // Backfill a missing image from the original source, same re-check guard.
+  const shouldBackfillImage =
+    !festival.imageUrl &&
+    isRecheckDue(festival.imageCheckedAt, IMAGE_RECHECK_STALE_MS);
 
-    if (ffMatch) {
-      imageUrl = await fetchFFEventImageUrl(ffMatch[1]);
-    } else if (raMatch) {
-      imageUrl = await fetchRAEventImageUrl(raMatch[1]);
-    } else if (pfMatch) {
-      imageUrl = await fetchPFEventImageUrl(pfMatch[1]);
-    }
-
-    if (imageUrl) {
-      await db
-        .update(festivals)
-        .set({ imageUrl })
-        .where(eq(festivals.id, id));
-      festival.imageUrl = imageUrl;
-    }
+  if (sourceRef && shouldBackfillImage) {
+    const imageUrl = await backfillImageAndStamp(id, sourceRef);
+    if (imageUrl) festival.imageUrl = imageUrl;
   }
 
   return formatFestivalWithLineup(festival, currentLineup, currentGenres);
@@ -135,21 +188,11 @@ export async function getFestivalMeta(id: string) {
   return festival ?? null;
 }
 
-/** Auto-import from RA or FestivalFans if the ID matches their patterns */
+/** Auto-import from RA, FestivalFans or Partyflock if the ID matches their patterns */
 async function tryAutoImport(id: string) {
-  const raMatch = id.match(/^ra-(\d+)$/);
-  if (raMatch) {
-    return await importAndReturn(id, () => fetchRAEvent(raMatch[1]));
-  }
-
-  const ffMatch = id.match(/^ff-([a-z0-9-]+)$/);
-  if (ffMatch) {
-    return await importAndReturn(id, () => fetchFFEvent(ffMatch[1]));
-  }
-
-  const pfMatch = id.match(/^pf-(\d+)$/);
-  if (pfMatch) {
-    return await importAndReturn(id, () => fetchPFEvent(pfMatch[1]));
+  const sourceRef = parseFestivalSourceRef(id);
+  if (sourceRef) {
+    return await importAndReturn(id, () => reimportFromSource(sourceRef));
   }
 
   // Partyflock permanent series URLs (/event/slug) can't be fetched directly;
@@ -192,61 +235,6 @@ export async function getFullUserData() {
   return fetchUserDataForId(userId);
 }
 
-// ── Timetable ──────────────────────────────────────────
-
-export type TimetableStage = {
-  stageName: string;
-  stageOrder: number;
-  slots: TimetableSlotRow[];
-};
-
-export type TimetableSlotRow = {
-  artistId: string;
-  artistName: string;
-  artistImageUrl: string | null;
-  startTime: string;
-  endTime: string;
-  slotOrder: number;
-};
-
-/**
- * Fetch all timetable slots for a festival, grouped by stage.
- * Returns an empty array when no timetable data exists.
- */
-export async function getTimetable(festivalId: string): Promise<TimetableStage[]> {
-  const rows = await db
-    .select({
-      stageName: festivalTimetableSlots.stageName,
-      stageOrder: festivalTimetableSlots.stageOrder,
-      slotOrder: festivalTimetableSlots.slotOrder,
-      startTime: festivalTimetableSlots.startTime,
-      endTime: festivalTimetableSlots.endTime,
-      artistId: artists.id,
-      artistName: artists.name,
-      artistImageUrl: artists.imageUrl,
-    })
-    .from(festivalTimetableSlots)
-    .innerJoin(artists, eq(festivalTimetableSlots.artistId, artists.id))
-    .where(eq(festivalTimetableSlots.festivalId, festivalId))
-    .orderBy(festivalTimetableSlots.stageOrder, festivalTimetableSlots.slotOrder);
-
-  const stageMap = new Map<number, TimetableStage>();
-
-  for (const row of rows) {
-    let stage = stageMap.get(row.stageOrder);
-    if (!stage) {
-      stage = { stageName: row.stageName, stageOrder: row.stageOrder, slots: [] };
-      stageMap.set(row.stageOrder, stage);
-    }
-    stage.slots.push({
-      artistId: row.artistId,
-      artistName: row.artistName,
-      artistImageUrl: row.artistImageUrl,
-      startTime: row.startTime,
-      endTime: row.endTime,
-      slotOrder: row.slotOrder,
-    });
-  }
-
-  return Array.from(stageMap.values()).sort((a, b) => a.stageOrder - b.stageOrder);
-}
+// Note: the timetable read lives in festival-timetable.ts — it grew a day
+// dimension (see TimetableData) and is a separate responsibility from the
+// festival/lineup reads here.

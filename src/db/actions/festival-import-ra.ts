@@ -78,9 +78,9 @@ export async function fetchRAEvent(
   const location = [areaName, countryName].filter(Boolean).join(", ") || null;
   const imageUrl = data.images?.[0]?.filename ?? null;
 
-  // Geocode the location to get coordinates for the heatmap.
-  // We do this in the background alongside the rest of the import;
-  // failures are silently ignored — the map will fall back to city-name lookup.
+  // Geocode the location to get coordinates for the heatmap. This is awaited
+  // inline, so the import waits on it; failures are swallowed rather than
+  // failing the import — the map falls back to a city-name lookup.
   const geocoded = location ? await geocodeLocation(location).catch(() => null) : null;
 
   const artistsFallback = (data.artists ?? [])
@@ -168,16 +168,22 @@ export async function fetchRAEvent(
       .map(([name, id]) => ({ name, raArtistId: id! }));
 
     if (namesWithRaId.length > 0) {
-      const artistNames = namesWithRaId.map((e) => e.name);
+      // Compare on lower(name) so this hits the case-insensitive unique index
+      // rather than seq-scanning artists (there is no btree on the raw name).
+      const lowerArtistNames = namesWithRaId.map((e) => e.name.toLowerCase());
       const existingRows = await db
         .select({ id: artists.id, name: artists.name, raArtistId: artists.raArtistId })
         .from(artists)
-        .where(inArray(artists.name, artistNames));
+        .where(inArray(sql`lower(${artists.name})`, lowerArtistNames));
 
       const rowsToUpdate = existingRows
         .filter((row) => row.raArtistId === null)
         .map((row) => {
-          const entry = namesWithRaId.find((e) => e.name === row.name);
+          // Matched case-insensitively to stay consistent with the query above:
+          // RA's casing of a lineup name can differ from the stored casing.
+          const entry = namesWithRaId.find(
+            (e) => e.name.toLowerCase() === row.name.toLowerCase()
+          );
           return entry ? { id: row.id, name: row.name, raArtistId: entry.raArtistId } : null;
         })
         .filter((r): r is { id: string; name: string; raArtistId: string } => r !== null);

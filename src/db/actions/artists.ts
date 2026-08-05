@@ -278,16 +278,23 @@ async function enrichWithSimilarImages(data: ArtistData): Promise<ArtistData> {
   const similarNames = data.lastfmSimilar.map(a => a.name).filter(Boolean);
   if (!similarNames.length) return data;
 
+  // Compare on lower(name) so this hits the case-insensitive unique index
+  // instead of seq-scanning artists (there is no btree on the raw name).
   const imageRows = await db
     .select({ name: artists.name, imageUrl: artists.imageUrl })
     .from(artists)
-    .where(inArray(artists.name, similarNames))
+    .where(inArray(sql`lower(${artists.name})`, similarNames.map(name => name.toLowerCase())))
     .catch(() => []);
 
-  const imageByName = new Map(imageRows.map(r => [r.name, r.imageUrl ?? null] as const));
+  // Keyed by lowercased name: the lookup is case-insensitive, so Last.fm's
+  // casing of a similar artist need not match the casing stored in the DB.
+  const imageByLowerName = new Map(imageRows.map(r => [r.name.toLowerCase(), r.imageUrl ?? null] as const));
   return {
     ...data,
-    lastfmSimilar: data.lastfmSimilar.map(a => ({ ...a, image: imageByName.get(a.name) ?? null as string | null })),
+    lastfmSimilar: data.lastfmSimilar.map(a => ({
+      ...a,
+      image: imageByLowerName.get(a.name.toLowerCase()) ?? null as string | null,
+    })),
   };
 }
 

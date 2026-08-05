@@ -3,9 +3,10 @@
  *
  * This is a plain server-only module — deliberately NOT `"use server"`. It takes
  * an arbitrary userId, so exposing it as a Server Action would be an IDOR:
- * anyone could read any user's private data by guessing a UUID. The only callers
- * are the auth-gated wrappers `getInitialUserData` (get-initial-data.ts) and
- * `getFullUserData` (festival-data.ts), which derive the userId from the session.
+ * anyone could read any user's private data by guessing a UUID. Callers must
+ * derive the userId from the session themselves: `getFullUserData`
+ * (festival-data.ts) via requireAuth, and the root layout (app/layout.tsx) from
+ * the single `auth()` call it already makes for the session provider.
  */
 
 import { db } from "@/db";
@@ -20,6 +21,12 @@ import {
   artistGenres as artistGenresTable,
 } from "@/db/schema";
 import { fetchFestivalGenresByIds } from "./festival-genres";
+
+/**
+ * SSR hydration payload for UserDataContext. Null when there is no session —
+ * the root layout passes null for logged-out visitors rather than querying.
+ */
+export type InitialUserData = Awaited<ReturnType<typeof fetchUserDataForId>> | null;
 
 /** Shared query logic for fetching all user data given a userId. */
 export async function fetchUserDataForId(userId: string) {

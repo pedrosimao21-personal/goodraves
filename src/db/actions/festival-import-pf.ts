@@ -9,6 +9,7 @@ import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { toIsoDate } from "@/lib/dates";
 import { parsePFEventPage } from "@/services/partyflock/parser";
 import { syncFestivalGenres } from "./festival-genres";
+import { getCountryIsoCode } from "@/utils/location-normalizer";
 
 /** Fetch only the og:image URL for a Partyflock event by party ID. */
 export async function fetchPFEventImageUrl(partyId: string): Promise<string | null> {
@@ -180,6 +181,8 @@ async function persistPFEvent(
     await clearPFFestivalRelations(festivalId);
   }
 
+  // `parsed.country` is already normalized to English by the parser
+  // (Partyflock is the Dutch source — e.g. "Duitsland" -> "Germany").
   const festivalValues = {
     id: festivalId,
     name: parsed.name,
@@ -187,6 +190,8 @@ async function persistPFEvent(
     endDate: parsed.endDate,
     venue: parsed.venue,
     location: parsed.location,
+    countryCode: getCountryIsoCode(parsed.country),
+    countryName: parsed.country,
     source: "partyflock" as const,
     sourceId: partyId,
     imageUrl: parsed.imageUrl,
@@ -208,6 +213,8 @@ async function persistPFEvent(
           endDate: festivalValues.endDate,
           venue: festivalValues.venue,
           location: festivalValues.location,
+          countryCode: festivalValues.countryCode,
+          countryName: festivalValues.countryName,
           imageUrl: festivalValues.imageUrl,
           latitude: festivalValues.latitude,
           longitude: festivalValues.longitude,
@@ -224,6 +231,8 @@ async function persistPFEvent(
         target: festivals.id,
         set: {
           endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
+          countryCode: sql`COALESCE(${festivalValues.countryCode}, ${festivals.countryCode})`,
+          countryName: sql`COALESCE(${festivalValues.countryName}, ${festivals.countryName})`,
           imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
           latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
           longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
@@ -238,7 +247,7 @@ async function persistPFEvent(
     const nameToId = await persistLineup(festivalId, parsed.lineup);
 
     if (parsed.timetable.length > 0) {
-      await insertTimetableSlots(festivalId, parsed.timetable, nameToId);
+      await insertTimetableSlots(festivalId, parsed.timetable, nameToId, date);
     }
   }
 

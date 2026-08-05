@@ -40,21 +40,29 @@ export async function getArtistsWithImages(
     imageUrl: artists.imageUrl,
     spotifyId: artists.spotifyId,
     spotifyFetchedAt: artists.spotifyFetchedAt,
-  }).from(artists).where(inArray(artists.name, names));
-  const byName = new Map(rows.map((r) => [r.name, r]));
+    // Compare on lower(name): a plain `name` comparison seq-scans the table,
+    // since the only btree on names is the case-insensitive lower(name) unique
+    // index. Matching that expression makes this an index lookup — and stops
+    // "Boris"/"boris" from being treated as two different artists.
+  }).from(artists).where(inArray(sql`lower(${artists.name})`, names.map((name) => name.toLowerCase())));
+
+  // Keyed by lowercased name, because the lookup above is case-insensitive: the
+  // stored casing can differ from the caller's, so only the lowered form is a
+  // reliable key.
+  const byLowerName = new Map(rows.map((r) => [r.name.toLowerCase(), r]));
 
   const needsFetch = names.filter((name) => {
-    const row = byName.get(name);
+    const row = byLowerName.get(name.toLowerCase());
     return !row || isStaleSpotify(row.spotifyFetchedAt);
   });
 
   if (needsFetch.length) {
-    await fetchAndUpsertArtists(needsFetch, byName);
+    await fetchAndUpsertArtists(needsFetch, byLowerName);
   }
 
   return Object.fromEntries(
     names.map((name) => {
-      const row = byName.get(name);
+      const row = byLowerName.get(name.toLowerCase());
       if (!row) return [name, null];
       return [
         name,
@@ -78,13 +86,13 @@ type ArtistImageRow = {
 
 async function fetchAndUpsertArtists(
   needsFetch: string[],
-  byName: Map<string, ArtistImageRow>
+  byLowerName: Map<string, ArtistImageRow>
 ): Promise<void> {
   const withId = needsFetch
-    .map((name) => ({ name, spotifyId: byName.get(name)?.spotifyId ?? null }))
+    .map((name) => ({ name, spotifyId: byLowerName.get(name.toLowerCase())?.spotifyId ?? null }))
     .filter((e): e is { name: string; spotifyId: string } => !!e.spotifyId);
 
-  const withoutId = needsFetch.filter((name) => !byName.get(name)?.spotifyId);
+  const withoutId = needsFetch.filter((name) => !byLowerName.get(name.toLowerCase())?.spotifyId);
 
   let batchResults: Record<string, SpotifyResult> = {};
   if (withId.length) {
@@ -170,8 +178,8 @@ async function fetchAndUpsertArtists(
   }
 
   for (const { name, data } of toUpsert) {
-    byName.set(name, {
-      ...(byName.get(name) as any),
+    byLowerName.set(name.toLowerCase(), {
+      ...(byLowerName.get(name.toLowerCase()) as any),
       name,
       spotifyId: data?.id ?? null,
       imageUrl: data?.image ?? null,

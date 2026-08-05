@@ -332,7 +332,7 @@ export async function importPFTimetable(
     await db.insert(festivalArtists).values(lineupRows).onConflictDoNothing();
   }
 
-  await insertTimetableSlots(festivalId, parsed.timetable, nameToId);
+  await insertTimetableSlots(festivalId, parsed.timetable, nameToId, festival.date);
 
   await db
     .update(festivals)
@@ -346,11 +346,18 @@ export async function importPFTimetable(
   };
 }
 
-/** Insert timetable slots for a festival, mapping artist names to IDs. */
+/**
+ * Insert timetable slots for a festival, mapping artist names to IDs.
+ * `slotDate` is the ISO date these slots fall on — normally the festival's
+ * own `date`, but a merged multi-day festival passes each source day's own
+ * date so slots from different days don't collide on the unique index (see
+ * schema.ts's comment on `festivalTimetableSlots.slotDate`).
+ */
 export async function insertTimetableSlots(
   festivalId: string,
   slots: TimetableSlot[],
-  nameToId: Record<string, string>
+  nameToId: Record<string, string>,
+  slotDate: string
 ): Promise<void> {
   const rows = slots
     .filter((slot) => nameToId[slot.artistName])
@@ -362,6 +369,7 @@ export async function insertTimetableSlots(
       endTime: slot.endTime,
       stageOrder: slot.stageOrder,
       slotOrder: slot.slotOrder,
+      slotDate,
     }));
 
   if (rows.length === 0) return;

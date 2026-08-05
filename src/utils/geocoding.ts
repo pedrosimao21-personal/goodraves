@@ -13,13 +13,19 @@ const NOMINATIM_USER_AGENT = 'Goodraves/1.0 (festival tracker)'
 export type Coords = {
   latitude: number
   longitude: number
+  /** ISO-2 country code, ONLY populated when `addressdetails=1` was requested. */
+  countryCode?: string | null
 }
 
 /**
- * Geocode a city or location string to coordinates.
+ * Geocode a city or location string to coordinates (and, with `addressdetails`,
+ * an ISO-2 country code for free from the same lookup).
  * Returns null on failure or when the query is empty.
  */
-export async function geocodeLocation(query: string): Promise<Coords | null> {
+export async function geocodeLocation(
+  query: string,
+  opts?: { addressDetails?: boolean }
+): Promise<Coords | null> {
   if (!query?.trim()) return null
 
   try {
@@ -27,7 +33,7 @@ export async function geocodeLocation(query: string): Promise<Coords | null> {
     url.searchParams.set('q', query.trim())
     url.searchParams.set('format', 'json')
     url.searchParams.set('limit', '1')
-    url.searchParams.set('addressdetails', '0')
+    url.searchParams.set('addressdetails', opts?.addressDetails ? '1' : '0')
 
     const res = await fetch(url.toString(), {
       headers: { 'User-Agent': NOMINATIM_USER_AGENT },
@@ -37,14 +43,18 @@ export async function geocodeLocation(query: string): Promise<Coords | null> {
 
     if (!res.ok) return null
 
-    const results: Array<{ lat: string; lon: string }> = await res.json()
+    const results: Array<{ lat: string; lon: string; address?: { country_code?: string } }> = await res.json()
     if (!results.length) return null
 
     const lat = parseFloat(results[0].lat)
     const lng = parseFloat(results[0].lon)
     if (isNaN(lat) || isNaN(lng)) return null
 
-    return { latitude: lat, longitude: lng }
+    return {
+      latitude: lat,
+      longitude: lng,
+      countryCode: results[0].address?.country_code?.toUpperCase() ?? null,
+    }
   } catch {
     return null
   }

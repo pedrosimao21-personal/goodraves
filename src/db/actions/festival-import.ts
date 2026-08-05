@@ -27,7 +27,7 @@ export async function upsertFestival(data: {
   sourceId?: string | null;
   interestedCount?: number | null;
   lineup?: string[];
-}) {
+}): Promise<{ id: string }> {
   await requireAuth();
   await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
@@ -37,7 +37,13 @@ export async function upsertFestival(data: {
 
   const existingId = await findExistingFestivalByNameDate(data.name, data.date);
   if (existingId && existingId !== data.id) {
-    throw new Error("A festival with this name and date already exists");
+    // A festival with this exact name+date already exists under a different
+    // id — most often a live search card for something already imported
+    // under another source's id. Redirect to that row instead of throwing
+    // (the caller was left with an already-applied optimistic "Going" update
+    // and no way to undo it) or creating a duplicate for festival-merge to
+    // clean up later.
+    return { id: existingId };
   }
 
   await db
@@ -93,5 +99,7 @@ export async function upsertFestival(data: {
         .onConflictDoNothing();
     }
   }
+
+  return { id: data.id };
 }
 

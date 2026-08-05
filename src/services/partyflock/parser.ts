@@ -85,6 +85,8 @@ export interface ParsedPFEvent {
   endDate: string | null;
   venue: string | null;
   location: string | null;
+  /** Already normalized to English (Partyflock is the Dutch source). */
+  country: string | null;
   imageUrl: string | null;
   lineup: LineupEntry[];
   timetable: TimetableSlot[];
@@ -384,6 +386,7 @@ export function parsePFEventPage(html: string): ParsedPFEvent {
     endDate,
     venue,
     location,
+    country,
     imageUrl,
     lineup,
     timetable,

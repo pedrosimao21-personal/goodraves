@@ -40,6 +40,12 @@ export const festivals = pgTable("festivals", {
   venue: text("venue"),
   latitude: real("latitude"),
   longitude: real("longitude"),
+  // English country name + ISO-2 code, populated at import time (or by the
+  // backfill script for pre-existing rows) from location-normalizer.ts.
+  // Kept as real columns rather than derived from `location` at read time
+  // because ~47% of rows have no country in that free-text string at all.
+  countryCode: text("country_code"),
+  countryName: text("country_name"),
   source: text("source"), // "ra", "custom", "external", etc.
   sourceId: text("source_id"),
   imageUrl: text("image_url"),
@@ -47,6 +53,12 @@ export const festivals = pgTable("festivals", {
   // whose own source (RA/FestivalFans) doesn't provide one. Independent of
   // `source`/`sourceId` — a festival can be RA-sourced and PF-linked at once.
   pfPartyId: text("pf_party_id"),
+  // Last time we attempted a lineup re-import / image backfill from the origin
+  // source for this festival. Stamped on every attempt regardless of outcome so
+  // a festival with no announced lineup (or no available image) isn't re-scraped
+  // on every page view — see LINEUP_RECHECK_STALE_MS / IMAGE_RECHECK_STALE_MS.
+  lineupCheckedAt: timestamp("lineup_checked_at", { withTimezone: true }),
+  imageCheckedAt: timestamp("image_checked_at", { withTimezone: true }),
   interestedCount: integer("interested_count").default(0),
   visitorsCount: integer("visitors_count").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -55,11 +67,31 @@ export const festivals = pgTable("festivals", {
   uniqueIndex("festivals_name_date_idx").on(t.name, t.date),
   index("festivals_date_idx").on(t.date),
   index("festivals_source_idx").on(t.source),
+  index("festivals_country_code_idx").on(t.countryCode),
   index("festivals_interested_count_idx").on(sql`${t.interestedCount} DESC`),
   // Trigram GIN indexes backing the leading-wildcard ILIKE free-text search.
   index("festivals_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
   index("festivals_venue_trgm_idx").using("gin", sql`${t.venue} gin_trgm_ops`),
   index("festivals_location_trgm_idx").using("gin", sql`${t.location} gin_trgm_ops`),
+]);
+
+// ── Festival Merges (audit trail for the hard-merge dedup) ─────────────
+// When two rows turn out to be the same festival edition, the loser's data is
+// copied onto the winner and the loser row is deleted. This table remembers
+// that mapping so (a) old /festival/<loserId> URLs can redirect instead of
+// 404ing, and (b) a wrong auto-merge is recoverable — `snapshot` holds enough
+// of the loser's original state to reconstruct it. `winnerId` is deliberately
+// NOT a foreign key: if the winner is itself later merged into a third
+// festival (a chain), it becomes a loser in its own row here, which a strict
+// FK to festivals.id can't represent. Resolve chains by following winnerId
+// until it names a live festival.
+export const festivalMerges = pgTable("festival_merges", {
+  loserId: text("loser_id").primaryKey(),
+  winnerId: text("winner_id").notNull(),
+  mergedAt: timestamp("merged_at", { withTimezone: true }).defaultNow().notNull(),
+  snapshot: text("snapshot").notNull(), // JSON.stringify'd — see festival-merge.ts
+}, (t) => [
+  index("festival_merges_winner_id_idx").on(t.winnerId),
 ]);
 
 // ── Artists ────────────────────────────────────────────
@@ -260,6 +292,13 @@ export const festivalTimetableSlots = pgTable(
     endTime: text("end_time").notNull(),
     stageOrder: integer("stage_order").notNull(),
     slotOrder: integer("slot_order").notNull(),
+    // ISO date this slot actually falls on. Needed once a multi-day festival's
+    // per-day rows are merged into one: startTime/endTime are bare "HH:MM"
+    // with no date, so two days reusing the same stage name at overlapping
+    // clock times (e.g. Partyflock's "Area A" on both Fri and Sat) are
+    // indistinguishable without this. Defaults to the source festival's own
+    // `date` for slots imported before this column existed or before a merge.
+    slotDate: text("slot_date").notNull(),
   },
   (t) => [
     index("festival_timetable_slots_festival_id_idx").on(t.festivalId),
@@ -269,6 +308,7 @@ export const festivalTimetableSlots = pgTable(
       t.stageName,
       t.startTime,
       t.endTime,
+      t.slotDate,
     ),
   ]
 );

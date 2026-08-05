@@ -43,6 +43,8 @@ UI and the Partyflock agenda cron (`vercel.json`). For a manual backfill or ad-h
 npx tsx --env-file=.env scripts/import-pf-agenda.ts     # Partyflock agenda backfill
 npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Refresh imported Partyflock festivals
 npx tsx --env-file=.env scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one
+npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run]              # Detect + hard-merge duplicate festival editions
+npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 ```
 
 ## Migrations
@@ -80,13 +82,14 @@ npm run db:migrate:down  # Roll back the most recent migration
 | Table | Purpose |
 |---|---|
 | `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
-| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` and an optional `pf_party_id` linking to a Partyflock party for timetable import, independent of `source` |
+| `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` and an optional `pf_party_id` linking to a Partyflock party for timetable import, independent of `source`. `lineup_checked_at`/`image_checked_at` record the last on-demand lineup/image backfill attempt so a festival with nothing to import isn't re-scraped on every view. `country_code`/`country_name` back the search country filter — populated at import time, backfilled for older rows by `scripts/backfill-festival-countries.ts` |
 | `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
 | `festival_genres` | Festival↔genre join (from the Partyflock genre estimate) |
 | `festival_artists` | Lineup join between festivals and artists |
 | `festival_b2b_sets` / `festival_b2b_set_members` | Back-to-back sets split into their individual member artists |
-| `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering) |
+| `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering). `slot_date` distinguishes days once a multi-day festival's per-day rows are merged into one — see `festival_merges` |
+| `festival_merges` | Audit trail for the hard-merge duplicate-festival dedup (`src/db/actions/festival-merge.ts`, `scripts/dedupe-festivals.ts`): records which festival id was merged into which winner, plus a JSON snapshot of the loser's full state. Old `/festival/<id>` links for a merged-away row redirect to the winner instead of 404ing |
 | `user_festivals` | A user's attendance/interest, with optional `rating` and `notes` |
 | `user_festival_artist_ratings` | Per-festival, per-artist performance ratings |
 | `user_artist_global` | A user's overall rating/notes for an artist |

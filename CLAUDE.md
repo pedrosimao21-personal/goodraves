@@ -25,6 +25,8 @@ npx tsx scripts/cleanup-artist-data.ts [--dry-run]  # Fix encoding/junk artist r
 npx tsx --env-file=.env scripts/import-pf-agenda.ts    # Backfill/re-run the daily Partyflock agenda import
 npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock festival refresh (7-/2-day checkpoints)
 npx tsx --env-file=.env scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one
+npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run]              # Detect + hard-merge duplicate festival editions
+npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -87,8 +89,9 @@ timestamps. Refetch only when stale (Spotify ~60 days, Last.fm ~7 days). Don't h
 external APIs on every render.
 
 **Client state: `UserDataContext`** (`src/context/`) holds the user's festivals/ratings,
-does optimistic updates, then calls server actions. `get-initial-data.ts` hydrates it
-server-side on first load. State-shaping helpers (`transformDbData`, `buildUpsertPayload`)
+does optimistic updates, then calls server actions. The root layout hydrates it
+server-side on first load via `user-data-query.ts` (`fetchUserDataForId`), reusing the
+userId from the single `auth()` call it makes for the session provider. State-shaping helpers (`transformDbData`, `buildUpsertPayload`)
 live in `user-data-state.ts`; read selectors in `use-user-data-readers.ts`.
 
 **Auth:** NextAuth v5 (beta) Credentials provider in `auth.ts` (bcrypt password hashes,
@@ -122,12 +125,19 @@ Workflow: edit `schema.ts` (ORM types) **and** author a migration
 
 Key tables: `festivals` (PK is text like `ra-2403879`; `source` is
 `"ra"|"custom"|"external"|"festivalfans"|"partyflock"`; optional `pf_party_id` links to a
-Partyflock party for timetable import, independent of `source`),
+Partyflock party for timetable import, independent of `source`; `lineup_checked_at` /
+`image_checked_at` gate the on-demand lineup/image backfills in `getFestival`;
+`country_code`/`country_name` are populated at import time — see
+`src/utils/location-normalizer.ts` — and by `scripts/backfill-festival-countries.ts` for
+pre-existing rows),
 `artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings`, `user_artist_global`, `festival_b2b_sets`/`_members`
-(splitting back-to-back DJ sets into individuals), `festival_timetable_slots`.
+(splitting back-to-back DJ sets into individuals), `festival_timetable_slots` (per-stage
+slots; `slot_date` distinguishes days once a multi-day festival's rows are merged),
+`festival_merges` (audit trail for the hard-merge dedup in `festival-merge.ts` — old
+`/festival/<id>` URLs for a merged-away row redirect via `getMergeRedirectTarget`).
 
 ## Conventions
 

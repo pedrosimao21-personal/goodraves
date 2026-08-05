@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useUserData } from '@/context/UserDataContext'
 import { isAllowedImageHost } from '@/lib/imageHosts'
 import { getFestivalLineupNames } from '@/db/actions/get-initial-data'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
@@ -143,7 +144,7 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
 
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexShrink: 0 }}>
           <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-          <button onClick={handleSave} className="btn btn-primary" style={{ flex: 2 }}>
+          <button onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" style={{ flex: 2 }}>
             {saved ? 'Saved!' : 'Save Changes'}
           </button>
         </div>

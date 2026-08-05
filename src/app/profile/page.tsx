@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { searchFestivalsDB } from '@/db/actions/festival-search'
 import { getUserProfile, updateUserProfile } from '@/db/actions/profile'
 import { MAX_CITY_LENGTH, MAX_GENRES_LENGTH } from '@/lib/constants'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 function FestivalRow({ fest }: { fest: any }) {
   const href = `/festival/${fest.id}`
@@ -197,6 +198,7 @@ export default function ProfilePage() {
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={saveLocation}
+                    onPointerDown={keepKeyboardOpenOnTap}
                     disabled={isSavingLocation}
                     style={{ minWidth: 60 }}
                   >
@@ -222,6 +224,7 @@ export default function ProfilePage() {
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={saveGenres}
+                    onPointerDown={keepKeyboardOpenOnTap}
                     disabled={isSavingGenres}
                     style={{ minWidth: 60 }}
                   >

@@ -91,6 +91,22 @@
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-outfit), system-ui, sans-serif;
   --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+
+  /* Shorthand aliases for tokens referenced by their older, shorter names in
+     components (var(--accent), var(--text), …). They were never defined, so
+     every declaration using one was invalid and silently fell back to the
+     inherited value — which read fine on the dark theme but produced
+     white-on-white in light mode (e.g. the Top DJs sort toggle). Defined as
+     aliases rather than literals so they inherit the light-theme overrides
+     below automatically; do NOT redefine them in the light block. */
+  --accent: var(--accent-purple);
+  --bg: var(--bg-primary);
+  --text: var(--text-primary);
+  --surface: var(--bg-card);
+  --border-glass: var(--border);
+  --shadow-sm: var(--shadow-card);
+  --shadow-md: var(--shadow-card);
+  --shadow-xl: var(--shadow-dropdown);
 }
 
 /* =============================================
@@ -1046,6 +1062,17 @@ img {
 
 .artist-card-options-btn:hover {
   opacity: 1 !important;
+}
+
+/* Touch devices have no real hover: the emulated one means the first tap only
+   satisfies `.artist-card:hover` (which is what re-enables pointer-events),
+   so a second tap was needed to actually press the button. Show and enable it
+   unconditionally there; the hover-reveal above still applies on desktop. */
+@media (hover: none) {
+  .artist-card-options-btn {
+    opacity: 0.6;
+    pointer-events: auto;
+  }
 }
 
 .artist-avatar {

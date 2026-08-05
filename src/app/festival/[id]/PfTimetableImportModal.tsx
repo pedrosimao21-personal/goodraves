@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { importPFTimetableForFestival, type PFTimetableImportResult } from '@/db/actions/festivals'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
@@ -126,7 +127,7 @@ export default function PfTimetableImportModal({ festivalId, onClose, onImported
             {result ? 'Close' : 'Cancel'}
           </button>
           {!result && (
-            <button onClick={handleImport} className="btn btn-primary" style={{ flex: 2 }} disabled={importing}>
+            <button onClick={handleImport} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" style={{ flex: 2 }} disabled={importing}>
               {importing ? 'Importing…' : 'Import Timetable'}
             </button>
           )}

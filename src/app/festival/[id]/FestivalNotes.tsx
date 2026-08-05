@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const SAVED_MESSAGE_DURATION_MS = 2000
 
@@ -95,6 +96,7 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
         <button
           onClick={handleSave}
+          onPointerDown={keepKeyboardOpenOnTap}
           disabled={!isDirty || saving}
           className="btn btn-secondary btn-sm"
           style={{ opacity: (!isDirty || saving) ? 0.5 : 1, cursor: (!isDirty || saving) ? 'default' : 'pointer' }}

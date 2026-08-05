@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { keepKeyboardOpenOnTap } from "@/lib/touch-tap";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -67,7 +68,7 @@ export default function LoginPage() {
             />
           </label>
           {error && <p className="auth-error">{error}</p>}
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
             {loading ? "Logging in..." : "Log In"}
           </button>
         </form>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { mergeFestivals, type MergeResult } from '@/db/actions/festivals'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
@@ -149,6 +150,7 @@ export default function FestivalMergeModal({ winnerId, onClose, onMerged }: Fest
           {!result && (
             <button
               onClick={handleMerge}
+              onPointerDown={keepKeyboardOpenOnTap}
               className="btn btn-primary"
               style={{ flex: 2, background: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}
               disabled={merging}

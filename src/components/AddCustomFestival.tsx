@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useUserData } from '../context/UserDataContext'
 import { isAllowedImageHost } from '../lib/imageHosts'
+import { keepKeyboardOpenOnTap } from '../lib/touch-tap'
 
 const SUCCESS_TOAST_DELAY_MS = 1200
 
@@ -178,7 +179,7 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
         />
       </div>
 
-      <button type="submit" className="btn btn-primary" style={{ marginTop: 4 }}>
+      <button type="submit" className="btn btn-primary" style={{ marginTop: 4 }} onPointerDown={keepKeyboardOpenOnTap}>
         Add Event
       </button>
     </form>

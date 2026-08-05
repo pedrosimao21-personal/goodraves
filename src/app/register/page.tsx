@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { keepKeyboardOpenOnTap } from "@/lib/touch-tap";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -72,7 +73,7 @@ export default function RegisterPage() {
             />
           </label>
           {error && <p className="auth-error">{error}</p>}
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
             {loading ? "Creating..." : "Register"}
           </button>
         </form>

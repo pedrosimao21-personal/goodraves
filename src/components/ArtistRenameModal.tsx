@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 480
@@ -116,7 +117,7 @@ export default function ArtistRenameModal({ artistName, onSave, onClose }: Artis
         {/* Footer */}
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexShrink: 0 }}>
           <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-          <button onClick={handleSave} className="btn btn-primary" style={{ flex: 2 }} disabled={saving || !isValid}>
+          <button onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" style={{ flex: 2 }} disabled={saving || !isValid}>
             {saving ? 'Saving...' : 'Save'}
           </button>
         </div>

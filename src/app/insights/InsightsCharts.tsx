@@ -22,6 +22,11 @@ export function YearBarChart({ data }: { data: { year: string; count: number }[]
           <Tooltip
             cursor={{ fill: 'var(--surface-hover)' }}
             contentStyle={{ backgroundColor: 'var(--chart-tooltip-bg)', borderColor: 'var(--chart-tooltip-border)', borderRadius: 8 }}
+            // Recharts defaults the label to #666, which is too dark against the
+            // dark-theme tooltip background — set both explicitly so the tooltip
+            // tracks the active theme like the rest of the chart does.
+            itemStyle={{ color: 'var(--text-primary)' }}
+            labelStyle={{ color: 'var(--text-primary)' }}
           />
           <Bar dataKey="count" fill="var(--accent-purple)" radius={[4, 4, 0, 0]}>
             {data.map((_, index) => (
@@ -55,7 +60,10 @@ export function GenrePieChart({ data }: { data: { name: string; count: number }[
           </Pie>
           <Tooltip
             contentStyle={{ backgroundColor: 'var(--chart-tooltip-bg)', borderColor: 'var(--chart-tooltip-border)', borderRadius: 8, padding: '8px 12px' }}
-            itemStyle={{ color: 'var(--color-white)', fontSize: '0.9rem' }}
+            // Was --color-white, which is invisible against the light theme's
+            // white tooltip background (--chart-tooltip-bg is #fff there).
+            itemStyle={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}
+            labelStyle={{ color: 'var(--text-primary)' }}
             formatter={(value, name) => [`${value} Performance${Number(value) > 1 ? 's' : ''}`, name]}
           />
           <Legend verticalAlign="bottom" height={48} iconType="circle" wrapperStyle={{ fontSize: '0.75rem', color: 'var(--chart-axis-text)', textTransform: 'capitalize' }}/>

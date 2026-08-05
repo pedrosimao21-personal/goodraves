@@ -24,6 +24,7 @@ import {
   parseFiltersFromParams,
   buildFilterParams,
 } from '@/lib/filter-utils'
+import { keepKeyboardOpenOnTap, dismissKeyboard } from '@/lib/touch-tap'
 
 function SearchIcon() {
   return (
@@ -420,10 +421,19 @@ export default function SearchSection() {
     // one place that should, since the URL below carries no year/country.
     setFilters(EMPTY_FILTERS)
     setOpenDropdown(null)
+    // keepKeyboardOpenOnTap held focus so this tap could land; now that it has,
+    // close the keyboard so it isn't covering the results.
+    dismissKeyboard()
     // Update URL param — this causes the component to re-read initialQuery via the effect
     const params = new URLSearchParams()
     params.set('q', q)
     router.push(`/?${params.toString()}`)
+    // Re-submitting the query the URL already carries leaves initialQuery
+    // unchanged, so the effect above never fires and the tap would do nothing.
+    // Search directly in that case (the effect covers every changed query).
+    if (q === initialQuery) {
+      doSearch(q)
+    }
   }
 
   // Not gated on `!loading` — DB results (and their filters) should appear as
@@ -446,7 +456,7 @@ export default function SearchSection() {
               autoComplete="off"
             />
           </div>
-          <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading}>
+          <button id="search-submit-btn" type="submit" className="btn btn-primary" disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
             {loading ? (isUrlInput(inputValue) ? 'Fetching event…' : 'Searching…') : 'Search'}
           </button>
         </form>

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import FestivalCard from '@/components/FestivalCard'
-import SearchFilters from '@/components/SearchFilters'
+import SearchFilters, { type DropdownKey } from '@/components/SearchFilters'
 import {
   searchFestivalsDB,
   searchRAEvents,
@@ -31,6 +31,19 @@ function SearchIcon() {
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
   )
+}
+
+/**
+ * ID prefixes whose missing image doSearch resolves itself, in the enrichment
+ * pass at the end of the search. Cards for these must skip their own image
+ * lookup — otherwise every imageless result costs two requests instead of one.
+ * Other results (custom-, external DB rows) are not covered by that pass and
+ * still rely on the card's own fallback lookup.
+ */
+const SOURCE_IMAGE_ID_PREFIXES = ['ra-', 'ff-', 'pf-']
+
+function hasSourceImageLookup(eventId: string): boolean {
+  return SOURCE_IMAGE_ID_PREFIXES.some((prefix) => eventId.startsWith(prefix))
 }
 
 /** Extract an RA event ID from a ra.co URL, or return null */
@@ -81,7 +94,7 @@ export default function SearchSection() {
   const [filters, setFilters] = useState<SearchFiltersType>(() =>
     parseFiltersFromParams(searchParams)
   )
-  const [openDropdown, setOpenDropdown] = useState<'year' | null>(null)
+  const [openDropdown, setOpenDropdown] = useState<DropdownKey | null>(null)
 
   // Derived — computed only when events or filters change
   const filterOptions = useMemo(() => extractFilterOptions(events), [events])
@@ -101,7 +114,7 @@ export default function SearchSection() {
     setOpenDropdown(null)
   }, [])
 
-  const handleDropdownToggle = useCallback((key: 'year') => {
+  const handleDropdownToggle = useCallback((key: DropdownKey) => {
     setOpenDropdown((prev) => (prev === key ? null : key))
   }, [])
 
@@ -113,9 +126,11 @@ export default function SearchSection() {
     if (!q.trim()) return
     setLoading(true)
     setError(null)
-    // Reset filters when a new search is triggered
-    setFilters(EMPTY_FILTERS)
-    setOpenDropdown(null)
+    // Filters are NOT reset here — this same function also runs for the
+    // initial mount / a deep link (e.g. "/?q=X&year=2026"), and resetting
+    // unconditionally threw away the year/country the URL asked to restore.
+    // A genuinely new user-initiated query resets filters in handleSubmit
+    // instead, right where its filter-free URL is built.
     try {
       // Check if the input is an RA event URL
       const raEventId = extractRAEventId(q)
@@ -165,23 +180,39 @@ export default function SearchSection() {
         }
       }
 
+      // `results` mirrors what's on screen so the image-enrichment pass at the
+      // end can see the full merged set without re-reading React state.
       const results: any[] = []
+      const sortByDateDesc = (list: any[]) =>
+        [...list].sort((a, b) => {
+          if (!a.date) return 1
+          if (!b.date) return -1
+          return b.date.localeCompare(a.date)
+        })
 
-      // Search DB, RA, FestivalFans, and Partyflock in parallel
-      const [dbResults, raResults, ffResults, pfResults] = await Promise.all([
-        searchFestivalsDB(q).catch((err) => { console.warn('DB search failed:', err); return [] }),
-        searchRAEvents(q).catch((err) => { console.warn('RA search failed:', err); return [] }),
-        searchFFEvents(q).catch((err) => { console.warn('FF search failed:', err); return [] }),
-        searchPFEvents(q).catch((err) => { console.warn('PF search failed:', err); return [] }),
-      ])
+      // Paint DB results as soon as they land instead of waiting on the three
+      // external scrapes too — DB is a single fast Neon round trip, while RA/
+      // FestivalFans/Partyflock are each a live fetch, and Next's server
+      // action queue runs client-triggered actions one at a time (not in
+      // parallel), so a single Promise.all here would make first paint wait
+      // on whichever scrape is slowest. Each source below is merged in and
+      // painted the moment it resolves.
+      let dbResults: any[] = []
+      try {
+        dbResults = await searchFestivalsDB(q)
+      } catch (err) {
+        console.warn('DB search failed:', err)
+      }
 
-      // Add DB results first
       const mapped = dbResults.map((f: any) => ({
         id: f.id,
         name: f.name,
         date: f.date,
+        endDate: f.endDate,
         venue: f.venue ? { name: f.venue, city: f.location ?? '' } : undefined,
         location: f.location,
+        countryCode: f.countryCode,
+        countryName: f.countryName,
         lineup: [],
         source: f.source ?? 'ra',
         image: f.imageUrl,
@@ -194,94 +225,116 @@ export default function SearchSection() {
         results.map((r: any) => `${r.name?.toLowerCase()}::${r.date ?? ''}`)
       )
 
-      // Collect PF IDs already in DB results to deduplicate
+      // Collect per-source ids already in DB results, so a live scrape result
+      // for something already imported doesn't render as a second card.
       const dbPFIds = new Set(
         dbResults
           .filter((f: any) => f.source === 'partyflock' && f.sourceId)
           .map((f: any) => String(f.sourceId))
       )
-
-      // Add PF results that aren't already in DB or exact duplicates (same name + date)
-      for (const pf of pfResults) {
-        if (!pf.date) continue
-        if (dbPFIds.has(pf.pfId)) continue
-        if (existingKeys.has(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)) continue
-        existingKeys.add(`${pf.name?.toLowerCase()}::${pf.date ?? ''}`)
-        results.push({
-          id: `pf-${pf.pfId}`,
-          name: pf.name,
-          date: pf.date,
-          venue: pf.venue ? { name: pf.venue, city: pf.location ?? '' } : undefined,
-          location: pf.location,
-          lineup: [],
-          source: 'partyflock',
-          image: pf.imageUrl,
-          _fromPF: true,
-        })
-      }
-
-      // Collect RA source IDs already in DB results to deduplicate
       const dbRaIds = new Set(
         dbResults
           .filter((f: any) => f.source === 'ra' && f.sourceId)
           .map((f: any) => String(f.sourceId))
       )
-
-      // Add RA results that aren't already in DB results (by sourceId or name+date)
-      for (const ra of raResults) {
-        if (dbRaIds.has(ra.raId)) continue
-        const key = `${ra.name?.toLowerCase()}::${ra.date ?? ''}`
-        if (existingKeys.has(key)) continue
-        existingKeys.add(key)
-        results.push({
-          id: `ra-${ra.raId}`,
-          name: ra.name,
-          date: ra.date,
-          venue: ra.venue ? { name: ra.venue, city: ra.location ?? '' } : undefined,
-          location: ra.location,
-          lineup: [],
-          source: 'ra',
-          image: ra.imageUrl,
-          _fromRA: true,
-        })
-      }
-
-      // Collect FF slugs already in DB results to deduplicate
       const dbFFSlugs = new Set(
         dbResults
           .filter((f: any) => f.source === 'festivalfans' && f.sourceId)
           .map((f: any) => String(f.sourceId))
       )
 
-      // Add FF results that aren't already in DB or exact duplicates (same name + date)
-      for (const ff of ffResults) {
-        if (!ff.date) continue
-        if (dbFFSlugs.has(ff.ffSlug)) continue
-        if (existingKeys.has(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)) continue
-        existingKeys.add(`${ff.name?.toLowerCase()}::${ff.date ?? ''}`)
-        results.push({
-          id: `ff-${ff.ffSlug}`,
-          name: ff.name,
-          date: ff.date,
-          venue: ff.venue ? { name: ff.venue, city: ff.location ?? '' } : undefined,
-          location: ff.location,
-          lineup: [],
-          source: 'festivalfans',
-          image: ff.imageUrl,
-          _fromFF: true,
-        })
+      setEvents(sortByDateDesc(results))
+      setSearched(true)
+      // Not setLoading(false) yet — the three scrapes below are still in
+      // flight and the search button should keep reflecting that.
+
+      // Partyflock next (existing dedup priority: DB > PF > RA > FF)
+      try {
+        const pfResults = await searchPFEvents(q)
+        for (const pf of pfResults) {
+          if (!pf.date) continue
+          if (dbPFIds.has(pf.pfId)) continue
+          const key = `${pf.name?.toLowerCase()}::${pf.date ?? ''}`
+          if (existingKeys.has(key)) continue
+          existingKeys.add(key)
+          results.push({
+            id: `pf-${pf.pfId}`,
+            name: pf.name,
+            date: pf.date,
+            venue: pf.venue ? { name: pf.venue, city: pf.location ?? '' } : undefined,
+            location: pf.location,
+            // Partyflock search results carry a city only, no country — this
+            // relies on the best-effort location-string derivation in
+            // filter-utils.ts (documented limitation, see location-normalizer.ts).
+            lineup: [],
+            source: 'partyflock',
+            image: pf.imageUrl,
+            _fromPF: true,
+          })
+        }
+        setEvents(sortByDateDesc(results))
+      } catch (err) {
+        console.warn('PF search failed:', err)
       }
 
-      const sorted = results.sort((a, b) => {
-        if (!a.date) return 1
-        if (!b.date) return -1
-        return b.date.localeCompare(a.date)
-      })
+      // Resident Advisor next
+      try {
+        const raResults = await searchRAEvents(q)
+        for (const ra of raResults) {
+          if (dbRaIds.has(ra.raId)) continue
+          const key = `${ra.name?.toLowerCase()}::${ra.date ?? ''}`
+          if (existingKeys.has(key)) continue
+          existingKeys.add(key)
+          results.push({
+            id: `ra-${ra.raId}`,
+            name: ra.name,
+            date: ra.date,
+            endDate: ra.endDate,
+            venue: ra.venue ? { name: ra.venue, city: ra.location ?? '' } : undefined,
+            location: ra.location,
+            countryCode: ra.countryCode,
+            countryName: ra.country,
+            lineup: [],
+            source: 'ra',
+            image: ra.imageUrl,
+            _fromRA: true,
+          })
+        }
+        setEvents(sortByDateDesc(results))
+      } catch (err) {
+        console.warn('RA search failed:', err)
+      }
 
-      setEvents(sorted)
-      setSearched(true)
+      // FestivalFans last
+      try {
+        const ffResults = await searchFFEvents(q)
+        for (const ff of ffResults) {
+          if (!ff.date) continue
+          if (dbFFSlugs.has(ff.ffSlug)) continue
+          const key = `${ff.name?.toLowerCase()}::${ff.date ?? ''}`
+          if (existingKeys.has(key)) continue
+          existingKeys.add(key)
+          results.push({
+            id: `ff-${ff.ffSlug}`,
+            name: ff.name,
+            date: ff.date,
+            venue: ff.venue ? { name: ff.venue, city: ff.location ?? '' } : undefined,
+            location: ff.location,
+            countryCode: ff.countryCode,
+            countryName: ff.countryName,
+            lineup: [],
+            source: 'festivalfans',
+            image: ff.imageUrl,
+            _fromFF: true,
+          })
+        }
+        setEvents(sortByDateDesc(results))
+      } catch (err) {
+        console.warn('FF search failed:', err)
+      }
 
       // Batch image fetches: collect all resolved images then apply a single state update
+      const sorted = results
       const imagePromises: Promise<{ id: string; imageUrl: string } | null>[] = []
 
       // FF results without images
@@ -363,13 +416,19 @@ export default function SearchSection() {
     if (!q) return
     setEvents([])
     setSearched(false)
+    // A genuinely new query resets filters from the old search — this is the
+    // one place that should, since the URL below carries no year/country.
+    setFilters(EMPTY_FILTERS)
+    setOpenDropdown(null)
     // Update URL param — this causes the component to re-read initialQuery via the effect
     const params = new URLSearchParams()
     params.set('q', q)
     router.push(`/?${params.toString()}`)
   }
 
-  const showFilters = searched && !loading && events.length > 0
+  // Not gated on `!loading` — DB results (and their filters) should appear as
+  // soon as they paint, without waiting for the still-in-flight RA/FF/PF scrapes.
+  const showFilters = searched && events.length > 0
 
   return (
     <>
@@ -452,7 +511,9 @@ export default function SearchSection() {
 
           <div className="grid">
             {filteredEvents.map((event: any) => (
-              <FestivalCard key={event.id} event={event} />
+              // doSearch resolves the image for these results itself, so the
+              // card must not fire its own duplicate lookup for them.
+              <FestivalCard key={event.id} event={event} skipImageFetch={hasSourceImageLookup(event.id)} />
             ))}
           </div>
         </>

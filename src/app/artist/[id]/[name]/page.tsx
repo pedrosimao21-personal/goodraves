@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import { getArtistDataSnapshot } from '@/db/actions/artists'
 import ArtistDetailClient from './ArtistDetailClient'
 
-// Cache the server-rendered page shell for 1 hour (ISR)
+// Currently a no-op: the root layout calls auth(), which reads cookies, so every
+// route is rendered dynamically and nothing is cached for this window. Kept so the
+// intended 1-hour ISR window applies as soon as that cookie read moves out of the
+// shared layout.
 export const revalidate = 3600
 
 interface Props {

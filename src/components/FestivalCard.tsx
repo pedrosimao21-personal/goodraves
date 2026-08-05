@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import { getFestivalCardImage } from '@/db/actions/festivals'
-import { formatDate } from '@/lib/format-date'
+import { formatDateRange } from '@/lib/format-date'
 import { parseLocalDate } from '@/lib/dates'
 
 function CalendarIcon() {
@@ -77,7 +77,18 @@ function SourceBadge({ source, isFromDB }: { source?: string; isFromDB: boolean 
   )
 }
 
-export default memo(function FestivalCard({ event }: { event: any }) {
+type FestivalCardProps = {
+  event: any
+  /**
+   * Set by render sites that already resolve images for every card themselves
+   * (SearchSection runs its own enrichment pass over the whole result set).
+   * Without it, each card fires a second, redundant lookup for the same image,
+   * multiplying the request count by the number of imageless results.
+   */
+  skipImageFetch?: boolean
+}
+
+export default memo(function FestivalCard({ event, skipImageFetch = false }: FestivalCardProps) {
   const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserDataActions()
   
   const attended = isAttended(event.id)
@@ -93,6 +104,7 @@ export default memo(function FestivalCard({ event }: { event: any }) {
   const [fallbackImage, setFallbackImage] = useState<string | null>(null)
   
   useEffect(() => {
+    if (skipImageFetch) return
     if (event.image) return
 
     const mainArtist = artistCount > 0 ? event.attractions[0].name : null
@@ -111,7 +123,7 @@ export default memo(function FestivalCard({ event }: { event: any }) {
       .catch(() => { /* fallback image unavailable */ })
 
     return () => { cancelled = true }
-  }, [event.image, artistCount, event.attractions, event.venue?.name, event.venue?.city])
+  }, [skipImageFetch, event.image, artistCount, event.attractions, event.venue?.name, event.venue?.city])
 
   const displayImage = event.image || fallbackImage
 
@@ -169,7 +181,7 @@ export default memo(function FestivalCard({ event }: { event: any }) {
         <div className="festival-card-meta">
           <div className="festival-card-meta-item">
             <CalendarIcon />
-            {formatDate(event.date)}
+            {formatDateRange(event.date, event.endDate)}
           </div>
           {event.venue?.name && (
             <div className="festival-card-meta-item">

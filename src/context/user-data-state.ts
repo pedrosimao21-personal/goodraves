@@ -1,4 +1,4 @@
-import type { InitialUserData } from '@/db/actions/get-initial-data'
+import type { InitialUserData } from '@/db/actions/user-data-query'
 import { isFestivalPast } from '@/lib/festival-date'
 
 export interface FestivalMeta {
@@ -114,6 +114,26 @@ export function buildUpsertPayload(eventId: string, meta: any) {
     source: meta.source ?? (eventId.startsWith('ra-') ? 'ra' : 'external'),
     sourceId: deriveSourceId(eventId),
     lineup: meta.lineup?.length ? meta.lineup : undefined,
+  }
+}
+
+/**
+ * Moves an optimistically-added festival's local state from a guessed id to
+ * the real one the server actually used (see upsertFestival's collision
+ * redirect in festival-import.ts). No-op if `oldId` isn't present anywhere.
+ */
+export function reconcileFestivalId(state: UserDataState, oldId: string, newId: string): UserDataState {
+  const meta = state.festivalMeta[oldId]
+  if (!meta) return state
+
+  const restMeta = Object.fromEntries(
+    Object.entries(state.festivalMeta).filter(([id]) => id !== oldId)
+  )
+  return {
+    ...state,
+    attendedFestivals: state.attendedFestivals.map(id => (id === oldId ? newId : id)),
+    upcomingFestivals: state.upcomingFestivals.map(id => (id === oldId ? newId : id)),
+    festivalMeta: { ...restMeta, [newId]: meta },
   }
 }
 

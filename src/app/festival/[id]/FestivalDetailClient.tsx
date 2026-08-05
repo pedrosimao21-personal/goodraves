@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useUserData } from '@/context/UserDataContext'
-import { getFestival, reimportFestival, getTimetable, type TimetableStage } from '@/db/actions/festivals'
+import { getFestival, reimportFestival, getTimetable, type TimetableData } from '@/db/actions/festivals'
 import { getArtistsWithImages } from '@/db/actions/artist-images'
 import { IMAGE_ENRICH_CHUNK_SIZE } from '@/lib/constants'
 import ArtistCard from '@/components/ArtistCard'
@@ -12,11 +12,12 @@ import B2bSetCard from '@/components/B2bSetCard'
 import FestivalNotes from './FestivalNotes'
 import TimetableView from './TimetableView'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
-import { formatDate } from '@/lib/format-date'
+import { formatDateRange } from '@/lib/format-date'
 import { parseLocalDate } from '@/lib/dates'
 import { getFestivalPlaylist, type FestivalPlaylistData } from '@/db/actions/festival-playlist'
 
 const PfTimetableImportModal = lazy(() => import('./PfTimetableImportModal'))
+const FestivalMergeModal = lazy(() => import('./FestivalMergeModal'))
 
 const STAR_COUNT = 5
 const STAR_COLOR_FILLED = 'var(--star-filled)'
@@ -52,6 +53,7 @@ function transformDbFestival(dbFestival: any) {
     id: dbFestival.id,
     name: dbFestival.name,
     date: dbFestival.date,
+    endDate: dbFestival.endDate,
     venue: dbFestival.venue ? { name: dbFestival.venue, city: dbFestival.location ?? '' } : undefined,
     location: dbFestival.location,
     imageUrl: dbFestival.imageUrl,
@@ -64,7 +66,26 @@ function transformDbFestival(dbFestival: any) {
   }
 }
 
-export default function FestivalDetail({ initialFestival = null }: { initialFestival?: any }) {
+const EMPTY_TIMETABLE: TimetableData = { days: [], stagesByDay: {} }
+
+/** Short day-tab label, e.g. "Fri 10" — distinct from formatDate's presets, which are all longer. */
+function formatDayTabLabel(isoDate: string): string {
+  return parseLocalDate(isoDate).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+}
+
+type FestivalDetailProps = {
+  initialFestival?: any
+  /** Server-fetched timetable; null for custom festivals (fetched client-side). */
+  initialTimetable?: TimetableData | null
+  /** Server-fetched Spotify playlist; null when none was found. */
+  initialPlaylist?: FestivalPlaylistData | null
+}
+
+export default function FestivalDetail({
+  initialFestival = null,
+  initialTimetable = null,
+  initialPlaylist = null,
+}: FestivalDetailProps) {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
@@ -75,12 +96,14 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   const [loading, setLoading] = useState(!initialFestival)
   const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
-  const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(null)
+  const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(() => initialPlaylist)
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showReimportConfirm, setShowReimportConfirm] = useState(false)
   const [showPfImportModal, setShowPfImportModal] = useState(false)
+  const [showMergeModal, setShowMergeModal] = useState(false)
   const [isReimporting, setIsReimporting] = useState(false)
-  const [timetableStages, setTimetableStages] = useState<TimetableStage[]>([])
+  const [timetable, setTimetable] = useState<TimetableData>(() => initialTimetable ?? EMPTY_TIMETABLE)
+  const [selectedDay, setSelectedDay] = useState<string | null>(() => initialTimetable?.days[0] ?? null)
   const [lineupView, setLineupView] = useState<'lineup' | 'timetable'>(
     typeof window !== 'undefined' && window.location.hash === '#timetable' ? 'timetable' : 'lineup'
   )
@@ -96,6 +119,20 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   }, [])
 
   useEffect(() => {
+    // The server component already fetched this festival — use it directly
+    // instead of throwing it away and re-fetching on mount, which replaced
+    // correct server-rendered content with a skeleton and sat behind whatever
+    // server actions the search page left in Next's action queue. Depending
+    // on `initialFestival` (not just checking it once) matters because Next
+    // reuses this client component across /festival/[id] navigations rather
+    // than remounting it, so a fresh prop for a new id must still take effect.
+    if (initialFestival) {
+      setEvent(transformDbFestival(initialFestival))
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     let cancelled = false
     setLoading(true)
     setError(null)
@@ -126,7 +163,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
       })
 
     return () => { cancelled = true }
-  }, [id])
+  }, [id, initialFestival])
 
   useEffect(() => {
     if (!event) return
@@ -162,24 +199,61 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
       }
     }
 
-    // Always fetch playlist, even if no artists need enrichment.
+    return () => { cancelled = true }
+  }, [event])
+
+  useEffect(() => {
+    if (!event) return
+
+    // The server component already resolved the playlist for this festival, so
+    // skip the duplicate round trip. Depending on the prop (rather than checking
+    // it once) matters because Next reuses this client component across
+    // /festival/[id] navigations, so a fresh prop must still take effect.
+    if (initialPlaylist) {
+      setPlaylist(initialPlaylist)
+      return
+    }
+
+    let cancelled = false
+
     // Pass the first attraction as potential headliner for "This is {artist}" fallback.
     const headliner = event.attractions?.[0]?.name as string | undefined
     ;(getFestivalPlaylist(event.name, headliner) as unknown as Promise<FestivalPlaylistData | null>)
       .then(data => { if (!cancelled) setPlaylist(data) })
-      .catch(() => {})
+      .catch(() => {
+        // The playlist is an optional embed — clearing it hides the section
+        // rather than failing the whole festival page.
+        if (!cancelled) setPlaylist(null)
+      })
 
     return () => { cancelled = true }
-  }, [event])
+  }, [event, initialPlaylist])
 
   const refreshTimetable = () => {
-    getTimetable(id).then(stages => setTimetableStages(stages)).catch(() => {})
+    getTimetable(id).then(data => setTimetable(data)).catch(() => {})
   }
 
   useEffect(() => {
+    // B2B sets stay client-side: they live in the shared UserDataContext state,
+    // which this page reads through getB2bSets(id).
     loadB2bSets(id)
+
+    // Same reasoning as the festival/playlist props — the server component
+    // already read the timetable, and the prop must still be re-applied when it
+    // changes, since this component is reused across /festival/[id] navigations.
+    if (initialTimetable) {
+      setTimetable(initialTimetable)
+      return
+    }
     refreshTimetable()
-  }, [id, loadB2bSets])
+  }, [id, loadB2bSets, initialTimetable])
+
+  // Keep the selected day tab valid whenever the timetable's day list changes
+  // (a fresh festival, a refresh after linking a Partyflock timetable, etc.) —
+  // default to the first day rather than leaving a stale/missing selection.
+  useEffect(() => {
+    setSelectedDay((prev) => (prev && timetable.days.includes(prev) ? prev : (timetable.days[0] ?? null)))
+  }, [timetable.days])
 
   const isFuture = event?.date && parseLocalDate(event.date) > new Date()
   const attended = isAttended(id)
@@ -210,8 +284,16 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   }
 
   const handleAction = () => {
-    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.image, source: event.source }
+    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.imageUrl, source: event.source }
     toggleFestival(id, payload)
+  }
+
+  const handleMerged = async () => {
+    // A merge can change this festival's lineup, date range, and timetable —
+    // re-fetch everything rather than trying to patch state piecemeal.
+    const updated = await getFestival(id)
+    if (updated) setEvent(transformDbFestival(updated))
+    refreshTimetable()
   }
 
   const handleReimport = async () => {
@@ -262,8 +344,8 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
   return (
     <div className="page">
       <div className="festival-hero">
-        {event.image ? (
-          <Image className="festival-hero-bg" src={event.image} alt="" width={1200} height={400} sizes="100vw" quality={85} priority style={{ objectFit: 'cover' }} aria-hidden />
+        {event.imageUrl ? (
+          <Image className="festival-hero-bg" src={event.imageUrl} alt="" width={1200} height={400} sizes="100vw" quality={85} priority style={{ objectFit: 'cover' }} aria-hidden />
         ) : (
           <div className="festival-hero-bg-fallback" />
         )}
@@ -300,7 +382,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
           <h1 className="festival-hero-title">{event.name}</h1>
 
           <div className="festival-meta-row">
-            <div className="festival-meta-chip"><CalIcon />{formatDate(event.date, 'long')}</div>
+            <div className="festival-meta-chip"><CalIcon />{formatDateRange(event.date, event.endDate, 'long')}</div>
             {event.venue?.name && (
               <div className="festival-meta-chip">
                 <PinIcon />
@@ -398,6 +480,18 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                   Link Partyflock Timetable
                 </button>
                 <button
+                  onClick={() => { setShowAdminMenu(false); setShowMergeModal(true) }}
+                  style={{
+                    width: '100%', background: 'none', border: 'none',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.95rem', fontFamily: 'var(--font-sans)',
+                    padding: '16px 20px', textAlign: 'left', cursor: 'pointer',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  Merge Duplicate Festivals
+                </button>
+                <button
                   onClick={() => { setShowAdminMenu(false); setShowReimportConfirm(true) }}
                   style={{
                     width: '100%', background: 'none', border: 'none',
@@ -424,6 +518,17 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                 festivalId={id}
                 onClose={() => setShowPfImportModal(false)}
                 onImported={refreshTimetable}
+              />
+            </Suspense>
+          )}
+
+          {/* Merge duplicate festivals — admin only */}
+          {showMergeModal && (
+            <Suspense fallback={null}>
+              <FestivalMergeModal
+                winnerId={id}
+                onClose={() => setShowMergeModal(false)}
+                onMerged={handleMerged}
               />
             </Suspense>
           )}
@@ -513,7 +618,7 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
                   <span className="section-count">{event.attractions.length} artist{event.attractions.length !== 1 ? 's' : ''}</span>
                 )}
               </div>
-              {timetableStages.length > 0 && (
+              {timetable.days.length > 0 && (
                 <div style={{ display: 'flex', gap: 4 }}>
                    <button
                     onClick={() => switchView('lineup')}
@@ -553,7 +658,38 @@ export default function FestivalDetail({ initialFestival = null }: { initialFest
               )}
             </div>
             {lineupView === 'timetable' ? (
-              <TimetableView stages={timetableStages} />
+              <>
+                {timetable.days.length > 1 && (
+                  <div
+                    className="timetable-day-tabs"
+                    style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}
+                  >
+                    {timetable.days.map((day) => (
+                      <button
+                        key={day}
+                        onClick={() => setSelectedDay(day)}
+                        style={{
+                          flexShrink: 0,
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          border: '1px solid var(--border-subtle)',
+                          background: selectedDay === day ? 'var(--accent-purple)' : 'transparent',
+                          color: selectedDay === day ? 'var(--color-white)' : 'var(--text-muted)',
+                          fontSize: '0.85rem',
+                          fontWeight: selectedDay === day ? 600 : 400,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          transition: 'background 120ms, color 120ms',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        {formatDayTabLabel(day)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <TimetableView stages={timetable.stagesByDay[selectedDay ?? timetable.days[0]] ?? []} />
+              </>
             ) : (
               <div className="grid-artists">
                 {b2bSetsForFestival.map(b2bSet => (

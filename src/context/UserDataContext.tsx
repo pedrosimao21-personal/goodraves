@@ -25,9 +25,9 @@ import {
 import { renameArtist as renameArtistAction } from '@/db/actions/artist-rename'
 
 import { isFestivalPast } from '@/lib/festival-date'
-import type { InitialUserData } from '@/db/actions/get-initial-data'
+import type { InitialUserData } from '@/db/actions/user-data-query'
 import type { FestivalMeta, UserDataState, UserDataContextType } from './user-data-state'
-import { DEFAULT_STATE, transformDbData, buildUpsertPayload } from './user-data-state'
+import { DEFAULT_STATE, transformDbData, buildUpsertPayload, reconcileFestivalId } from './user-data-state'
 
 // State (attendedFestivals, ratings, notes, ...) and actions (readers + mutators)
 // are split into two contexts. Actions rarely change identity (stable useCallback
@@ -103,11 +103,38 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       return { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId], festivalMeta }
     })
 
-    if (!wasAdded) {
-      if (meta) await upsertFestival(buildUpsertPayload(eventId, meta))
-      await addAttendance(eventId)
-    } else {
-      await removeAttendance(eventId)
+    try {
+      if (!wasAdded) {
+        let finalId = eventId
+        if (meta) {
+          // May redirect to an existing row with the same name+date instead
+          // of creating a duplicate — reconcile the optimistic state onto it.
+          const result = await upsertFestival(buildUpsertPayload(eventId, meta))
+          finalId = result.id
+        }
+        if (finalId !== eventId) {
+          setState(prev => reconcileFestivalId(prev, eventId, finalId))
+        }
+        await addAttendance(finalId)
+      } else {
+        await removeAttendance(eventId)
+      }
+    } catch (err) {
+      // The mutation didn't happen — undo the optimistic update.
+      setState(prev => {
+        if (!wasAdded) {
+          return {
+            ...prev,
+            attendedFestivals: prev.attendedFestivals.filter(x => x !== eventId),
+            upcomingFestivals: prev.upcomingFestivals.filter(x => x !== eventId),
+          }
+        }
+        const date = prev.festivalMeta[eventId]?.date
+        return isFestivalPast(date)
+          ? { ...prev, attendedFestivals: [...prev.attendedFestivals, eventId] }
+          : { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId] }
+      })
+      throw err
     }
   }, [userId, promptAuth])
 

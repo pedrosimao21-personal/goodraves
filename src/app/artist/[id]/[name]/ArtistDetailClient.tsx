@@ -35,9 +35,22 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
   useEffect(() => {
     if (!artistId) return
     let cancelled = false
-    setLoading(true)
     setTimedOut(false)
     setReportSent(false)
+
+    // Seed from the server-fetched snapshot (page.tsx already ran the exact
+    // same getArtistDataSnapshot call) instead of unconditionally flipping to
+    // `loading` and re-fetching it client-side — that flashed a skeleton over
+    // content that was already correct. `initialArtist` is checked on every
+    // run (not just once) because Next reuses this client component across
+    // /artist/[id]/[name] navigations rather than remounting it.
+    if (initialArtist) {
+      setArtist(initialArtist)
+      setLoading(false)
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
 
     const timeout = setTimeout(() => {
       if (!cancelled) { setTimedOut(true); setLoading(false) }
@@ -45,18 +58,21 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
 
     const fetchArtist = async () => {
       try {
-        // ── Step 1: Show cached DB data immediately (fast path) ──────────
-        // This unblocks the UI so the user sees content within ~200ms for
-        // returning visitors, rather than staring at a skeleton for 3-5s.
-        const snapshot = await (getArtistDataSnapshot(artistId) as unknown as Promise<ArtistData | null>)
-        if (cancelled) return
-
         let resolvedId = artistId
+        let snapshot = initialArtist
 
-        if (snapshot) {
-          setArtist(snapshot)
-          setLoading(false)
-          setRefreshing(true)
+        if (!snapshot) {
+          // ── Step 1: Show cached DB data immediately (fast path) ────────
+          // This unblocks the UI so the user sees content within ~200ms for
+          // returning visitors, rather than staring at a skeleton for 3-5s.
+          snapshot = await (getArtistDataSnapshot(artistId) as unknown as Promise<ArtistData | null>)
+          if (cancelled) return
+
+          if (snapshot) {
+            setArtist(snapshot)
+            setLoading(false)
+            setRefreshing(true)
+          }
         }
 
         // ── Step 2: Refresh stale data from external APIs (slow path) ────
@@ -109,7 +125,7 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
 
     fetchArtist()
     return () => { cancelled = true; clearTimeout(timeout) }
-  }, [artistId])
+  }, [artistId, initialArtist])
 
   useEffect(() => {
     if (!artist?.lastfmSimilar?.length) return

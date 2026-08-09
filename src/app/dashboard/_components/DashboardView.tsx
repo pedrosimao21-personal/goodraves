@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
@@ -11,6 +11,8 @@ import FestivalRow from './FestivalRow'
 import TimelineView from './TimelineView'
 import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
 import type { TrendingFestival } from '@/db/actions/trending-festivals'
+
+const AvgVibeModal = lazy(() => import('./AvgVibeModal'))
 
 const CLEAR_LIST_COLOR = 'var(--accent-red-bright)'
 const UPCOMING_BG_COLOR = 'var(--state-going)'
@@ -31,7 +33,7 @@ type Props = {
 
 export default function DashboardView({ trendingFestivals, userCity }: Props) {
   const {
-    attendedFestivals, upcomingFestivals, seenArtists, festivalRatings,
+    attendedFestivals, upcomingFestivals, festivalRatings,
     toggleFestival, clearFestivals, getFestivalMeta, loaded, isAdmin,
   } = useUserData()
   const { promptAuth } = useAuthPrompt()
@@ -39,6 +41,7 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
   const router = useRouter()
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [showVibeModal, setShowVibeModal] = useState(false)
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
 
@@ -52,10 +55,14 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
     setActiveTab(tab)
   }
 
-  const totalSeen = useMemo(
-    () => (Object.values(seenArtists) as string[][]).reduce((sum, arr) => sum + arr.length, 0),
-    [seenArtists]
-  )
+  const ratedFestivals = useMemo(() =>
+    attendedFestivals
+      .map(id => ({ id, meta: getFestivalMeta(id), rating: festivalRatings?.[id] ?? 0 }))
+      .filter(f => f.rating > 0)
+      .map(f => ({ id: f.id, name: f.meta?.name ?? f.id, date: f.meta?.date ?? null, rating: f.rating }))
+      .sort((a, b) => b.rating - a.rating),
+  [attendedFestivals, getFestivalMeta, festivalRatings])
+
   const festivalRatingValues = useMemo(
     () => attendedFestivals.map(id => festivalRatings?.[id]).filter((r): r is number => !!r && r > 0),
     [attendedFestivals, festivalRatings]
@@ -109,56 +116,82 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
         </div>
 
         <div className="stats-grid">
-          <div className="stat-card">
+          <div
+            className="stat-card stat-card-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => switchToTab('attended')}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('attended') } }}
+          >
             <div className="stat-label">Festivals Attended</div>
             <div className="stat-value">{attendedFestivals.length}</div>
             <div className="stat-sub">festivals on record</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-label">Artists Seen</div>
-            <div className="stat-value">{totalSeen}</div>
-            <div className="stat-sub">live performances tracked</div>
+          <div
+            className="stat-card stat-card-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => switchToTab('upcoming')}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('upcoming') } }}
+          >
+            <div className="stat-label">Upcoming</div>
+            <div className="stat-value">{upcomingFestivals.length}</div>
+            <div className="stat-sub">future festivals planned</div>
           </div>
-          <div className="stat-card">
+          <div
+            className="stat-card stat-card-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => setShowVibeModal(true)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowVibeModal(true) } }}
+          >
             <div className="stat-label">Avg. Vibe</div>
             <div className="stat-value">{avgRatingAll ?? '\u2014'}</div>
             <div className="stat-sub">{festivalRatingValues.length} festivals rated</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-label">Upcoming</div>
-            <div className="stat-value">{upcomingFestivals.length}</div>
-            <div className="stat-sub">future festivals planned</div>
+          <div
+            className="stat-card stat-card-clickable"
+            role="button"
+            tabIndex={0}
+            onClick={() => switchToTab('timeline')}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('timeline') } }}
+          >
+            <div className="stat-label">All-Time Festivals</div>
+            <div className="stat-value">{attendedFestivals.length}</div>
+            <div className="stat-sub">view your timeline</div>
           </div>
         </div>
 
         <div className="divider" />
 
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => switchToTab('attended')}
-            style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          >
-            Past ({attendedFestivals.length})
-          </button>
-          <button
-            className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => switchToTab('upcoming')}
-            style={
-              activeTab === 'upcoming'
-                ? { background: UPCOMING_BG_COLOR, color: 'var(--color-white)', borderColor: UPCOMING_BG_COLOR }
-                : { border: '1px solid var(--border)', color: 'var(--text-primary)' }
-            }
-          >
-            Upcoming ({upcomingFestivals.length})
-          </button>
-          <button
-            className={`btn ${activeTab === 'timeline' ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => switchToTab('timeline')}
-            style={activeTab === 'timeline' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          >
-            Timeline
-          </button>
+          <div className="dashboard-tab-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button
+              className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => switchToTab('attended')}
+              style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              Past ({attendedFestivals.length})
+            </button>
+            <button
+              className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => switchToTab('upcoming')}
+              style={
+                activeTab === 'upcoming'
+                  ? { background: UPCOMING_BG_COLOR, color: 'var(--color-white)', borderColor: UPCOMING_BG_COLOR }
+                  : { border: '1px solid var(--border)', color: 'var(--text-primary)' }
+              }
+            >
+              Upcoming ({upcomingFestivals.length})
+            </button>
+            <button
+              className={`btn ${activeTab === 'timeline' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => switchToTab('timeline')}
+              style={activeTab === 'timeline' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            >
+              Timeline
+            </button>
+          </div>
           {activeTab !== 'timeline' && isAdmin && (
             <div style={{ marginLeft: 'auto' }}>
               <button
@@ -233,6 +266,12 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
 
       {editingId && (
         <EditFestivalModal eventId={editingId} onClose={() => setEditingId(null)} />
+      )}
+
+      {showVibeModal && (
+        <Suspense fallback={null}>
+          <AvgVibeModal festivals={ratedFestivals} onClose={() => setShowVibeModal(false)} />
+        </Suspense>
       )}
 
       {trendingFestivals.length > 0 && (

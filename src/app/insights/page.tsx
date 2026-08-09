@@ -134,6 +134,45 @@ export default function Insights() {
           </div>
         </div>
 
+        <div className="dashboard-card" style={{ marginBottom: 24 }}>
+          <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Top Cities</h2>
+          {cityData.length > 0 ? (
+            <div style={{ padding: '8px 0' }}>
+              {cityData.map((city, index) => (
+                <div key={city.name} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: '12px 16px',
+                  marginBottom: 8,
+                  background: 'var(--bg-secondary)',
+                  borderRadius: 12,
+                  border: '1px solid var(--border)',
+                }}>
+                  <div style={{
+                    width: 28, height: 28,
+                    borderRadius: '50%',
+                    background: index === 0 ? 'var(--accent)' : 'var(--bg-glass)',
+                    color: index === 0 ? 'var(--color-white)' : 'var(--text-primary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700, fontSize: '0.85rem'
+                  }}>
+                    {index + 1}
+                  </div>
+                  <div style={{ flex: 1, fontWeight: 600 }}>{city.name}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {city.count} {city.count === 1 ? 'show' : 'shows'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p style={{ color: 'var(--text-muted)' }}>No city data found.</p>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, paddingBottom: 64 }}>
           <div className="dashboard-card">
             <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Shows Per Year</h2>
@@ -153,45 +192,6 @@ export default function Insights() {
             ) : (
               <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: 'var(--text-muted)' }}>No genre data available yet.</p>
-              </div>
-            )}
-          </div>
-
-          <div className="dashboard-card">
-            <h2 className="section-title" style={{ fontSize: '1.25rem', marginBottom: 16 }}>Top Cities</h2>
-            {cityData.length > 0 ? (
-              <div style={{ padding: '8px 0', minHeight: 300 }}>
-                {cityData.map((city, index) => (
-                  <div key={city.name} style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 16,
-                    padding: '12px 16px',
-                    marginBottom: 8,
-                    background: 'var(--bg-secondary)',
-                    borderRadius: 12,
-                    border: '1px solid var(--border)',
-                  }}>
-                    <div style={{
-                      width: 28, height: 28,
-                      borderRadius: '50%',
-                      background: index === 0 ? 'var(--accent)' : 'var(--bg-glass)',
-                      color: index === 0 ? 'var(--color-white)' : 'var(--text-primary)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, fontSize: '0.85rem'
-                    }}>
-                      {index + 1}
-                    </div>
-                    <div style={{ flex: 1, fontWeight: 600 }}>{city.name}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      {city.count} {city.count === 1 ? 'show' : 'shows'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: 'var(--text-muted)' }}>No city data found.</p>
               </div>
             )}
           </div>

@@ -1407,6 +1407,29 @@ img {
   border-color: var(--border-hover);
 }
 
+.stat-card-clickable {
+  cursor: pointer;
+  transition: border-color var(--transition-normal), transform 150ms ease;
+}
+
+.stat-card-clickable:active {
+  transform: scale(0.98);
+}
+
+.stat-card-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The stat cards replace this row's role as navigation on mobile; keep the
+   row (and its Past/Upcoming counts) on wider screens where there's room for
+   both and an already-visible list would otherwise look card-only. */
+@media (max-width: 640px) {
+  .dashboard-tab-row {
+    display: none;
+  }
+}
+
 .stat-label {
   font-size: 0.8rem;
   font-weight: 600;

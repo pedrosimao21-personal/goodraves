@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUserData } from '@/context/UserDataContext'
 import { useSpotifyEnrichment } from './useSpotifyEnrichment'
 import ArtistActionsModal from './ArtistActionsModal'
-import { PageHeader, StatsBar, ArtistRankingList } from './TopDjsSections'
+import { PageHeader, SortModeControl, StatsBar, ArtistRankingList } from './TopDjsSections'
 import DjSuggestionsChips from './DjSuggestionsChips'
 
 const TOP_ENRICHMENT_LIMIT = 15
@@ -125,11 +125,13 @@ export default function TopDJs() {
           availableYears={availableYears}
           selectedYear={selectedYear}
           onYearChange={setSelectedYear}
-          sortMode={sortMode}
-          onSortModeChange={setSortMode}
         />
 
-        {ranking.length > 0 && <StatsBar ranking={ranking} />}
+        {ranking.length > 0 && <StatsBar ranking={ranking} sortMode={sortMode} />}
+
+        {ranking.length > 0 && (
+          <SortModeControl sortMode={sortMode} onSortModeChange={setSortMode} />
+        )}
 
         {ranking.length === 0 ? (
           <div className="empty-state">

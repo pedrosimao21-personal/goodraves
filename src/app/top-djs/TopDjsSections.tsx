@@ -8,19 +8,17 @@ const STAR_COLOR_FILLED = 'var(--star-filled)'
 const STAR_COLOR_EMPTY = 'var(--border-strong)'
 const MEDALS = ['\u{1F947}', '\u{1F948}', '\u{1F949}']
 
-export function PageHeader({ availableYears, selectedYear, onYearChange, sortMode, onSortModeChange }: {
+export function PageHeader({ availableYears, selectedYear, onYearChange }: {
   availableYears: string[]
   selectedYear: string
   onYearChange: (year: string) => void
-  sortMode: 'count' | 'rating'
-  onSortModeChange: (mode: 'count' | 'rating') => void
 }) {
   return (
     <div style={{ paddingTop: 8, marginBottom: 24 }}>
       <h1 className="section-title" style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 6 }}>
         Most Watched DJs
       </h1>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
           Your personalized ranking of artists you&apos;ve watched
         </p>
@@ -45,34 +43,52 @@ export function PageHeader({ availableYears, selectedYear, onYearChange, sortMod
           </select>
         )}
       </div>
-      {/* Sort mode segmented control */}
-      <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-        {([['count', '# Times Seen'], ['rating', '\u2b50 By Rating']] as const).map(([mode, label]) => (
-          <button
-            key={mode}
-            onClick={() => onSortModeChange(mode)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 7,
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              fontFamily: 'var(--font-sans)',
-              transition: 'background 200ms ease, color 200ms ease',
-              background: sortMode === mode ? 'var(--accent)' : 'transparent',
-              color: sortMode === mode ? 'var(--color-white)' : 'var(--text-muted)',
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
 
-export function StatsBar({ ranking }: { ranking: any[] }) {
+export function SortModeControl({ sortMode, onSortModeChange }: {
+  sortMode: 'count' | 'rating'
+  onSortModeChange: (mode: 'count' | 'rating') => void
+}) {
+  return (
+    <div style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', borderRadius: 10, padding: 4, width: 'fit-content', marginBottom: 20 }}>
+      {([['count', '# Times Seen'], ['rating', '\u2b50 By Rating']] as const).map(([mode, label]) => (
+        <button
+          key={mode}
+          onClick={() => onSortModeChange(mode)}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 7,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            fontFamily: 'var(--font-sans)',
+            transition: 'background 200ms ease, color 200ms ease',
+            background: sortMode === mode ? 'var(--accent)' : 'transparent',
+            color: sortMode === mode ? 'var(--color-white)' : 'var(--text-muted)',
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function StatsBar({ ranking, sortMode }: { ranking: any[]; sortMode: 'count' | 'rating' }) {
+  // The list is already ordered by the active sort mode, so a "Top DJ" card
+  // just repeats item #1 \u2014 replace it with whichever metric the current sort
+  // ISN'T showing, so it always adds information instead of echoing the list.
+  const complementary = sortMode === 'count'
+    ? [...ranking].filter((a: any) => a.avgSetRating > 0).sort((a: any, b: any) => b.avgSetRating - a.avgSetRating)[0]
+    : [...ranking].sort((a: any, b: any) => b.count - a.count)[0]
+  const complementaryLabel = sortMode === 'count' ? 'Highest Rated' : 'Most Seen'
+  const complementarySub = complementary
+    ? (sortMode === 'count' ? `${complementary.avgSetRating.toFixed(1)}\u2605 avg` : `${complementary.count}\u00d7 seen`)
+    : ''
+
   return (
     <div className="stats-grid" style={{ marginBottom: 32 }}>
       <div className="stat-card">
@@ -86,9 +102,9 @@ export function StatsBar({ ranking }: { ranking: any[] }) {
         <div className="stat-sub">live shows watched</div>
       </div>
       <div className="stat-card">
-        <div className="stat-label">Top DJ</div>
-        <div className="stat-value" style={{ fontSize: '1.3rem' }}>{ranking[0]?.name ?? '\u2014'}</div>
-        <div className="stat-sub">{ranking[0]?.count ?? 0}&times; seen</div>
+        <div className="stat-label">{complementaryLabel}</div>
+        <div className="stat-value" style={{ fontSize: '1.3rem' }}>{complementary?.name ?? '\u2014'}</div>
+        <div className="stat-sub">{complementarySub}</div>
       </div>
     </div>
   )

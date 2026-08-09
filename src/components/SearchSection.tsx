@@ -86,6 +86,11 @@ export default function SearchSection() {
   const initialQuery = searchParams.get('q') ?? ''
 
   const [inputValue, setInputValue] = useState(initialQuery)
+  // The query actually being searched/displayed. Kept as its own state instead
+  // of reading `initialQuery` everywhere, because a submit no longer navigates
+  // (see handleSubmit) — this is the only source of truth for "what query is
+  // active" once the page has mounted.
+  const [activeQuery, setActiveQuery] = useState(initialQuery)
   const [events, setEvents] = useState<any[]>([])
   const [searched, setSearched] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -110,13 +115,18 @@ export default function SearchSection() {
   // freshly-filtered list was discarded — which is why applying a filter
   // appeared to do nothing. history.replaceState updates the address bar
   // without any navigation, so filter state survives.
+  //
+  // Depends on `activeQuery`, not the initial-mount `initialQuery` — reading
+  // the latter here was the actual "click Search twice" bug: handleSubmit
+  // used to call router.push(`/?q=...`) and this effect ran in the same tick
+  // off a still-stale `initialQuery` closure, so it immediately replaceState'd
+  // the URL back to before the query was added, cancelling the navigation.
   useEffect(() => {
     const baseParams = new URLSearchParams()
-    if (initialQuery) baseParams.set('q', initialQuery)
+    if (activeQuery) baseParams.set('q', activeQuery)
     const params = buildFilterParams(baseParams, filters)
     window.history.replaceState({}, '', `/?${params.toString()}`)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  }, [filters, activeQuery])
 
   const handleFilterChange = useCallback((next: SearchFiltersType) => {
     setFilters(next)
@@ -411,13 +421,30 @@ export default function SearchSection() {
     }
   }, [router])
 
-  // Trigger search on mount (or when URL ?q= changes) without pushing a new history entry
+  // Trigger search on mount and whenever activeQuery changes
   useEffect(() => {
-    if (initialQuery) {
-      doSearch(initialQuery)
+    if (activeQuery) {
+      doSearch(activeQuery)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuery])
+  }, [activeQuery])
+
+  // Searching used to be a real navigation (router.push), which round-tripped
+  // to the server for a route that renders nothing but this client component
+  // — an extra RSC fetch on every mobile search for no benefit, and the
+  // source of the double-tap bug above. A plain pushState keeps the URL
+  // shareable/deep-linkable without any of that.
+  useEffect(() => {
+    function handlePopState() {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get('q') ?? ''
+      setInputValue(q)
+      setActiveQuery(q)
+      setFilters(parseFiltersFromParams(params))
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -432,15 +459,17 @@ export default function SearchSection() {
     // keepKeyboardOpenOnTap held focus so this tap could land; now that it has,
     // close the keyboard so it isn't covering the results.
     dismissKeyboard()
-    // Update URL param — this causes the component to re-read initialQuery via the effect
     const params = new URLSearchParams()
     params.set('q', q)
-    router.push(`/?${params.toString()}`)
-    // Re-submitting the query the URL already carries leaves initialQuery
-    // unchanged, so the effect above never fires and the tap would do nothing.
-    // Search directly in that case (the effect covers every changed query).
-    if (q === initialQuery) {
+    window.history.pushState({}, '', `/?${params.toString()}`)
+    // Re-submitting the query that's already active leaves activeQuery
+    // unchanged, so the effect above never fires and the tap would do
+    // nothing. Search directly in that case (the effect covers every
+    // genuinely changed query).
+    if (q === activeQuery) {
       doSearch(q)
+    } else {
+      setActiveQuery(q)
     }
   }
 

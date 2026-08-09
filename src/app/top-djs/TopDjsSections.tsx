@@ -77,18 +77,7 @@ export function SortModeControl({ sortMode, onSortModeChange }: {
   )
 }
 
-export function StatsBar({ ranking, sortMode }: { ranking: any[]; sortMode: 'count' | 'rating' }) {
-  // The list is already ordered by the active sort mode, so a "Top DJ" card
-  // just repeats item #1 \u2014 replace it with whichever metric the current sort
-  // ISN'T showing, so it always adds information instead of echoing the list.
-  const complementary = sortMode === 'count'
-    ? [...ranking].filter((a: any) => a.avgSetRating > 0).sort((a: any, b: any) => b.avgSetRating - a.avgSetRating)[0]
-    : [...ranking].sort((a: any, b: any) => b.count - a.count)[0]
-  const complementaryLabel = sortMode === 'count' ? 'Highest Rated' : 'Most Seen'
-  const complementarySub = complementary
-    ? (sortMode === 'count' ? `${complementary.avgSetRating.toFixed(1)}\u2605 avg` : `${complementary.count}\u00d7 seen`)
-    : ''
-
+export function StatsBar({ ranking }: { ranking: any[] }) {
   return (
     <div className="stats-grid" style={{ marginBottom: 32 }}>
       <div className="stat-card">
@@ -100,11 +89,6 @@ export function StatsBar({ ranking, sortMode }: { ranking: any[]; sortMode: 'cou
         <div className="stat-label">Total Performances</div>
         <div className="stat-value">{ranking.reduce((s: number, a: any) => s + a.count, 0)}</div>
         <div className="stat-sub">live shows watched</div>
-      </div>
-      <div className="stat-card">
-        <div className="stat-label">{complementaryLabel}</div>
-        <div className="stat-value" style={{ fontSize: '1.3rem' }}>{complementary?.name ?? '\u2014'}</div>
-        <div className="stat-sub">{complementarySub}</div>
       </div>
     </div>
   )

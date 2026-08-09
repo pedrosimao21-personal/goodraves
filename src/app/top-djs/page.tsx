@@ -127,7 +127,7 @@ export default function TopDJs() {
           onYearChange={setSelectedYear}
         />
 
-        {ranking.length > 0 && <StatsBar ranking={ranking} sortMode={sortMode} />}
+        {ranking.length > 0 && <StatsBar ranking={ranking} />}
 
         {ranking.length > 0 && (
           <SortModeControl sortMode={sortMode} onSortModeChange={setSortMode} />

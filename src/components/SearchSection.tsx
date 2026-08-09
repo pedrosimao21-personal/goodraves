@@ -421,13 +421,22 @@ export default function SearchSection() {
     }
   }, [router])
 
-  // Trigger search on mount and whenever activeQuery changes
+  // Trigger search on initial mount / deep link only. Click-driven searches
+  // call doSearch directly from handleSubmit below — routing that through a
+  // state-change-triggered effect (setActiveQuery -> effect on [activeQuery])
+  // was the actual cause of "click does nothing, no request in Network tab":
+  // that effect fired in the same render pass as the filter-sync effect
+  // below, and something about that shared render tick made the resulting
+  // Server Action call hang indefinitely (reproduced with debug logging —
+  // execution reached `await searchFestivalsDB(q)` and never returned nor
+  // threw). Calling doSearch directly and synchronously from the click
+  // handler removes that indirection entirely.
   useEffect(() => {
-    if (activeQuery) {
-      doSearch(activeQuery)
+    if (initialQuery) {
+      doSearch(initialQuery)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery])
+  }, [])
 
   // Searching used to be a real navigation (router.push), which round-tripped
   // to the server for a route that renders nothing but this client component
@@ -441,9 +450,16 @@ export default function SearchSection() {
       setInputValue(q)
       setActiveQuery(q)
       setFilters(parseFiltersFromParams(params))
+      if (q) {
+        doSearch(q)
+      } else {
+        setEvents([])
+        setSearched(false)
+      }
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -456,21 +472,17 @@ export default function SearchSection() {
     // one place that should, since the URL below carries no year/country.
     setFilters(EMPTY_FILTERS)
     setOpenDropdown(null)
+    setActiveQuery(q)
     // keepKeyboardOpenOnTap held focus so this tap could land; now that it has,
     // close the keyboard so it isn't covering the results.
     dismissKeyboard()
+    // Fire the search before touching the URL — doSearch synchronously kicks
+    // off the DB/RA/FF/PF calls before its first await, so the Server Action
+    // call is already in flight before pushState runs.
+    doSearch(q)
     const params = new URLSearchParams()
     params.set('q', q)
     window.history.pushState({}, '', `/?${params.toString()}`)
-    // Re-submitting the query that's already active leaves activeQuery
-    // unchanged, so the effect above never fires and the tap would do
-    // nothing. Search directly in that case (the effect covers every
-    // genuinely changed query).
-    if (q === activeQuery) {
-      doSearch(q)
-    } else {
-      setActiveQuery(q)
-    }
   }
 
   // Not gated on `!loading` — DB results (and their filters) should appear as

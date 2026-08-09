@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, lazy, Suspense } from 'react'
+import React, { useState, useMemo, useRef, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
@@ -16,6 +16,10 @@ const AvgVibeModal = lazy(() => import('./AvgVibeModal'))
 
 const CLEAR_LIST_COLOR = 'var(--accent-red-bright)'
 const UPCOMING_BG_COLOR = 'var(--state-going)'
+// Matches the CSS breakpoint that hides .dashboard-tab-row — below it the
+// stat cards are the only way to navigate, so a tap should also scroll the
+// corresponding list into view instead of leaving it off-screen.
+const MOBILE_BREAKPOINT_PX = 640
 
 type ActiveTab = 'attended' | 'upcoming' | 'timeline'
 
@@ -49,10 +53,15 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
   const [timelineYear, setTimelineYear] = useState<number | null>(null)
   const [timelineMonth, setTimelineMonth] = useState<string>('All')
 
+  const listSectionRef = useRef<HTMLDivElement>(null)
+
   const switchToTab = (tab: ActiveTab) => {
     const hash = tab === 'attended' ? '' : `#${tab}`
     history.replaceState(null, '', `${window.location.pathname}${hash}`)
     setActiveTab(tab)
+    if (window.innerWidth <= MOBILE_BREAKPOINT_PX) {
+      listSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 
   const ratedFestivals = useMemo(() =>
@@ -162,10 +171,10 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
           </div>
         </div>
 
-        <div className="divider" />
+        <div className="divider" ref={listSectionRef} />
 
         <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div className="dashboard-tab-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="dashboard-tab-row">
             <button
               className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => switchToTab('attended')}

@@ -1421,6 +1421,12 @@ img {
   outline-offset: 2px;
 }
 
+.dashboard-tab-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 /* The stat cards replace this row's role as navigation on mobile; keep the
    row (and its Past/Upcoming counts) on wider screens where there's room for
    both and an already-visible list would otherwise look card-only. */

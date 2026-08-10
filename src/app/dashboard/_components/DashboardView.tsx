@@ -11,6 +11,7 @@ import FestivalRow from './FestivalRow'
 import TimelineView from './TimelineView'
 import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
 import type { TrendingFestival } from '@/db/actions/trending-festivals'
+import { buildIcsCalendar, downloadIcsFile, type IcsFestival } from '@/lib/ics'
 
 const AvgVibeModal = lazy(() => import('./AvgVibeModal'))
 
@@ -98,6 +99,22 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
 
   const displayList = activeTab === 'attended' ? sortedAttended : sortedUpcoming
   const removeHandler = toggleFestival
+
+  const handleExportUpcoming = () => {
+    const festivals: IcsFestival[] = sortedUpcoming.map(id => {
+      const meta = getFestivalMeta(id)
+      const venue = typeof meta?.venue === 'object' ? meta.venue : null
+      return {
+        id,
+        name: meta?.name ?? id,
+        date: meta?.date ?? '',
+        endDate: meta?.endDate,
+        venueName: venue?.name ?? (typeof meta?.venue === 'string' ? meta.venue : null),
+        location: venue?.city ?? meta?.location ?? null,
+      }
+    }).filter(f => f.date)
+    downloadIcsFile('goodraves-upcoming-festivals.ics', buildIcsCalendar(festivals))
+  }
 
   if (!loaded) {
     return (
@@ -243,17 +260,24 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
           <>
             <div className="section-header">
               <h2 className="section-title">{activeTab === 'attended' ? 'Attended Festivals' : 'Upcoming Festivals'}</h2>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => {
-                  if (confirm(`Are you sure you want to clear your ${activeTab === 'attended' ? 'past' : 'upcoming'} list? This will also remove any artist ratings associated with these festivals.`)) {
-                    clearFestivals(activeTab === 'attended' ? 'past' : 'upcoming')
-                  }
-                }}
-                style={{ color: CLEAR_LIST_COLOR }}
-              >
-                Clear List
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {activeTab === 'upcoming' && (
+                  <button className="btn btn-ghost btn-sm" onClick={handleExportUpcoming}>
+                    Export to Calendar
+                  </button>
+                )}
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to clear your ${activeTab === 'attended' ? 'past' : 'upcoming'} list? This will also remove any artist ratings associated with these festivals.`)) {
+                      clearFestivals(activeTab === 'attended' ? 'past' : 'upcoming')
+                    }
+                  }}
+                  style={{ color: CLEAR_LIST_COLOR }}
+                >
+                  Clear List
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

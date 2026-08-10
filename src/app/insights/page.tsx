@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useUserData } from '@/context/UserDataContext'
 import { normalizeLocation } from '@/utils/location-normalizer'
 import dynamic from 'next/dynamic'
@@ -71,13 +71,49 @@ export default function Insights() {
       .slice(0, 5)
   }, [attendedEvents])
 
-  const topArtists = useMemo(() => {
-    const counts = getArtistSeenCounts()
-    const sorted = Object.entries(counts).sort((a: any, b: any) => b[1].count - a[1].count)
-    return sorted.slice(0, 3).map(([id]) => artistMeta[id]?.name || id.replace(/-/g, ' '))
-  }, [getArtistSeenCounts, artistMeta])
+  // ── Raver Passport / "Wrapped" — same lifetime stats, scoped to a period ──
+  const passportYears = useMemo(() => {
+    const years = new Set(attendedEvents.map(e => e.date!.substring(0, 4)))
+    return [...years].sort((a, b) => b.localeCompare(a))
+  }, [attendedEvents])
 
-  const totalArtists = useMemo(() => Object.keys(getArtistSeenCounts()).length, [getArtistSeenCounts])
+  const [passportYear, setPassportYear] = useState('all')
+
+  const passportEvents = useMemo(() => {
+    if (passportYear === 'all') return attendedEvents
+    return attendedEvents.filter(e => e.date!.startsWith(passportYear))
+  }, [attendedEvents, passportYear])
+
+  // Artist counts scoped to the selected period — each entry's `events` list
+  // (from getArtistSeenCounts) is filtered down to the period's event ids
+  // rather than re-deriving seen-artist data from scratch.
+  const passportStats = useMemo(() => {
+    const periodIds = new Set(passportEvents.map(e => e.id))
+    const allCounts = getArtistSeenCounts()
+    const scoped = Object.entries(allCounts)
+      .map(([artistId, { events }]: [string, any]) => ({
+        artistId,
+        count: events.filter((eid: string) => periodIds.has(eid)).length,
+      }))
+      .filter(a => a.count > 0)
+      .sort((a, b) => b.count - a.count)
+
+    const genreCounts: Record<string, number> = {}
+    scoped.forEach(({ artistId, count }) => {
+      const genres = artistMeta[artistId]?.genres ?? []
+      genres.slice(0, 4).forEach((genre: string) => {
+        const key = genre.toLowerCase()
+        genreCounts[key] = (genreCounts[key] || 0) + count
+      })
+    })
+    const topGenre = Object.entries(genreCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+
+    return {
+      topArtists: scoped.slice(0, 3).map(({ artistId }) => artistMeta[artistId]?.name || artistId.replace(/-/g, ' ')),
+      totalArtists: scoped.length,
+      topGenre: topGenre ? topGenre.charAt(0).toUpperCase() + topGenre.slice(1) : undefined,
+    }
+  }, [passportEvents, getArtistSeenCounts, artistMeta])
 
   const passportRef = useRef(null)
   const passportCaptureRef = useRef(null)
@@ -201,21 +237,38 @@ export default function Insights() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
               <h2 className="section-title" style={{ margin: 0, fontSize: '1.5rem' }}>Your Passport</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: 4 }}>Save a snapshot of your lifetime stats to your phone&apos;s camera roll.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: 4 }}>Save a snapshot of your stats to your phone&apos;s camera roll.</p>
             </div>
-            <button className="btn btn-primary" onClick={handleDownloadPassport} style={{ whiteSpace: 'nowrap' }}>
-              📸 Save to Phone
-            </button>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              {passportYears.length > 0 && (
+                <select
+                  value={passportYear}
+                  onChange={e => setPassportYear(e.target.value)}
+                  style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8,
+                    padding: '7px 12px', color: 'var(--text-primary)', fontSize: '0.88rem',
+                    fontFamily: 'var(--font-sans)', cursor: 'pointer', outline: 'none',
+                  }}
+                >
+                  <option value="all">All time</option>
+                  {passportYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              )}
+              <button className="btn btn-primary" onClick={handleDownloadPassport} style={{ whiteSpace: 'nowrap' }}>
+                📸 Save to Phone
+              </button>
+            </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--bg-card)', padding: '32px 16px', borderRadius: 16 }}>
             <div style={{ width: 360, maxWidth: '100%', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
               <div style={{ transform: 'scale(min(1, calc((100vw - 64px) / 360)))', transformOrigin: 'top center', flexShrink: 0 }}>
                 <RaverPassport
                   ref={passportRef}
-                  events={attendedEvents}
-                  topArtists={topArtists}
-                  topGenre={topGenresData[0]?.name}
-                  totalArtists={totalArtists}
+                  events={passportEvents}
+                  periodLabel={passportYear === 'all' ? 'All Time' : passportYear}
+                  topArtists={passportStats.topArtists}
+                  topGenre={passportStats.topGenre}
+                  totalArtists={passportStats.totalArtists}
                 />
               </div>
             </div>
@@ -225,10 +278,11 @@ export default function Insights() {
           <div style={{ position: 'fixed', top: 0, left: '-9999px', pointerEvents: 'none', zIndex: -1 }}>
             <RaverPassport
               ref={passportCaptureRef}
-              events={attendedEvents}
-              topArtists={topArtists}
-              topGenre={topGenresData[0]?.name}
-              totalArtists={totalArtists}
+              events={passportEvents}
+              periodLabel={passportYear === 'all' ? 'All Time' : passportYear}
+              topArtists={passportStats.topArtists}
+              topGenre={passportStats.topGenre}
+              totalArtists={passportStats.totalArtists}
             />
           </div>
         </div>

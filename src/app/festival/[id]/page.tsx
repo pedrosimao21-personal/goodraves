@@ -29,6 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: `Festival details and lineup for ${festival.name}`,
         ...(festival.imageUrl ? { images: [festival.imageUrl] } : {}),
       },
+      twitter: {
+        card: festival.imageUrl ? 'summary_large_image' : 'summary',
+        title: festival.name,
+        description: `Festival details and lineup for ${festival.name}`,
+        ...(festival.imageUrl ? { images: [festival.imageUrl] } : {}),
+      },
     }
   }
 

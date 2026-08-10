@@ -9,6 +9,8 @@ import { getArtistsWithImages } from '@/db/actions/artist-images'
 import { IMAGE_ENRICH_CHUNK_SIZE } from '@/lib/constants'
 import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
+import ShareFestivalButton from '@/components/ShareFestivalButton'
+import AddToCalendarButton from '@/components/AddToCalendarButton'
 import FestivalNotes from './FestivalNotes'
 import TimetableView from './TimetableView'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
@@ -436,6 +438,12 @@ export default function FestivalDetail({
               <a href={pfExternalUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm ra-link">
                 <Image src="/partyflock-icon.png" alt="" width={14} height={14} unoptimized /> View on Partyflock ↗
               </a>
+            )}
+
+            <ShareFestivalButton name={event.name} date={formatDateRange(event.date, event.endDate, 'long')} venue={event.venue?.name} />
+
+            {isFuture && (
+              <AddToCalendarButton festival={{ id, name: event.name, date: event.date, endDate: event.endDate, venueName: event.venue?.name, location: event.venue?.city }} />
             )}
           </div>
 

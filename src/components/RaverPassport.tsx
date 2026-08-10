@@ -26,7 +26,8 @@ const RaverPassport = forwardRef<HTMLDivElement, {
   topArtists: string[]
   topGenre: string
   totalArtists: number
-}>(({ events, topArtists, topGenre, totalArtists }, ref) => {
+  periodLabel?: string
+}>(({ events, topArtists, topGenre, totalArtists, periodLabel = 'All Time' }, ref) => {
 
   // Calculate top city
   const cityCounts: Record<string, number> = {}
@@ -41,8 +42,6 @@ const RaverPassport = forwardRef<HTMLDivElement, {
   const topCity = Object.entries(cityCounts)
     .sort((a, b) => b[1] - a[1])
     .map(entry => entry[0])[0] ?? null
-
-  const currentYear = new Date().getFullYear()
 
   return (
     <div
@@ -74,7 +73,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
           Raver Passport
         </h1>
         <div style={{ fontSize: '0.85rem', color: '#fff', opacity: 0.7, marginTop: 3, fontStyle: 'italic' }}>
-          {currentYear} Edition
+          {periodLabel} Edition
         </div>
       </div>
 
@@ -83,7 +82,7 @@ const RaverPassport = forwardRef<HTMLDivElement, {
 
         {/* Lifetime Shows */}
         <div style={CARD_STYLE}>
-          <div style={LABEL_STYLE}>Lifetime Shows</div>
+          <div style={LABEL_STYLE}>{periodLabel === 'All Time' ? 'Lifetime Shows' : 'Shows'}</div>
           <div style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, lineHeight: 1 }}>{events.length}</div>
           <div style={{ fontSize: '0.78rem', color: '#aaa', marginTop: 3 }}>Across {totalArtists} unique artists</div>
         </div>

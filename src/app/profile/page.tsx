@@ -143,12 +143,15 @@ export default function ProfilePage() {
     }
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/')
-    return null
-  }
+  // A redirect belongs in an effect, not the render body: next/navigation's
+  // router touches `window` internally, so calling it directly during render
+  // crashes SSR with "location is not defined" the moment `status` resolves
+  // to 'unauthenticated' on the server pass.
+  useEffect(() => {
+    if (status === 'unauthenticated') router.push('/')
+  }, [status, router])
 
-  if (status === 'loading' || !session) {
+  if (status !== 'authenticated' || !session) {
     return (
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
         <div style={{ height: 40, width: 40, borderRadius: '50%', background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />

@@ -5,10 +5,12 @@ import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
 
 const SAVED_MESSAGE_DURATION_MS = 2000
 
-export default function FestivalNotes({ eventId, notes, onSave }: {
+export default function FestivalNotes({ eventId, notes, onSave, label = 'Personal Notes', placeholder = 'Add notes about this event...' }: {
   eventId: string
   notes: string
   onSave: (eventId: string, notes: string) => Promise<void>
+  label?: string
+  placeholder?: string
 }) {
   const [value, setValue] = useState(notes)
   const [savedValue, setSavedValue] = useState(notes)
@@ -58,7 +60,7 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
   return (
     <div style={{ marginTop: 0, flex: 1, minWidth: 200 }}>
       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-        Personal Notes
+        {label}
         {saving && (
           <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>
             Saving...
@@ -73,7 +75,7 @@ export default function FestivalNotes({ eventId, notes, onSave }: {
       <textarea
         value={value}
         onChange={handleChange}
-        placeholder="Add notes about this event..."
+        placeholder={placeholder}
         maxLength={5000}
         rows={1}
         style={{

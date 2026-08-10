@@ -34,6 +34,7 @@ export function useUserDataReaders(state: UserDataState) {
   [])
   const getNotes = useCallback((artistId: string) => stateRef.current.artistNotes[artistId] ?? '', [])
   const getFestivalNotes = useCallback((eventId: string) => stateRef.current.festivalNotes[eventId] ?? '', [])
+  const getFestivalPublicComment = useCallback((eventId: string) => stateRef.current.festivalPublicComments[eventId] ?? '', [])
   const getFestivalMeta = useCallback((eventId: string) => {
     return stateRef.current.festivalMeta[eventId] ?? null
   }, [])
@@ -83,7 +84,7 @@ export function useUserDataReaders(state: UserDataState) {
   return useMemo(() => ({
     isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
-    getNotes, getFestivalNotes, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
+    getNotes, getFestivalNotes, getFestivalPublicComment, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
     getB2bSets,
   }), [])
 }

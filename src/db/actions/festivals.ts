@@ -33,6 +33,7 @@ export {
   clearUserFestivals,
   setGlobalArtistRating,
   setGlobalArtistNotes,
+  setFestivalPublicComment,
 } from "./festival-attendance";
 
 // Import & upsert

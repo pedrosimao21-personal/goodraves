@@ -56,7 +56,7 @@ export async function setFestivalNotes(
     .values({ userId, festivalId, notes })
     .onConflictDoUpdate({
       target: [userFestivals.userId, userFestivals.festivalId],
-      set: { notes },
+      set: { notes, updatedAt: sql`now()` },
     });
 }
 
@@ -72,7 +72,25 @@ export async function rateFestival(
     .values({ userId, festivalId, rating: validRating })
     .onConflictDoUpdate({
       target: [userFestivals.userId, userFestivals.festivalId],
-      set: { rating: validRating },
+      set: { rating: validRating, updatedAt: sql`now()` },
+    });
+}
+
+// ── Set a festival's public comment (visible on the friends feed) ──
+export async function setFestivalPublicComment(
+  festivalId: string,
+  comment: string
+) {
+  const userId = await requireAuth();
+  if (comment.length > MAX_NOTES_LENGTH) {
+    throw new Error(`Comment must be under ${MAX_NOTES_LENGTH} characters`);
+  }
+  await db
+    .insert(userFestivals)
+    .values({ userId, festivalId, publicComment: comment })
+    .onConflictDoUpdate({
+      target: [userFestivals.userId, userFestivals.festivalId],
+      set: { publicComment: comment, updatedAt: sql`now()` },
     });
 }
 

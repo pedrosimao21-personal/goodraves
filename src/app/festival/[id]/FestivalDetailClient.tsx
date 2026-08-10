@@ -94,7 +94,7 @@ export default function FestivalDetail({
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
   const pathname = usePathname()
-  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin, wantToSee } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getFestivalPublicComment, setFestivalPublicComment, getB2bSets, loadB2bSets, isAdmin, wantToSee } = useUserData()
 
   const [event, setEvent] = useState<any>(() => initialFestival ? transformDbFestival(initialFestival) : null)
   const [loading, setLoading] = useState(!initialFestival)
@@ -621,6 +621,13 @@ export default function FestivalDetail({
             <div style={{ marginTop: 16, display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <VibeRating eventId={id} rating={getFestivalRating(id)} onRate={setFestivalRating} />
               <FestivalNotes eventId={id} notes={getFestivalNotes(id)} onSave={setFestivalNotes} />
+              <FestivalNotes
+                eventId={id}
+                notes={getFestivalPublicComment(id)}
+                onSave={setFestivalPublicComment}
+                label="Public Comment (visible to friends)"
+                placeholder="Say something about this one..."
+              />
             </div>
           )}
         </div>

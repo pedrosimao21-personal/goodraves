@@ -36,6 +36,7 @@ export interface UserDataState {
   festivalRatings: Record<string, number>
   artistNotes: Record<string, string>
   festivalNotes: Record<string, string>
+  festivalPublicComments: Record<string, string>
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
 }
@@ -53,6 +54,7 @@ export interface UserDataContextType {
   festivalRatings: Record<string, number>
   artistNotes: Record<string, string>
   festivalNotes: Record<string, string>
+  festivalPublicComments: Record<string, string>
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
   loaded: boolean
@@ -73,6 +75,7 @@ export interface UserDataContextType {
   setFestivalRating: (eventId: string, rating: number) => Promise<void>
   setNotes: (artistId: string, notes: string) => Promise<void>
   setFestivalNotes: (eventId: string, notes: string) => Promise<void>
+  setFestivalPublicComment: (eventId: string, comment: string) => Promise<void>
   splitB2bArtist: (festivalId: string, artistId: string, memberNames: string[]) => Promise<void>
   createB2bSet: (festivalId: string, memberArtistIds: string[]) => Promise<void>
   unsplitB2bSet: (b2bSetId: string, festivalId: string) => Promise<void>
@@ -90,6 +93,7 @@ export interface UserDataContextType {
   getFestivalRating: (eventId: string) => number
   getNotes: (artistId: string) => string
   getFestivalNotes: (eventId: string) => string
+  getFestivalPublicComment: (eventId: string) => string
   getFestivalMeta: (eventId: string) => FestivalMeta | null
   getArtistMeta: (artistId: string) => any
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
@@ -160,6 +164,7 @@ export const DEFAULT_STATE: UserDataState = {
   festivalRatings: {},
   artistNotes: {},
   festivalNotes: {},
+  festivalPublicComments: {},
   raEvents: {},
   b2bSets: {},
 }
@@ -176,6 +181,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   const artistRatings: Record<string, number> = {}
   const artistNotes: Record<string, string> = {}
   const festivalNotes: Record<string, string> = {}
+  const festivalPublicComments: Record<string, string> = {}
 
   for (const f of data.festivals) {
     if (isFestivalPast(f.date)) attended.push(f.festivalId)
@@ -195,6 +201,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
 
     if (f.rating) festivalRatings[f.festivalId] = f.rating
     if (f.notes) festivalNotes[f.festivalId] = f.notes
+    if (f.publicComment) festivalPublicComments[f.festivalId] = f.publicComment
   }
 
   for (const ar of data.artistRatings) {
@@ -235,6 +242,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     festivalRatings,
     artistNotes,
     festivalNotes,
+    festivalPublicComments,
     raEvents: {},
     b2bSets: {},
   }

@@ -17,6 +17,7 @@ import {
   setGlobalArtistRating,
   setGlobalArtistNotes,
   setFestivalNotes as setFestivalNotesAction,
+  setFestivalPublicComment as setFestivalPublicCommentAction,
   splitB2bArtist as splitB2bArtistAction,
   createB2bSet as createB2bSetAction,
   unsplitB2bSet as unsplitB2bSetAction,
@@ -216,6 +217,12 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     await setFestivalNotesAction(eventId, notes)
   }, [userId, promptAuth])
 
+  const setFestivalPublicComment = useCallback(async (eventId: string, comment: string) => {
+    if (!userId) { promptAuth(); return }
+    setState(prev => ({ ...prev, festivalPublicComments: { ...prev.festivalPublicComments, [eventId]: comment } }))
+    await setFestivalPublicCommentAction(eventId, comment)
+  }, [userId, promptAuth])
+
   const splitB2bArtist = useCallback(async (festivalId: string, artistId: string, memberNames: string[]) => {
     if (!userId) { promptAuth(); return }
     const result = await splitB2bArtistAction(festivalId, artistId, memberNames)
@@ -402,7 +409,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   const actionsValue = useMemo(() => ({
     isAdmin,
     toggleFestival, toggleSawArtist, toggleWantToSee,
-    setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
+    setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes, setFestivalPublicComment,
     ...readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists,
@@ -410,7 +417,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
   }), [
     isAdmin,
     toggleFestival, toggleSawArtist, toggleWantToSee,
-    setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
+    setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes, setFestivalPublicComment,
     readers,
     importData, addCustomFestival, clearFestivals,
     updateFestivalMeta, batchEnrichArtists,

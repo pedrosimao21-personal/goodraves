@@ -165,9 +165,34 @@ export const userFestivals = pgTable(
       .references(() => festivals.id, { onDelete: "cascade" }),
     rating: integer("rating"),
     notes: text("notes"),
+    // Distinct from `notes`: that field is presented to users as private,
+    // so the friends activity feed reads this instead rather than exposing
+    // notes people wrote assuming no one else would see them.
+    publicComment: text("public_comment"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.festivalId] })]
+);
+
+// ── Friendships ─────────────────────────────────────────
+export const friendships = pgTable(
+  "friendships",
+  {
+    requesterId: uuid("requester_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addresseeId: uuid("addressee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // 'pending' | 'accepted'
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.requesterId, t.addresseeId] }),
+    index("friendships_addressee_status_idx").on(t.addresseeId, t.status),
+  ]
 );
 
 // ── Rate Limiting ──────────────────────────────────────

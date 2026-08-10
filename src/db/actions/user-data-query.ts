@@ -38,6 +38,7 @@ export async function fetchUserDataForId(userId: string) {
           festivalId: userFestivals.festivalId,
           rating: userFestivals.rating,
           notes: userFestivals.notes,
+          publicComment: userFestivals.publicComment,
           name: festivals.name,
           date: festivals.date,
           venue: festivals.venue,

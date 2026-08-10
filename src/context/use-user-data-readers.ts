@@ -18,6 +18,9 @@ export function useUserDataReaders(state: UserDataState) {
   const didSeeArtist = useCallback((eventId: string, artistId: string) =>
     (stateRef.current.seenArtists[eventId] ?? []).includes(artistId),
   [])
+  const didWantToSee = useCallback((eventId: string, artistId: string) =>
+    (stateRef.current.wantToSee[eventId] ?? []).includes(artistId),
+  [])
   const getSeenCount = useCallback((eventId: string) => {
     if (!setsRef.current.attended.has(eventId) && !setsRef.current.upcoming.has(eventId)) return 0
     return (stateRef.current.seenArtists[eventId] ?? []).length
@@ -78,7 +81,7 @@ export function useUserDataReaders(state: UserDataState) {
   }, [])
 
   return useMemo(() => ({
-    isAttended, isUpcoming, didSeeArtist, getSeenCount,
+    isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
     getB2bSets,

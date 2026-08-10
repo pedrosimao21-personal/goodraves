@@ -29,6 +29,7 @@ export interface UserDataState {
   upcomingFestivals: string[]
   festivalMeta: Record<string, FestivalMeta>
   seenArtists: Record<string, string[]>
+  wantToSee: Record<string, string[]>
   artistMeta: Record<string, any>
   artistRatings: Record<string, number>
   performanceRatings: Record<string, number>
@@ -45,6 +46,7 @@ export interface UserDataContextType {
   upcomingFestivals: string[]
   festivalMeta: Record<string, FestivalMeta>
   seenArtists: Record<string, string[]>
+  wantToSee: Record<string, string[]>
   artistMeta: Record<string, any>
   artistRatings: Record<string, number>
   performanceRatings: Record<string, number>
@@ -65,6 +67,7 @@ export interface UserDataContextType {
    */
   toggleFestival: (eventId: string, meta?: any) => Promise<string | null>
   toggleSawArtist: (eventId: string, artistId: string, artistMeta?: any) => Promise<void>
+  toggleWantToSee: (eventId: string, artistId: string, artistMeta?: any) => Promise<void>
   setRating: (artistId: string, rating: number) => Promise<void>
   setPerformanceRating: (eventId: string, artistId: string, rating: number) => Promise<void>
   setFestivalRating: (eventId: string, rating: number) => Promise<void>
@@ -80,6 +83,7 @@ export interface UserDataContextType {
   isAttended: (eventId: string) => boolean
   isUpcoming: (eventId: string) => boolean
   didSeeArtist: (eventId: string, artistId: string) => boolean
+  didWantToSee: (eventId: string, artistId: string) => boolean
   getSeenCount: (eventId: string) => number
   getRating: (artistId: string) => number
   getPerformanceRating: (eventId: string, artistId: string) => number
@@ -149,6 +153,7 @@ export const DEFAULT_STATE: UserDataState = {
   upcomingFestivals: [],
   festivalMeta: {},
   seenArtists: {},
+  wantToSee: {},
   artistMeta: {},
   artistRatings: {},
   performanceRatings: {},
@@ -166,6 +171,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   const festivalMeta: Record<string, FestivalMeta> = {}
   const festivalRatings: Record<string, number> = {}
   const seenArtists: Record<string, string[]> = {}
+  const wantToSee: Record<string, string[]> = {}
   const performanceRatings: Record<string, number> = {}
   const artistRatings: Record<string, number> = {}
   const artistNotes: Record<string, string> = {}
@@ -199,6 +205,11 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     }
   }
 
+  for (const w of data.wantToSee) {
+    if (!wantToSee[w.festivalId]) wantToSee[w.festivalId] = []
+    wantToSee[w.festivalId].push(w.artistId)
+  }
+
   for (const g of data.globalArtistData) {
     if (g.rating) artistRatings[g.artistId] = g.rating
     if (g.notes) artistNotes[g.artistId] = g.notes
@@ -217,6 +228,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     upcomingFestivals: upcoming,
     festivalMeta,
     seenArtists,
+    wantToSee,
     artistMeta,
     artistRatings,
     performanceRatings,

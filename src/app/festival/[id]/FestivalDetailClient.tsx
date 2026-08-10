@@ -11,6 +11,8 @@ import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
 import ShareFestivalButton from '@/components/ShareFestivalButton'
 import AddToCalendarButton from '@/components/AddToCalendarButton'
+import ClashBanner from './ClashBanner'
+import { findClashes } from '@/lib/timetable-clash'
 import FestivalNotes from './FestivalNotes'
 import TimetableView from './TimetableView'
 import { BackIcon, SpotifyIcon } from '@/components/icons'
@@ -92,7 +94,7 @@ export default function FestivalDetail({
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const router = useRouter()
   const pathname = usePathname()
-  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin } = useUserData()
+  const { isAttended, isUpcoming, toggleFestival, getSeenCount, festivalMeta, setFestivalRating, getFestivalRating, getFestivalNotes, setFestivalNotes, getB2bSets, loadB2bSets, isAdmin, wantToSee } = useUserData()
 
   const [event, setEvent] = useState<any>(() => initialFestival ? transformDbFestival(initialFestival) : null)
   const [loading, setLoading] = useState(!initialFestival)
@@ -274,6 +276,9 @@ export default function FestivalDetail({
     const allSoloForB2b = soloArtists.map((a: any) => ({ id: a.id, name: a.name }))
     return { soloArtists, allSoloForB2b }
   }, [b2bSetsForFestival, event])
+
+  const wantedArtistIds = useMemo(() => new Set(wantToSee[id] ?? []), [wantToSee, id])
+  const clashes = useMemo(() => findClashes(timetable, wantedArtistIds), [timetable, wantedArtistIds])
 
   function switchView(view: 'lineup' | 'timetable') {
     setLineupView(view)
@@ -675,6 +680,7 @@ export default function FestivalDetail({
             </div>
             {lineupView === 'timetable' ? (
               <>
+                <ClashBanner clashes={clashes} />
                 {timetable.days.length > 1 && (
                   <div
                     className="timetable-day-tabs"

@@ -10,6 +10,7 @@ import {
   removeAttendance,
   rateFestival,
   toggleSawArtist as toggleSawArtistAction,
+  toggleWantToSee as toggleWantToSeeAction,
   rateArtist,
   upsertFestival,
   clearUserFestivals,
@@ -152,6 +153,20 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
       return { ...prev, seenArtists: { ...prev.seenArtists, [eventId]: saw }, artistMeta: newArtistMeta }
     })
     await toggleSawArtistAction(eventId, artistId)
+  }, [userId, promptAuth])
+
+  const toggleWantToSee = useCallback(async (eventId: string, artistId: string, artistMeta: any = null) => {
+    if (!userId) { promptAuth(); return }
+    setState(prev => {
+      const current = prev.wantToSee[eventId] ?? []
+      const wants = current.includes(artistId)
+        ? current.filter(x => x !== artistId)
+        : [...current, artistId]
+      const newArtistMeta = { ...prev.artistMeta }
+      if (!current.includes(artistId) && artistMeta) newArtistMeta[artistId] = artistMeta
+      return { ...prev, wantToSee: { ...prev.wantToSee, [eventId]: wants }, artistMeta: newArtistMeta }
+    })
+    await toggleWantToSeeAction(eventId, artistId)
   }, [userId, promptAuth])
 
   const setRating = useCallback(async (artistId: string, rating: number) => {
@@ -386,7 +401,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   const actionsValue = useMemo(() => ({
     isAdmin,
-    toggleFestival, toggleSawArtist,
+    toggleFestival, toggleSawArtist, toggleWantToSee,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     ...readers,
     importData, addCustomFestival, clearFestivals,
@@ -394,7 +409,7 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet: rateB2bSetFn, loadB2bSets, renameArtist,
   }), [
     isAdmin,
-    toggleFestival, toggleSawArtist,
+    toggleFestival, toggleSawArtist, toggleWantToSee,
     setRating, setPerformanceRating, setFestivalRating, setNotes, setFestivalNotes,
     readers,
     importData, addCustomFestival, clearFestivals,

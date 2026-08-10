@@ -208,6 +208,29 @@ export const userFestivalArtistRatings = pgTable(
   ]
 );
 
+// ── Want to see (upcoming-festival lineup picks) ────────
+// Deliberately a separate table from userFestivalArtistRatings rather than a
+// column on it: every row in that table is treated as "seen" throughout the
+// app (getArtistSeenCounts, Top DJs, Insights) — adding a want-to-see column
+// there would either need a matching "seen" backfill everywhere or silently
+// count unattended picks as seen artists. A dedicated table sidesteps that.
+export const userArtistWantToSee = pgTable(
+  "user_artist_want_to_see",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    festivalId: text("festival_id")
+      .notNull()
+      .references(() => festivals.id, { onDelete: "cascade" }),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistId] })]
+);
+
 // ── Genres ─────────────────────────────────────────────
 export const genres = pgTable("genres", {
   id: uuid("id").defaultRandom().primaryKey(),

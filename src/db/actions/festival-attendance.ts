@@ -7,6 +7,7 @@ import {
   userFestivals,
   userFestivalArtistRatings,
   userArtistGlobal,
+  userArtistWantToSee,
 } from "@/db/schema";
 import { requireAuth, validateRating, MAX_NOTES_LENGTH } from "./festival-helpers";
 
@@ -108,6 +109,43 @@ export async function toggleSawArtist(
 
   await db
     .insert(userFestivalArtistRatings)
+    .values({ userId, festivalId, artistId });
+  return true;
+}
+
+// ── Toggle "want to see" (upcoming-festival lineup pick) ───
+export async function toggleWantToSee(
+  festivalId: string,
+  artistId: string
+) {
+  const userId = await requireAuth();
+  const [existing] = await db
+    .select()
+    .from(userArtistWantToSee)
+    .where(
+      and(
+        eq(userArtistWantToSee.userId, userId),
+        eq(userArtistWantToSee.festivalId, festivalId),
+        eq(userArtistWantToSee.artistId, artistId)
+      )
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .delete(userArtistWantToSee)
+      .where(
+        and(
+          eq(userArtistWantToSee.userId, userId),
+          eq(userArtistWantToSee.festivalId, festivalId),
+          eq(userArtistWantToSee.artistId, artistId)
+        )
+      );
+    return false;
+  }
+
+  await db
+    .insert(userArtistWantToSee)
     .values({ userId, festivalId, artistId });
   return true;
 }

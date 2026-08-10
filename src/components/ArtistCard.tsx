@@ -26,9 +26,10 @@ const ArtistCard = memo(function ArtistCard({
   isPast?: boolean
   availableArtistsForB2b?: { id: string; name: string }[]
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin } = useUserDataActions()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin, didWantToSee, toggleWantToSee } = useUserDataActions()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
+  const wantsToSee = didWantToSee(eventId, artist.id)
   const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
   const [menuState, setMenuState] = useState<MenuState>('closed')
   const [nameOverride, setNameOverride] = useState<string | null>(null)
@@ -119,6 +120,19 @@ const ArtistCard = memo(function ArtistCard({
                 Mark as seen
               </button>
             )}
+          </div>
+        )}
+
+        {!isPast && (
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <button
+              className={`mark-seen-btn want-to-see-btn${wantsToSee ? ' is-active' : ''}`}
+              onClick={() => toggleWantToSee(eventId, artist.id, { name: artist.name, image: artist.image })}
+              aria-pressed={wantsToSee}
+              aria-label={wantsToSee ? `Remove ${displayName} from want to see` : `Mark ${displayName} as want to see`}
+            >
+              {wantsToSee ? '★ Want to see' : '☆ Want to see'}
+            </button>
           </div>
         )}
 

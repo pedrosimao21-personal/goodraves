@@ -28,6 +28,7 @@ export {
   setFestivalNotes,
   rateFestival,
   toggleSawArtist,
+  toggleWantToSee,
   rateArtist,
   clearUserFestivals,
   setGlobalArtistRating,

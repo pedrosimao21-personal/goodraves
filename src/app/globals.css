@@ -934,6 +934,32 @@ img {
   border-color: rgba(249, 115, 22, 0.2);
 }
 
+.clash-banner {
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.clash-banner-title {
+  color: var(--warning-text);
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.clash-banner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clash-banner-row {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 .festival-card-title {
   font-family: var(--font-display);
   font-size: 1.1rem;
@@ -1198,6 +1224,12 @@ img {
 }
 
 .mark-seen-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.want-to-see-btn.is-active {
   background: var(--accent);
   color: var(--bg);
   border-color: var(--accent);

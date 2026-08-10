@@ -43,3 +43,18 @@ export function formatDateRange(
 
   return `${formatDate(dateStr, preset)} – ${formatDate(endDateStr, preset)}`
 }
+
+const MINUTE_MS = 60 * 1000
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
+const WEEK_MS = 7 * DAY_MS
+
+/** "2h ago", "3d ago", falling back to a plain date once it's a week or older. */
+export function formatRelativeTime(isoDateTime: string): string {
+  const diffMs = Date.now() - new Date(isoDateTime).getTime()
+  if (diffMs < MINUTE_MS) return 'just now'
+  if (diffMs < HOUR_MS) return `${Math.floor(diffMs / MINUTE_MS)}m ago`
+  if (diffMs < DAY_MS) return `${Math.floor(diffMs / HOUR_MS)}h ago`
+  if (diffMs < WEEK_MS) return `${Math.floor(diffMs / DAY_MS)}d ago`
+  return new Date(isoDateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}

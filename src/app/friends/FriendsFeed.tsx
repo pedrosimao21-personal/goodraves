@@ -3,10 +3,62 @@
 import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getFriendsFeed, type FeedItem } from '@/db/actions/friends'
-import { formatDate } from '@/lib/format-date'
+import { getFriendsFeed, getFriendArtistRatingsForFestival, type FeedItem, type FriendArtistRating } from '@/db/actions/friends'
+import { formatDate, formatRelativeTime } from '@/lib/format-date'
+import { isFestivalPast } from '@/lib/festival-date'
 
 const STAR_COUNT = 5
+
+/** "{user} rated / went to / is going to {festival}" — derived from data
+ * already on the row, no separate action-type column needed. */
+function getVerb(item: FeedItem): string {
+  if (item.rating) return 'rated'
+  return isFestivalPast(item.festivalDate) ? 'went to' : 'is going to'
+}
+
+function DjsSeenPill({ friendUserId, festivalId, seenCount }: { friendUserId: string; festivalId: string; seenCount: number }) {
+  const [expanded, setExpanded] = useState(false)
+  const [artists, setArtists] = useState<FriendArtistRating[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleToggle = async () => {
+    const next = !expanded
+    setExpanded(next)
+    if (next && artists === null) {
+      setLoading(true)
+      try {
+        setArtists(await getFriendArtistRatingsForFestival(friendUserId, festivalId))
+      } finally {
+        setLoading(false)
+      }
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 6 }}>
+      <button
+        onClick={handleToggle}
+        className="btn btn-ghost btn-sm"
+        style={{ padding: '3px 10px', fontSize: '0.78rem' }}
+      >
+        🎧 {seenCount} DJ{seenCount !== 1 ? 's' : ''} seen {expanded ? '▲' : '▼'}
+      </button>
+      {expanded && (
+        <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {loading ? (
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Loading…</span>
+          ) : (
+            artists?.map((a, i) => (
+              <span key={i} className="tag" style={{ fontSize: '0.78rem', textTransform: 'none' }}>
+                {a.artistName}{a.rating ? ` ★${a.rating}` : ''}
+              </span>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function FeedRow({ item }: { item: FeedItem }) {
   return (
@@ -20,8 +72,9 @@ function FeedRow({ item }: { item: FeedItem }) {
         <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--gradient-card)', flexShrink: 0 }} />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 2 }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{item.username}</strong> marked
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+          <span><strong style={{ color: 'var(--text-primary)' }}>{item.username}</strong> {getVerb(item)}</span>
+          <span style={{ flexShrink: 0, fontSize: '0.78rem' }}>{formatRelativeTime(item.updatedAt)}</span>
         </div>
         <Link href={`/festival/${item.festivalId}`} style={{ fontWeight: 600, color: 'inherit', textDecoration: 'none' }}>
           {item.festivalName}
@@ -36,6 +89,9 @@ function FeedRow({ item }: { item: FeedItem }) {
         )}
         {item.publicComment && (
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '6px 0 0' }}>&ldquo;{item.publicComment}&rdquo;</p>
+        )}
+        {item.seenCount > 0 && (
+          <DjsSeenPill friendUserId={item.userId} festivalId={item.festivalId} seenCount={item.seenCount} />
         )}
       </div>
     </div>
@@ -81,7 +137,7 @@ export default function FriendsFeed({ hasFriends }: { hasFriends: boolean }) {
   }
 
   if (items.length === 0) {
-    return <p style={{ color: 'var(--text-muted)' }}>No activity yet — nothing to show once your friends mark festivals.</p>
+    return <p style={{ color: 'var(--text-muted)' }}>No activity yet</p>
   }
 
   return (

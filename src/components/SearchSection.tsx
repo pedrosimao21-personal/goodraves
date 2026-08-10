@@ -546,7 +546,7 @@ export default function SearchSection() {
           <p>
             {events.length > 0
               ? 'No events match the active filters. Try adjusting or clearing them.'
-              : 'Try a different search — artist name, venue, city or festival.'}
+              : 'Try a different search: artist name, venue, city or festival.'}
           </p>
         </div>
       )}

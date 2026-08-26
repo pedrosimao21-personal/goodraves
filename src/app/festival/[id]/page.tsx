@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getFestival, getFestivalMeta, getTimetable, getMergeRedirectTarget } from '@/db/actions/festivals'
-import { getFestivalPlaylist } from '@/db/actions/festival-playlist'
+// Core (unrated) version, not the "use server" action: this runs in the same
+// server-rendered request as getTimetable's unstable_cache call, and the
+// action's enforceRateLimit reads headers(), which Next.js disallows
+// anywhere in such a request. See festival-playlist-core.ts's file comment.
+import { getFestivalPlaylistCore as getFestivalPlaylist } from '@/db/actions/festival-playlist-core'
 import FestivalDetailClient from './FestivalDetailClient'
 
 // Currently a no-op: the root layout calls auth(), which reads cookies, so every

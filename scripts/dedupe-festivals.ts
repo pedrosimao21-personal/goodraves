@@ -230,7 +230,7 @@ async function main() {
   const { db } = await import("../src/db/index.js");
   const schema = await import("../src/db/schema.js");
   const { sql } = await import("drizzle-orm");
-  const { mergeFestivalsCore } = await import("../src/db/actions/festival-merge.js");
+  const { mergeFestivalsCore } = await import("../src/db/actions/festival-merge-core.js");
 
   const prefix = DRY_RUN ? "[DRY RUN] " : "";
 

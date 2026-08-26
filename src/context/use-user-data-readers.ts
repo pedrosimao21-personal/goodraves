@@ -81,10 +81,20 @@ export function useUserDataReaders(state: UserDataState) {
     URL.revokeObjectURL(url)
   }, [])
 
+  // Keyed on `state`, not `[]`: the individual reader functions above are
+  // stable forever (they read from refs), but this wrapping object is what
+  // UserDataContext spreads into UserDataActionsContext's value. React skips
+  // re-rendering a context's consumers when its value's reference is
+  // unchanged — so with `[]` here, a memo'd list item (FestivalCard,
+  // ArtistCard, ...) that only subscribes via useUserDataActions() never
+  // re-rendered on a state change at all, since nothing it was actually
+  // subscribed to ever changed identity. The reader functions themselves
+  // still return fresh data (via stateRef) either way; this is what makes a
+  // component actually look at that fresh data again.
   return useMemo(() => ({
     isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalPublicComment, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
     getB2bSets,
-  }), [])
+  }), [state])
 }

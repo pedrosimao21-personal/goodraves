@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import { getFestivalCardImage } from '@/db/actions/festivals'
 import { formatDateRange } from '@/lib/format-date'
-import { parseLocalDate } from '@/lib/dates'
+import { isFestivalPast } from '@/lib/festival-date'
 
 function CalendarIcon() {
   return (
@@ -96,9 +96,10 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
   const seenCount = getSeenCount(event.id)
 
   const artistCount = event.attractions?.length ?? 0
-  
-  // Check if event is in the future
-  const isFuture = event.date && parseLocalDate(event.date) > new Date()
+
+  // endDate-aware: a multi-day festival still counts as upcoming/ongoing on
+  // its later days, not just its first.
+  const isFuture = event.date && !isFestivalPast(event.date, event.endDate)
 
   // Spotify image fallback for events without images
   const [fallbackImage, setFallbackImage] = useState<string | null>(null)
@@ -164,6 +165,9 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
           <div style={{ position: 'absolute', top: 8, right: 8 }}>
             <SourceBadge source={event.source} isFromDB={false} />
           </div>
+        )}
+        {!isFuture && (
+          <span className="festival-card-past-badge">Past</span>
         )}
       </div>
 

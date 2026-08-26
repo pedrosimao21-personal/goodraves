@@ -1,23 +1,20 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, sql } from "drizzle-orm";
-import { festivals, festivalArtists } from "@/db/schema";
-import { requireAdmin, enforceRateLimit, checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
-import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
-import { fetchFFEventHtml } from "@/services/festivalfans/client";
-import { toIsoDate } from "@/lib/dates";
-import { parseFFEventPage } from "@/services/festivalfans/parser";
+import { eq } from "drizzle-orm";
+import { festivalArtists } from "@/db/schema";
+import { requireAdmin, enforceRateLimit, deleteB2bSets } from "./festival-helpers";
+import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_IMAGE_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
+import { fetchFFEventImageUrlCore, fetchFFEventCore } from "./festival-import-ff-core";
 
-/** Fetch only the og:image URL for a FestivalFans.nl event by slug. */
+/**
+ * Fetch only the og:image URL for a FestivalFans.nl event by slug. Called
+ * directly from SearchSection for un-imported search-result cards — rate
+ * limited under the same "card-image" bucket as the other per-card lookups.
+ */
 export async function fetchFFEventImageUrl(slug: string): Promise<string | null> {
-  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
-
-  const html = await fetchFFEventHtml(slug);
-  if (!html) return null;
-
-  const parsed = parseFFEventPage(html);
-  return parsed.imageUrl;
+  await enforceRateLimit("card-image", RATE_LIMIT_IMAGE_MAX, RATE_LIMIT_WINDOW_MS);
+  return fetchFFEventImageUrlCore(slug);
 }
 
 /** Force-reimport a FestivalFans.nl event (deletes existing lineup first) */
@@ -27,117 +24,26 @@ export async function reimportFFEvent(slug: string): Promise<string | null> {
   const festivalId = `ff-${slug}`;
 
   await deleteB2bSets(festivalId);
+  await db.delete(festivalArtists).where(eq(festivalArtists.festivalId, festivalId));
 
-  await db
-    .delete(festivalArtists)
-    .where(eq(festivalArtists.festivalId, festivalId));
-
-  return fetchFFEvent(slug, { force: true });
+  return fetchFFEventCore(slug, { force: true });
 }
 
-/** Fetch a single FestivalFans.nl event by slug and persist to DB */
+/**
+ * Fetch a single FestivalFans.nl event by slug and persist to DB. The public
+ * entry point: rate-limited per caller on every path that reaches
+ * festivalfans.nl, including the "already imported but no image yet"
+ * backfill branch inside fetchFFEventCore — not just the full-import case —
+ * since that's an external fetch too and was previously free to call
+ * unlimited times. Internal callers (festival-data.ts's auto-import/backfill)
+ * use fetchFFEventCore directly instead — see festival-import-ff-core.ts's
+ * file comment for why that's not just an optimization but a Next.js
+ * requirement.
+ */
 export async function fetchFFEvent(
   slug: string,
   opts?: { force?: boolean }
 ): Promise<string | null> {
-  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
-
-  const festivalId = `ff-${slug}`;
-
-  if (!opts?.force) {
-    const hasExisting = await checkExistingLineup(festivalId);
-    if (hasExisting) {
-      await backfillMissingImage(festivalId, () => fetchFFEventImageUrl(slug));
-      return festivalId;
-    }
-  }
-
-  // Past this point we hit festivalfans.nl and write a new festival.
   await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
-
-  const html = await fetchFFEventHtml(slug);
-  if (!html) return null;
-
-  const parsed = parseFFEventPage(html);
-  if (!parsed.name) return null;
-
-  const date = parsed.date ?? toIsoDate(new Date());
-
-  const existingId = await findExistingFestivalByNameDate(parsed.name, date);
-  if (existingId && existingId !== festivalId) {
-    return existingId;
-  }
-
-  // On a forced re-import, rebuild the lineup from scratch so dropped artists are
-  // removed and B2B sets aren't duplicated. Runs only after a successful fetch and
-  // once committed to this festival id. Ratings/attendance survive (they key on
-  // (userId, festivalId, artistId), not the lineup join).
-  if (opts?.force) {
-    await deleteB2bSets(festivalId);
-    await db.delete(festivalArtists).where(eq(festivalArtists.festivalId, festivalId));
-  }
-
-  // FestivalFans is Netherlands-only — parseFFEventPage already hardcodes
-  // "Netherlands" onto `location` when there's a city, so mirror that here
-  // rather than re-deriving it from the joined string.
-  const countryName = parsed.location ? "Netherlands" : null;
-  const countryCode = parsed.location ? "NL" : null;
-
-  const festivalValues = {
-    id: festivalId,
-    name: parsed.name,
-    date,
-    endDate: parsed.endDate,
-    venue: parsed.venue,
-    location: parsed.location,
-    countryCode,
-    countryName,
-    source: "festivalfans" as const,
-    sourceId: slug,
-    imageUrl: parsed.imageUrl,
-    latitude: parsed.latitude,
-    longitude: parsed.longitude,
-  };
-
-  if (opts?.force) {
-    await db
-      .insert(festivals)
-      .values(festivalValues)
-      .onConflictDoUpdate({
-        target: festivals.id,
-        set: {
-          name: festivalValues.name,
-          date: festivalValues.date,
-          endDate: festivalValues.endDate,
-          venue: festivalValues.venue,
-          location: festivalValues.location,
-          countryCode: festivalValues.countryCode,
-          countryName: festivalValues.countryName,
-          imageUrl: festivalValues.imageUrl,
-          latitude: festivalValues.latitude,
-          longitude: festivalValues.longitude,
-          sourceId: festivalValues.sourceId,
-        },
-      });
-  } else {
-    await db
-      .insert(festivals)
-      .values(festivalValues)
-      .onConflictDoUpdate({
-        target: festivals.id,
-        set: {
-          endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
-          countryCode: sql`COALESCE(${festivalValues.countryCode}, ${festivals.countryCode})`,
-          countryName: sql`COALESCE(${festivalValues.countryName}, ${festivals.countryName})`,
-          imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
-          latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
-          longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,
-          sourceId: sql`COALESCE(${festivalValues.sourceId}, ${festivals.sourceId})`,
-        },
-      });
-  }
-
-  await persistLineup(festivalId, parsed.lineup);
-
-  return festivalId;
+  return fetchFFEventCore(slug, opts);
 }

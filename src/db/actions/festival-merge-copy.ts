@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@/db";
 import { eq, and, inArray } from "drizzle-orm";
 import {
@@ -16,6 +14,11 @@ import {
  * Additive per-table copy helpers for merging one festival's children onto
  * another. Every function here is safe to re-run (idempotent) — repeating a
  * merge after a partial failure just re-does the same additive work.
+ *
+ * Deliberately no "use server": these take a bare (loserId, winnerId) pair
+ * with no auth check, and are only ever called from festival-merge.ts's
+ * requireAdmin-gated mergeFestivals. Without the directive they are plain
+ * server-side functions, not independently callable Server Actions.
  */
 
 export async function copyLineup(loserId: string, winnerId: string): Promise<number> {

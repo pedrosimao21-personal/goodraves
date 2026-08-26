@@ -102,16 +102,17 @@ export async function fetchUserDataForId(userId: string) {
 async function fetchArtistGenreData(artistIds: string[]) {
   if (artistIds.length === 0) return [];
 
-  const rows = await db
-    .select({ id: artists.id, name: artists.name })
-    .from(artists)
-    .where(inArray(artists.id, artistIds));
-
-  const genreRows = await db
-    .select({ artistId: artistGenresTable.artistId, genreName: genres.name })
-    .from(artistGenresTable)
-    .innerJoin(genres, eq(artistGenresTable.genreId, genres.id))
-    .where(inArray(artistGenresTable.artistId, artistIds));
+  const [rows, genreRows] = await Promise.all([
+    db
+      .select({ id: artists.id, name: artists.name })
+      .from(artists)
+      .where(inArray(artists.id, artistIds)),
+    db
+      .select({ artistId: artistGenresTable.artistId, genreName: genres.name })
+      .from(artistGenresTable)
+      .innerJoin(genres, eq(artistGenresTable.genreId, genres.id))
+      .where(inArray(artistGenresTable.artistId, artistIds)),
+  ]);
 
   const genresByArtist = new Map<string, string[]>();
   for (const row of genreRows) {

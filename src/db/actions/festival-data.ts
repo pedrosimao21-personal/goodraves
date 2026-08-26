@@ -8,9 +8,16 @@ import {
   artists,
 } from "@/db/schema";
 import { requireAuth } from "./festival-helpers";
-import { fetchRAEvent, fetchRAEventImageUrl } from "./festival-import-ra";
-import { fetchFFEvent, fetchFFEventImageUrl } from "./festival-import-ff";
-import { fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
+// Core (unrated) versions, not the "use server" actions in festival-import-{ra,ff,pf}.ts:
+// getFestival can run in the same server-rendered request as festival-timetable.ts's
+// unstable_cache call, and the actions' enforceRateLimit reads headers() — which Next.js
+// disallows anywhere in a request that also uses unstable_cache. See
+// festival-import-ra-core.ts's file comment for the full reasoning; this internal path is
+// already throttled per-festival by lineupCheckedAt/imageCheckedAt, so it doesn't need
+// the actions' per-caller rate limiting anyway.
+import { fetchRAEventCore as fetchRAEvent, fetchRAEventImageUrlCore as fetchRAEventImageUrl } from "./festival-import-ra-core";
+import { fetchFFEventCore as fetchFFEvent, fetchFFEventImageUrlCore as fetchFFEventImageUrl } from "./festival-import-ff-core";
+import { importPFEvent as fetchPFEvent, fetchPFEventImageUrlCore as fetchPFEventImageUrl } from "./festival-import-pf-core";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
 import { fetchUserDataForId } from "./user-data-query";
 import { fetchFestivalGenres } from "./festival-genres";

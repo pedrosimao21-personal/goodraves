@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
   requireAdmin,
   enforceRateLimit,
   importPFTimetable,
+  timetableCacheTag,
   type PFTimetableImportResult,
 } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
@@ -26,5 +27,6 @@ export async function importPFTimetableForFestival(
 
   const result = await importPFTimetable(festivalId, partyflockUrl);
   revalidatePath(`/festival/${festivalId}`);
+  revalidateTag(timetableCacheTag(festivalId));
   return result;
 }

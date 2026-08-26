@@ -7,7 +7,8 @@ import {
   spotifySearchArtist,
   spotifyGetArtistsBatch,
 } from "@/services/spotify/client";
-import { SPOTIFY_STALE_MS } from "@/lib/constants";
+import { SPOTIFY_STALE_MS, RATE_LIMIT_IMAGE_MAX, RATE_LIMIT_WINDOW_MS, MAX_ENRICHMENT_BATCH_SIZE } from "@/lib/constants";
+import { enforceRateLimit } from "./festival-helpers";
 
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
@@ -29,10 +30,21 @@ async function fetchByName(name: string): Promise<FetchOutcome> {
   }
 }
 
+/**
+ * Called directly from FestivalDetailClient (public festival pages need no
+ * login), in chunks of IMAGE_ENRICH_CHUNK_SIZE — capped here at the same
+ * batch size as the sibling enrichArtistNamesBatch and rate-limited under the
+ * shared "card-image" bucket so it can't be used to sleep-loop the function
+ * or pollute the artists table with unbounded, unauthenticated input.
+ */
 export async function getArtistsWithImages(
   names: string[]
 ): Promise<Record<string, { id: string; imageUrl: string | null; spotifyId: string | null } | null>> {
   if (!names.length) return {};
+  if (names.length > MAX_ENRICHMENT_BATCH_SIZE) {
+    throw new Error(`Batch size must not exceed ${MAX_ENRICHMENT_BATCH_SIZE}`);
+  }
+  await enforceRateLimit("card-image", RATE_LIMIT_IMAGE_MAX, RATE_LIMIT_WINDOW_MS);
 
   const rows = await db.select({
     id: artists.id,

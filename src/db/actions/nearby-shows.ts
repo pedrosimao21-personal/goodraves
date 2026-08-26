@@ -2,9 +2,10 @@
 
 import { db } from "@/db";
 import { festivals } from "@/db/schema";
-import { gte, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 const NEARBY_SHOWS_LIMIT = 5;
+const NEARBY_SHOWS_MAX_LIMIT = 20;
 
 export type NearbyShow = {
   id: string;
@@ -26,6 +27,7 @@ export async function getNearbyShows(
 ): Promise<NearbyShow[]> {
   if (!city || city.trim().length === 0) return [];
 
+  const cappedLimit = Math.min(Math.max(1, limit), NEARBY_SHOWS_MAX_LIMIT);
   const todayStr = new Date().toISOString().split("T")[0];
   const escaped = city.trim().replace(/[%_\\]/g, "\\$&");
   const pattern = `%${escaped}%`;
@@ -47,7 +49,7 @@ export async function getNearbyShows(
             AND (${festivals.location} ILIKE ${pattern} OR ${festivals.venue} ILIKE ${pattern})`
       )
       .orderBy(festivals.date)
-      .limit(limit);
+      .limit(cappedLimit);
 
     return rows;
   } catch {

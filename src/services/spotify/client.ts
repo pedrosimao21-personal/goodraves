@@ -17,21 +17,24 @@ const MIN_IMAGE_WIDTH = 300;
 const MAX_IMAGE_WIDTH = 640;
 const DEFAULT_ALBUM_LIMIT = 10;
 const ARTIST_SEARCH_CANDIDATE_LIMIT = 5;
-
-// Genre keywords that indicate an electronic music artist.
-// Used to disambiguate between multiple search results (e.g. "Franck" the DJ vs César Franck).
-const ELECTRONIC_GENRE_KEYWORDS = [
-  'electronic', 'techno', 'house', 'trance', 'edm', 'dance',
-  'drum and bass', 'dnb', 'dubstep', 'ambient', 'industrial',
-  'electro', 'rave', 'hardcore', 'psytrance', 'minimal',
-]
-
-function hasElectronicGenre(genres: string[]): boolean {
-  return genres.some(genre =>
-    ELECTRONIC_GENRE_KEYWORDS.some(keyword => genre.toLowerCase().includes(keyword))
-  )
-}
 const DEFAULT_SHOW_LIMIT = 5;
+
+/**
+ * Loose cross-system identity comparison: lowercase, strip diacritics, strip
+ * everything but letters/digits. Deliberately looser than
+ * utils/text-normalizer.ts's normalizeArtistName (which only decodes entities
+ * and NFC-normalizes, preserving case/punctuation for display) — this is for
+ * comparing a name from one system (our stored/lineup name) against a name
+ * from a different one (Spotify's), which can differ in case, accents, or
+ * punctuation for the same real artist.
+ */
+function normalizeForMatch(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // combining diacritical marks (post-NFD accents)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
 // Max individual /artists/{id} requests to run concurrently. Spotify's
 // "Get Several Artists" batch endpoint (/artists?ids=) now returns 403 for
 // this app, so we fetch each artist one at a time and cap the fan-out to
@@ -144,6 +147,18 @@ function normalizeArtist(a: any) {
   };
 }
 
+/**
+ * Search Spotify for an artist by name, requiring an exact (loosely
+ * normalized) name match — never just "the top search result". Spotify's
+ * search is a relevance ranking, not a lookup: for a name like "Maddix" it
+ * can rank an unrelated, more-popular artist (a country singer, in one
+ * observed case) above the real match, and the previous genre-based
+ * disambiguation never actually ran — Spotify's search endpoint no longer
+ * returns `genres` on results, so that check silently always fell through to
+ * "just take the top result" for every single call. Returning null on no
+ * exact match (rather than a guess) is deliberate: no image beats the wrong
+ * artist's image.
+ */
 export async function spotifySearchArtist(name: string) {
   const data = await apiFetch("/search", {
     q: name,
@@ -154,12 +169,15 @@ export async function spotifySearchArtist(name: string) {
   const candidates: any[] = data.artists?.items ?? [];
   if (!candidates.length) return null;
 
-  // Prefer the first result that has at least one electronic genre tag.
-  // This disambiguates e.g. "Franck" (DJ) from "César Franck" (classical composer).
-  const electronicMatch = candidates.find(a => hasElectronicGenre(a.genres ?? []));
-  const artist = electronicMatch ?? candidates[0];
+  const target = normalizeForMatch(name);
+  const exactMatches = candidates.filter(a => normalizeForMatch(a.name ?? "") === target);
+  if (!exactMatches.length) return null;
 
-  return normalizeArtist(artist);
+  // Multiple accounts can share an exact name (rare, but real); prefer the
+  // more-followed one as the more likely intended artist.
+  exactMatches.sort((a, b) => (b.followers?.total ?? 0) - (a.followers?.total ?? 0));
+
+  return normalizeArtist(exactMatches[0]);
 }
 
 export async function spotifyGetArtist(spotifyId: string) {

@@ -9,7 +9,7 @@
 
 import { fetchPFAgendaHtml, resolvePFEventSlug } from "@/services/partyflock/client";
 import { parsePFAgendaResults, type PFAgendaEntry } from "@/services/partyflock/agenda-parser";
-import { importPFEvent } from "./festival-import-pf";
+import { importPFEvent } from "./festival-import-pf-core";
 import { checkExistingLineup } from "./festival-helpers";
 import { sleep, withRetry } from "@/lib/retry";
 import { toIsoDate, addDays } from "@/lib/dates";

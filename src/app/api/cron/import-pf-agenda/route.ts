@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
+import { sql } from "drizzle-orm";
+import { db } from "@/db";
 import { importPFAgenda } from "@/db/actions/festival-import-pf-agenda";
 import { refreshDuePFFestivals } from "@/db/actions/festival-refresh-pf";
+
+// rate_limit_counters buckets are only ever cleaned up for the specific
+// identifier+action a caller just hit (see rate-limit.ts) — anyone who never
+// comes back leaves their bucket rows behind forever. Sweep old ones here
+// daily rather than adding a second cron just for this.
+const RATE_LIMIT_COUNTER_MAX_AGE_HOURS = 24;
 
 /** Constant-time comparison of the bearer token to avoid a timing side-channel. */
 function isValidBearer(provided: string | null, expected: string): boolean {
@@ -45,6 +53,13 @@ export async function GET(request: Request) {
   const refresh = await refreshDuePFFestivals({ deadlineMs: DEADLINE_MS });
   const importDeadline = Math.max(0, DEADLINE_MS - (Date.now() - startedAt));
   const importSummary = await importPFAgenda({ deadlineMs: importDeadline });
+
+  // Best-effort: every window's own per-key cleanup already keeps hot rows
+  // trimmed (see rate-limit.ts) — this only matters for identifiers that
+  // never come back, so a failure here shouldn't fail the whole cron run.
+  await db
+    .execute(sql`DELETE FROM rate_limit_counters WHERE window_start < now() - interval '1 hour' * ${RATE_LIMIT_COUNTER_MAX_AGE_HOURS}`)
+    .catch((err) => console.error("[cron] rate_limit_counters cleanup failed:", err));
 
   return NextResponse.json({ refresh, import: importSummary });
 }

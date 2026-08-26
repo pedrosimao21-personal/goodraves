@@ -51,11 +51,15 @@ export { reimportFFEvent, fetchFFEvent, fetchFFEventImageUrl } from "./festival-
 export { splitB2bArtist, createB2bSet, unsplitB2bSet, rateB2bSet, getB2bSetsForFestival } from "./b2b-split";
 
 // Partyflock import
-export { reimportPFEvent, refreshPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
-// Note: the daily agenda importer (festival-import-pf-agenda.ts) and the scheduled refresh
-// orchestrator (festival-refresh-pf.ts) are intentionally NOT re-exported here — they are
-// server-only cron/script entry points, and this barrel is imported by client components, so
-// pulling them in would leak server code into the client bundle.
+export { reimportPFEvent, fetchPFEvent, fetchPFEventImageUrl } from "./festival-import-pf";
+// Note: refreshPFEvent/importPFEvent (festival-import-pf-core.ts) and the daily agenda
+// importer (festival-import-pf-agenda.ts) / scheduled refresh orchestrator
+// (festival-refresh-pf.ts) are intentionally NOT re-exported here — they have no auth
+// or rate limiting of their own (see festival-import-pf-core.ts), and this barrel is
+// imported by client components, so pulling them in would make them directly callable
+// from the client. Unlike festival-import-pf.ts, festival-import-pf-core.ts has no
+// "use server" directive at all, so this isn't just a barrel-hygiene convention — an
+// app-wide grep for "use server" is enough to audit every real Server Action.
 
 // Admin re-import (clears and re-fetches lineup from source)
 export { reimportFestival } from "./festival-reimport";

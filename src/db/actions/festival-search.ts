@@ -57,6 +57,11 @@ export async function searchFestivalsDB(query: string) {
   if (!query || query.length > MAX_QUERY_LENGTH) return [];
   if (query.length < MIN_SEARCH_QUERY_LENGTH) return [];
 
+  // Unauthenticated (this is the public homepage search), so rate-limit by
+  // caller like the RA/FF/PF searches below — otherwise it's the cheapest
+  // way to saturate the connection pool with trigram-defeating short terms.
+  await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
+
   const escaped = query.replace(/[%_\\]/g, "\\$&");
   const pattern = `%${escaped}%`;
 

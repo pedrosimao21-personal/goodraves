@@ -124,7 +124,12 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
   const trimmed = query.trim().slice(0, MAX_USERNAME_LENGTH);
   if (trimmed.length < MIN_USER_SEARCH_LENGTH) return [];
 
-  const pattern = `%${trimmed}%`;
+  // Escape ILIKE wildcards in the caller's input — unescaped, a bare "%"
+  // matches every username, turning the 8-row cap into a pageable full
+  // enumeration of every account (as festival-search.ts and nearby-shows.ts
+  // already do for the same reason).
+  const escaped = trimmed.replace(/[%_\\]/g, "\\$&");
+  const pattern = `%${escaped}%`;
   const rows = await db
     .select({ id: users.id, username: users.username })
     .from(users)

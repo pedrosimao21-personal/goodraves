@@ -8,7 +8,6 @@ import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { THEME_STORAGE_KEY, THEME_COLORS } from '@/lib/theme-constants'
-import { fetchUserDataForId } from '@/db/actions/user-data-query'
 import { auth } from '../../auth'
 import { Suspense } from 'react'
 
@@ -72,12 +71,16 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // auth() reads cookies, so it must run here anyway — derive the userId from
-  // this one session and hand it straight to the query. Going through the
-  // auth-gated wrapper instead would run auth() a second time, serially.
+  // auth() reads cookies, needed for the session provider on every route
+  // (including logged-out ones). Deliberately NOT also fetching the user's
+  // full attendance/ratings data here anymore — that was a 7-query, fully
+  // unbounded fetch that ran on every single route (including /login and
+  // /register) and blocked the entire shell from rendering until it
+  // finished. UserDataProvider's own client-side effect already fetches it
+  // (the same path used for a mid-session sign-in), so logged-in users now
+  // see one brief loading state on first load instead of every route
+  // depending on this query's latency.
   const session = await auth()
-  const userId = (session?.user as { id?: string } | undefined)?.id
-  const initialData = userId ? await fetchUserDataForId(userId) : null
 
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
@@ -85,7 +88,7 @@ export default async function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider>
           <Providers session={session}>
-            <UserDataProvider initialData={initialData}>
+            <UserDataProvider>
               <Navbar />
               <ErrorBoundary>
                 <Suspense fallback={null}>

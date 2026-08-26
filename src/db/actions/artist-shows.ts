@@ -1,6 +1,8 @@
 "use server";
 
 import { spotifySearchArtistShows } from "@/services/spotify/client";
+import { enforceRateLimit } from "./festival-helpers";
+import { RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 
 export type ArtistShow = {
   id: string;
@@ -18,6 +20,7 @@ export type ArtistShow = {
  */
 export async function getArtistShows(artistName: string): Promise<ArtistShow[]> {
   try {
+    await enforceRateLimit("search", RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS);
     const shows = await spotifySearchArtistShows(artistName, 8);
 
     // Filter shows to ones that are specifically about the artist (not generic)

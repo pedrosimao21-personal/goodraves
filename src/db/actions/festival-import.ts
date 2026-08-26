@@ -8,6 +8,7 @@ import {
   enforceRateLimit,
   ensureArtistsAndGetIds,
   findExistingFestivalByNameDate,
+  isUserAdmin,
   MAX_FESTIVAL_NAME_LENGTH,
 } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
@@ -28,7 +29,7 @@ export async function upsertFestival(data: {
   interestedCount?: number | null;
   lineup?: string[];
 }): Promise<{ id: string }> {
-  await requireAuth();
+  const userId = await requireAuth();
   await enforceRateLimit("import", RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS);
 
   if (!data.id || !data.name || data.name.length > MAX_FESTIVAL_NAME_LENGTH) {
@@ -44,6 +45,20 @@ export async function upsertFestival(data: {
     // and no way to undo it) or creating a duplicate for festival-merge to
     // clean up later.
     return { id: existingId };
+  }
+
+  // Any authenticated user can self-service-import a festival that doesn't
+  // exist yet (marking an external search result as "Going" for the first
+  // time), but once a row exists, only an admin may modify it — otherwise
+  // any logged-in user could call this directly with a crafted id and
+  // overwrite another festival's name/date/venue, or (via `lineup`) wipe its
+  // whole lineup. The two legitimate non-admin call sites (FestivalCard,
+  // FestivalDetailClient) always re-send data matching what's already
+  // stored, so skipping the write here (rather than throwing) is invisible
+  // to them — attendance still proceeds against the existing id.
+  const [existingRow] = await db.select({ id: festivals.id }).from(festivals).where(eq(festivals.id, data.id)).limit(1);
+  if (existingRow && !(await isUserAdmin(userId))) {
+    return { id: data.id };
   }
 
   await db

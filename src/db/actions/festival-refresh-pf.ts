@@ -12,7 +12,7 @@
 import { db } from "@/db";
 import { inArray, and, eq } from "drizzle-orm";
 import { festivals } from "@/db/schema";
-import { refreshPFEvent } from "./festival-import-pf";
+import { refreshPFEvent } from "./festival-import-pf-core";
 import { sleep, withRetry } from "@/lib/retry";
 import { toIsoDate, addDays } from "@/lib/dates";
 import {

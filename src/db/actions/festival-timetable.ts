@@ -1,8 +1,10 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { festivalTimetableSlots, artists } from "@/db/schema";
+import { timetableCacheTag } from "./festival-helpers";
 
 export type TimetableSlotRow = {
   artistId: string;
@@ -103,11 +105,25 @@ function toTimetableData(byDay: StagesByDay): TimetableData {
   return { days, stagesByDay };
 }
 
+const TIMETABLE_CACHE_REVALIDATE_SECONDS = 60 * 60;
+
 /**
  * Fetch all timetable slots for a festival, grouped by day and then by stage.
- * Returns empty `days`/`stagesByDay` when no timetable data exists.
+ * Returns empty `days`/`stagesByDay` when no timetable data exists. Public,
+ * non-user-specific data — cached per festival for an hour and tagged so
+ * importPFTimetableForFestival (the one path that changes a timetable
+ * on demand, admin-only) can invalidate it immediately; any other path that
+ * touches a timetable (a re-import, a merge) just waits out the hour.
  */
 export async function getTimetable(festivalId: string): Promise<TimetableData> {
+  return unstable_cache(
+    fetchTimetable,
+    ["festival-timetable"],
+    { revalidate: TIMETABLE_CACHE_REVALIDATE_SECONDS, tags: [timetableCacheTag(festivalId)] }
+  )(festivalId);
+}
+
+async function fetchTimetable(festivalId: string): Promise<TimetableData> {
   const rows = await db
     .select({
       slotDate: festivalTimetableSlots.slotDate,

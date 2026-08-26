@@ -21,9 +21,9 @@ function isValidTiming(value: string | null): value is TimingOption {
 }
 
 /** An event's timing bucket, or null when it has no usable date. */
-function extractTiming(event: { date?: string | null }): TimingOption | null {
+function extractTiming(event: { date?: string | null; endDate?: string | null }): TimingOption | null {
   if (!event.date) return null
-  return isFestivalPast(event.date) ? 'past' : 'upcoming'
+  return isFestivalPast(event.date, event.endDate) ? 'past' : 'upcoming'
 }
 
 // ── Year Extraction ────────────────────────────────────

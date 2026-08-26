@@ -196,16 +196,21 @@ export const friendships = pgTable(
 );
 
 // ── Rate Limiting ──────────────────────────────────────
-export const rateLimitAttempts = pgTable(
-  "rate_limit_attempts",
+// One row per (identifier, action, window_start) bucket, incremented
+// atomically via `INSERT ... ON CONFLICT DO UPDATE SET count = count + 1` —
+// see rate-limit.ts and migration 1787751943533 for why this replaced a
+// sliding-window log table (the count-then-insert there raced under
+// concurrent requests).
+export const rateLimitCounters = pgTable(
+  "rate_limit_counters",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
     identifier: text("identifier").notNull(),
     action: text("action").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    count: integer("count").notNull().default(0),
   },
   (t) => [
-    index("rate_limit_identifier_action_idx").on(t.identifier, t.action, t.createdAt),
+    primaryKey({ columns: [t.identifier, t.action, t.windowStart] }),
   ]
 );
 

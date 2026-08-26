@@ -40,18 +40,23 @@ export async function getOptionalUserId(): Promise<string | null> {
   return ((session?.user as any)?.id as string | undefined) ?? null;
 }
 
+/** Re-check the DB (not a JWT claim) for whether userId is an admin. */
+export async function isUserAdmin(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ isAdmin: users.isAdmin })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return !!row?.isAdmin;
+}
+
 /** Verify the session and return the authenticated userId. Throws if not an admin user. */
 export async function requireAdmin(): Promise<string> {
   const userId = await getOptionalUserId();
   if (!userId) {
     throw new Error("Unauthorized");
   }
-  const [row] = await db
-    .select({ isAdmin: users.isAdmin })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  if (!row?.isAdmin) {
+  if (!(await isUserAdmin(userId))) {
     throw new Error("Forbidden");
   }
   return userId;
@@ -75,6 +80,17 @@ export async function enforceRateLimit(
   if (await isRateLimited(identifier, action, maxAttempts, windowMs)) {
     throw new Error("Too many requests. Please slow down and try again shortly.");
   }
+}
+
+/**
+ * unstable_cache tag for a festival's timetable (see festival-timetable.ts).
+ * Lives here — a plain module with no "use server" — rather than in
+ * festival-timetable.ts itself, since a "use server" file's exports must all
+ * be async functions; this needs to be a plain sync helper shared by both
+ * getTimetable and its one on-demand invalidator, importPFTimetableForFestival.
+ */
+export function timetableCacheTag(festivalId: string): string {
+  return `timetable-${festivalId}`;
 }
 
 /** Clamp a rating to 1-5, or throw if invalid. */
@@ -107,14 +123,17 @@ export async function ensureArtistsAndGetIds(names: string[]): Promise<Record<st
     .from(artists)
     .where(inArray(sql`lower(${artists.name})`, lowerNames));
 
+  // Built once up front rather than re-normalizing every input name inside
+  // the row loop below (was O(rows × names), each doing a regex + Unicode
+  // normalize — ~90k calls for a 300-artist RA lineup).
+  const inputNameByLower = new Map(names.map((n) => [normalizeArtistName(n).toLowerCase(), n]));
+
   const map: Record<string, string> = {};
   for (const row of rows) {
     // Map by the original input name (case-preserving) so callers can look up
     // using the exact string they provided, even when the DB stores
     // a different casing.
-    const inputName = names.find(
-      (n) => normalizeArtistName(n).toLowerCase() === row.name.toLowerCase()
-    );
+    const inputName = inputNameByLower.get(row.name.toLowerCase());
     if (inputName) {
       map[inputName] = row.id;
     }

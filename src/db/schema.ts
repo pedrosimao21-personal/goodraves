@@ -59,6 +59,9 @@ export const festivals = pgTable("festivals", {
   // on every page view — see LINEUP_RECHECK_STALE_MS / IMAGE_RECHECK_STALE_MS.
   lineupCheckedAt: timestamp("lineup_checked_at", { withTimezone: true }),
   imageCheckedAt: timestamp("image_checked_at", { withTimezone: true }),
+  // Last time the daily cron searched Partyflock for this festival's
+  // timetable without linking one — see festival-timetable-autolink.ts.
+  pfLinkCheckedAt: timestamp("pf_link_checked_at", { withTimezone: true }),
   interestedCount: integer("interested_count").default(0),
   visitorsCount: integer("visitors_count").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -73,6 +76,26 @@ export const festivals = pgTable("festivals", {
   index("festivals_name_trgm_idx").using("gin", sql`${t.name} gin_trgm_ops`),
   index("festivals_venue_trgm_idx").using("gin", sql`${t.venue} gin_trgm_ops`),
   index("festivals_location_trgm_idx").using("gin", sql`${t.location} gin_trgm_ops`),
+]);
+
+// ── Festival Duplicate Candidates (review queue for the daily dedupe) ───
+// Pairs the daily dedupe (festival-dedupe-core.ts) thinks MIGHT be the same
+// event but isn't confident enough to auto-merge. An admin resolves each one
+// on /admin/duplicates: "merge" runs the normal hard merge (which deletes the
+// loser, cascading this row away); "dismiss" keeps the row with status
+// 'dismissed' so the pair is never suggested again. `festivalA` < `festivalB`
+// (lexicographic), so each unordered pair has exactly one row.
+export const festivalDuplicateCandidates = pgTable("festival_duplicate_candidates", {
+  festivalA: text("festival_a").notNull().references(() => festivals.id, { onDelete: "cascade" }),
+  festivalB: text("festival_b").notNull().references(() => festivals.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(),
+  status: text("status").notNull().default("pending"), // "pending" | "dismissed"
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.festivalA, t.festivalB] }),
+  index("festival_duplicate_candidates_status_idx").on(t.status),
+  index("festival_duplicate_candidates_festival_b_idx").on(t.festivalB),
 ]);
 
 // ── Festival Merges (audit trail for the hard-merge dedup) ─────────────

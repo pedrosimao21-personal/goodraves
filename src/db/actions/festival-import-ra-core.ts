@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { eq, inArray, sql } from "drizzle-orm";
 import { artists, festivals, festivalArtists } from "@/db/schema";
 import { checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
+import { resolveMergedFestivalId } from "./festival-merge-lookup";
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { toIsoDate } from "@/lib/dates";
 import { parseRALineup } from "@/services/ra/parser";
@@ -51,6 +52,10 @@ export async function fetchRAEventCore(
   if (!id) return null;
 
   const festivalId = `ra-${id}`;
+
+  // A merged-away id must resolve to its winner, never be recreated.
+  const mergedInto = await resolveMergedFestivalId(festivalId);
+  if (mergedInto) return mergedInto;
 
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);

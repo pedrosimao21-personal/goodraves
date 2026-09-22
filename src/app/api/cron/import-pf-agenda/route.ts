@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { importPFAgenda } from "@/db/actions/festival-import-pf-agenda";
 import { refreshDuePFFestivals } from "@/db/actions/festival-refresh-pf";
+import { isValidCronBearer } from "@/lib/cron-auth";
 
 // rate_limit_counters buckets are only ever cleaned up for the specific
 // identifier+action a caller just hit (see rate-limit.ts) — anyone who never
 // comes back leaves their bucket rows behind forever. Sweep old ones here
 // daily rather than adding a second cron just for this.
 const RATE_LIMIT_COUNTER_MAX_AGE_HOURS = 24;
-
-/** Constant-time comparison of the bearer token to avoid a timing side-channel. */
-function isValidBearer(provided: string | null, expected: string): boolean {
-  if (!provided) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(`Bearer ${expected}`);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 // This batch hits partyflock.nl many times with delays; it must run as a Node
 // function, never be statically cached, and have a long execution budget.
@@ -45,7 +37,7 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-  if (!isValidBearer(request.headers.get("authorization"), secret)) {
+  if (!isValidCronBearer(request.headers.get("authorization"), secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

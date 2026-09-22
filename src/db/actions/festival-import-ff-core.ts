@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists } from "@/db/schema";
 import { checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, backfillMissingImage, persistLineup } from "./festival-helpers";
+import { resolveMergedFestivalId } from "./festival-merge-lookup";
 import { fetchFFEventHtml } from "@/services/festivalfans/client";
 import { toIsoDate } from "@/lib/dates";
 import { parseFFEventPage } from "@/services/festivalfans/parser";
@@ -36,6 +37,10 @@ export async function fetchFFEventCore(
   if (!slug || !/^[a-z0-9-]+$/i.test(slug)) return null;
 
   const festivalId = `ff-${slug}`;
+
+  // A merged-away id must resolve to its winner, never be recreated.
+  const mergedInto = await resolveMergedFestivalId(festivalId);
+  if (mergedInto) return mergedInto;
 
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);

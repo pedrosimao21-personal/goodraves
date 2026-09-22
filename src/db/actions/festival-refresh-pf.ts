@@ -10,8 +10,8 @@
  */
 
 import { db } from "@/db";
-import { inArray, and, eq } from "drizzle-orm";
-import { festivals } from "@/db/schema";
+import { inArray, notInArray, and, eq } from "drizzle-orm";
+import { festivals, festivalMerges } from "@/db/schema";
 import { refreshPFEvent } from "./festival-import-pf-core";
 import { sleep, withRetry } from "@/lib/retry";
 import { toIsoDate, addDays } from "@/lib/dates";
@@ -68,7 +68,18 @@ export async function refreshDuePFFestivals(
   const dueFestivals = await db
     .select({ id: festivals.id })
     .from(festivals)
-    .where(and(eq(festivals.source, "partyflock"), inArray(festivals.date, checkpointDates)));
+    .where(
+      and(
+        eq(festivals.source, "partyflock"),
+        inArray(festivals.date, checkpointDates),
+        // refreshPFEvent deletes and re-imports the whole lineup/timetable
+        // from ONE Partyflock page. A festival other rows were merged into
+        // holds data from several sources (other days, RA/FF lineups), which
+        // that would wipe — its timetable is kept fresh non-destructively by
+        // festival-timetable-refresh.ts instead.
+        notInArray(festivals.id, db.select({ id: festivalMerges.winnerId }).from(festivalMerges))
+      )
+    );
 
   const summary: RefreshSummary = {
     due: dueFestivals.length,

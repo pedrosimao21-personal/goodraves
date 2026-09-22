@@ -81,14 +81,14 @@ type FestivalDetailProps = {
   initialFestival?: any
   /** Server-fetched timetable; null for custom festivals (fetched client-side). */
   initialTimetable?: TimetableData | null
-  /** Server-fetched Spotify playlist; null when none was found. */
+  /** Server-fetched Spotify playlist; null when none was found, undefined when not looked up server-side. */
   initialPlaylist?: FestivalPlaylistData | null
 }
 
 export default function FestivalDetail({
   initialFestival = null,
   initialTimetable = null,
-  initialPlaylist = null,
+  initialPlaylist,
 }: FestivalDetailProps) {
   const params = useParams()
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
@@ -100,7 +100,7 @@ export default function FestivalDetail({
   const [loading, setLoading] = useState(!initialFestival)
   const [error, setError] = useState<Error | null>(null)
   const [spotifyData, setSpotifyData] = useState<Record<string, any>>({})
-  const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(() => initialPlaylist)
+  const [playlist, setPlaylist] = useState<FestivalPlaylistData | null>(() => initialPlaylist ?? null)
   const [showAdminMenu, setShowAdminMenu] = useState(false)
   const [showReimportConfirm, setShowReimportConfirm] = useState(false)
   const [showPfImportModal, setShowPfImportModal] = useState(false)
@@ -213,16 +213,15 @@ export default function FestivalDetail({
     // skip the duplicate round trip. Depending on the prop (rather than checking
     // it once) matters because Next reuses this client component across
     // /festival/[id] navigations, so a fresh prop must still take effect.
-    if (initialPlaylist) {
+    if (initialPlaylist !== undefined) {
       setPlaylist(initialPlaylist)
       return
     }
 
     let cancelled = false
 
-    // Pass the first attraction as potential headliner for "This is {artist}" fallback.
-    const headliner = event.attractions?.[0]?.name as string | undefined
-    ;(getFestivalPlaylist(event.name, headliner) as unknown as Promise<FestivalPlaylistData | null>)
+    const lineupNames = (event.attractions ?? []).map((a: { name: string }) => a.name).filter(Boolean)
+    ;(getFestivalPlaylist(event.name, lineupNames) as unknown as Promise<FestivalPlaylistData | null>)
       .then(data => { if (!cancelled) setPlaylist(data) })
       .catch(() => {
         // The playlist is an optional embed — clearing it hides the section

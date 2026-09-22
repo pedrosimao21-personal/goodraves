@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { eq, sql } from "drizzle-orm";
 import { festivals, festivalArtists, festivalTimetableSlots } from "@/db/schema";
 import { findExistingFestivalByNameDate, deleteB2bSets, persistLineup, insertTimetableSlots, checkExistingLineup, backfillMissingImage } from "./festival-helpers";
+import { resolveMergedFestivalId } from "./festival-merge-lookup";
 import { fetchPFEventHtml } from "@/services/partyflock/client";
 import { toIsoDate } from "@/lib/dates";
 import { parsePFEventPage } from "@/services/partyflock/parser";
@@ -220,6 +221,10 @@ export async function importPFEvent(
   if (!partyId || !/^\d+$/.test(partyId)) return null;
 
   const festivalId = `pf-${partyId}`;
+
+  // A merged-away id must resolve to its winner, never be recreated.
+  const mergedInto = await resolveMergedFestivalId(festivalId);
+  if (mergedInto) return mergedInto;
 
   if (!opts?.force) {
     const hasExisting = await checkExistingLineup(festivalId);

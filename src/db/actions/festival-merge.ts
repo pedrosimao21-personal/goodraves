@@ -1,11 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { festivalMerges } from "@/db/schema";
 import { requireAdmin } from "./festival-helpers";
 import { mergeFestivalsCore, type MergeResult } from "./festival-merge-core";
+import { resolveMergedFestivalId } from "./festival-merge-lookup";
 
 export type { MergeResult };
 
@@ -31,22 +29,5 @@ export async function mergeFestivals(winnerId: string, loserIds: string[]): Prom
  * festival. Returns null if `festivalId` was never a merge loser.
  */
 export async function getMergeRedirectTarget(festivalId: string): Promise<string | null> {
-  let current = festivalId;
-  const seen = new Set<string>();
-
-  for (let hop = 0; hop < 10; hop++) {
-    if (seen.has(current)) return null; // defensive cycle guard
-    seen.add(current);
-
-    const [row] = await db
-      .select({ winnerId: festivalMerges.winnerId })
-      .from(festivalMerges)
-      .where(eq(festivalMerges.loserId, current))
-      .limit(1);
-    if (!row) return current === festivalId ? null : current;
-
-    current = row.winnerId;
-  }
-
-  return current;
+  return resolveMergedFestivalId(festivalId);
 }

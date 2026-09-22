@@ -51,13 +51,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 type ServerFestival = Awaited<ReturnType<typeof getFestival>>
 
 /**
- * The playlist lookup needs the festival name, and falls back to a
- * "This is {headliner}" playlist — the headliner being the first lineup entry,
- * exactly as the client used to derive it from `attractions[0]`.
+ * The playlist lookup needs the festival name and lineup (used to confirm a
+ * candidate playlist really is this festival's). `undefined` means "not
+ * looked up here" (the client then does it); `null` means "looked up, none" —
+ * including when Spotify is failing, so the client doesn't immediately retry
+ * and spend more of the shared Spotify quota.
  */
 async function fetchPlaylistForFestival(festival: ServerFestival) {
-  if (!festival) return null
-  return getFestivalPlaylist(festival.name, festival.lineup?.[0]?.name)
+  if (!festival) return undefined
+  const lineupNames = (festival.lineup ?? []).map((a: { name: string }) => a.name)
+  return getFestivalPlaylist(festival.name, lineupNames).catch(() => null)
 }
 
 export default async function FestivalDetailPage({ params }: Props) {
@@ -67,7 +70,7 @@ export default async function FestivalDetailPage({ params }: Props) {
   // Custom ("custom-…") festivals aren't in the festivals table and rely on
   // client-side festivalMeta context, so they're left for the client fetch.
   if (decodedId.startsWith('custom-')) {
-    return <FestivalDetailClient initialFestival={null} initialTimetable={null} initialPlaylist={null} />
+    return <FestivalDetailClient initialFestival={null} initialTimetable={null} />
   }
 
   // Server-fetch the public (non-user-specific) festival data so the initial

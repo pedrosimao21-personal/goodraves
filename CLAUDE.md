@@ -24,9 +24,11 @@ npx tsx scripts/clear-artist-cache.ts               # Clear cached Spotify/Last.
 npx tsx scripts/cleanup-artist-data.ts [--dry-run]  # Fix encoding/junk artist records
 npx tsx --env-file=.env scripts/import-pf-agenda.ts    # Backfill/re-run the daily Partyflock agenda import
 npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock festival refresh (7-/2-day checkpoints)
-npx tsx --env-file=.env scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one
-npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run]              # Detect + hard-merge duplicate festival editions
+npx tsx --env-file=.env.local scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one (all dates)
+npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sync timetables of festivals in the next 2 weeks (daily cron step)
+npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
+npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--start-after <id>] [--limit <n>] # Re-verify stored Spotify artist matches
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -66,7 +68,9 @@ re-listing columns) so there's less to keep in sync.
 endpoints for app data. Mutations and reads live as `"use server"` functions in
 `src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers,
 registration, and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
-`CRON_SECRET` bearer token — see `vercel.json`). Every server action must:
+`CRON_SECRET` bearer token — see `vercel.json`: `import-pf-agenda` at 04:00, then
+`daily-maintenance` at 06:00 — dedupe, timetable re-sync for the next 2 weeks, timetable
+auto-link; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
 1. Call `requireAuth()` (or `requireAdmin()`) from `festival-helpers.ts` to verify the session.
 2. Use the Drizzle query builder against `db` from `src/db/index.ts`.
 3. Return plain serializable objects.
@@ -129,15 +133,18 @@ Partyflock party for timetable import, independent of `source`; `lineup_checked_
 `image_checked_at` gate the on-demand lineup/image backfills in `getFestival`;
 `country_code`/`country_name` are populated at import time — see
 `src/utils/location-normalizer.ts` — and by `scripts/backfill-festival-countries.ts` for
-pre-existing rows),
+pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock timetable search),
 `artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings`, `user_artist_global`, `festival_b2b_sets`/`_members`
 (splitting back-to-back DJ sets into individuals), `festival_timetable_slots` (per-stage
 slots; `slot_date` distinguishes days once a multi-day festival's rows are merged),
-`festival_merges` (audit trail for the hard-merge dedup in `festival-merge.ts` — old
-`/festival/<id>` URLs for a merged-away row redirect via `getMergeRedirectTarget`).
+`festival_duplicate_candidates` (review queue for the daily dedupe — pairs that weren't certain
+enough to auto-merge; resolved on `/admin/duplicates`; dismissed pairs stay so they're never
+re-suggested), `festival_merges` (audit trail for the hard-merge dedup in `festival-merge.ts` — old
+`/festival/<id>` URLs for a merged-away row redirect via `getMergeRedirectTarget`, and every
+importer checks `resolveMergedFestivalId` first so a merged-away id is never re-created).
 
 ## Conventions
 

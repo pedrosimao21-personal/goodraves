@@ -77,3 +77,10 @@ export const PF_AGENDA_BACKOFF_BASE_MS = 1000; // exponential backoff base on fa
 
 /** Days-before-event checkpoints at which imported Partyflock festivals are re-fetched/refreshed. */
 export const PF_REFRESH_CHECKPOINT_DAYS = [7, 2] as const;
+
+/** Festivals starting within this many days get their Partyflock timetable re-synced daily. */
+export const TIMETABLE_REFRESH_DAYS_AHEAD = 14;
+/** Festivals starting within this many days with no timetable are auto-matched to a Partyflock page. */
+export const PF_AUTOLINK_DAYS_AHEAD = 30;
+/** Don't search Partyflock again for the same unmatched festival more often than this. */
+export const PF_AUTOLINK_RECHECK_DAYS = 3;

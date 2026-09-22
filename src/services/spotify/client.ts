@@ -18,6 +18,10 @@ const MAX_IMAGE_WIDTH = 640;
 const DEFAULT_ALBUM_LIMIT = 10;
 const ARTIST_SEARCH_CANDIDATE_LIMIT = 5;
 const DEFAULT_SHOW_LIMIT = 5;
+const MAX_RETRY_AFTER_SECONDS = 10;
+const PLAYLIST_ITEMS_LIMIT = 100;
+/** Error message thrown when Spotify asks us to back off longer than we'll wait. */
+export const SPOTIFY_RATE_LIMITED = "SPOTIFY_RATE_LIMITED";
 
 /**
  * Loose cross-system identity comparison: lowercase, strip diacritics, strip
@@ -118,6 +122,14 @@ async function apiFetch(path: string, params: Record<string, any> = {}) {
 
   if (res.status === 429) {
     const retryAfter = parseInt(res.headers.get("Retry-After") ?? "1", 10);
+    // Spotify can answer with a Retry-After of many hours (57834s observed)
+    // once an app's quota is exhausted. Waiting that out would hang a user's
+    // request (or a cron run) indefinitely — fail fast instead, with an error
+    // callers can recognize and treat as "couldn't check", never "no match".
+    if (!Number.isFinite(retryAfter) || retryAfter > MAX_RETRY_AFTER_SECONDS) {
+      console.warn(`[spotify] Rate limited on ${path}; Retry-After ${retryAfter}s exceeds cap, giving up`);
+      throw new Error(SPOTIFY_RATE_LIMITED);
+    }
     console.warn(`[spotify] Rate limited on ${path}; retrying after ${retryAfter}s`);
     await new Promise((r) => setTimeout(r, retryAfter * MS_PER_SECOND));
     const retry = await fetchWithTimeout(url, {
@@ -200,8 +212,31 @@ export async function spotifySearchPlaylist(query: string, limit = 1) {
     url: p.external_urls?.spotify ?? null,
     image: p.images?.[0]?.url ?? null,
     owner: p.owner?.display_name ?? "",
-    tracksTotal: p.tracks?.total ?? 0,
+    ownerId: p.owner?.id ?? "",
+    tracksTotal: p.tracks?.total ?? p.items?.total ?? 0,
   }));
+}
+
+/**
+ * Artist names across a playlist's first page of tracks — used to check a
+ * candidate festival playlist against the festival's lineup. Returns null
+ * (not []) when the playlist's contents can't be read at all: Spotify has
+ * been restricting playlist-content access for client-credentials apps, and
+ * "couldn't check" must never be mistaken for "no lineup artists in it".
+ * The endpoint was renamed from /tracks to /items; try both.
+ */
+export async function spotifyGetPlaylistArtistNames(playlistId: string): Promise<string[] | null> {
+  for (const path of [`/playlists/${playlistId}/items`, `/playlists/${playlistId}/tracks`]) {
+    try {
+      const data = await apiFetch(path, { limit: PLAYLIST_ITEMS_LIMIT, market: SPOTIFY_MARKET });
+      return (data.items ?? []).flatMap((entry: any) =>
+        ((entry?.track ?? entry?.item)?.artists ?? []).map((a: any) => a?.name).filter(Boolean)
+      );
+    } catch (err) {
+      if (!(err instanceof Error && /Spotify error (403|404)/.test(err.message))) throw err;
+    }
+  }
+  return null;
 }
 
 export async function spotifyGetArtistTopTracks(spotifyId: string) {

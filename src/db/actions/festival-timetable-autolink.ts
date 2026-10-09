@@ -118,8 +118,10 @@ async function findBestMatch(festival: Target): Promise<MatchOutcome> {
   const dateMatches = parsePFSearchResults(html).filter((r) => r.date === festival.date);
   let best: { result: (typeof dateMatches)[number]; score: number } | null = null;
   for (const result of dateMatches) {
+    // Score against the title alone too: an RA/FestivalFans name is often the
+    // bare brand ("Awakenings") while the Partyflock name carries a subtitle.
     const score =
-      nameSimilarity(festival.name, result.name) +
+      Math.max(nameSimilarity(festival.name, result.name), nameSimilarity(festival.name, result.title)) +
       locationSimilarity(festival.venue ?? festival.location, result.venue ?? result.location);
     if (!best || score > best.score) best = { result, score };
   }

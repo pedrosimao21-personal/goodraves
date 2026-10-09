@@ -5,6 +5,7 @@
 import { type LineupEntry, type TimetableSlot } from "@/services/lineup-types";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 import { decodeHtmlEntities } from "@/utils/text-normalizer";
+import { cleanPFSubtitle, joinPFTitle } from "./title";
 
 const DUTCH_MONTHS: Record<string, string> = {
   januari: "01", februari: "02", maart: "03", april: "04",
@@ -31,7 +32,10 @@ function parseDutchDate(dateStr: string): string | null {
 
 export interface PFSearchResult {
   pfId: string;
+  /** Title plus subtitle, as stored for an imported festival (see title.ts). */
   name: string;
+  /** The title alone, without the subtitle. */
+  title: string;
   date: string | null;
   venue: string | null;
   location: string | null;
@@ -59,7 +63,10 @@ export function parsePFSearchResults(html: string): PFSearchResult[] {
     if (!primaryMatch) continue;
 
     const pfId = partyLinkMatch ? partyLinkMatch[1] : `event-${eventLinkMatch![1]}`;
-    const name = decodeHtmlEntities(primaryMatch[2].trim());
+    const title = decodeHtmlEntities(primaryMatch[2].trim());
+    // `<span class="bold"><a …>Title</a></span><small> &middot; Subtitle</small>`
+    const subtitleMatch = block.match(/<\/a><\/span><small>([^<]+)<\/small>/);
+    const name = joinPFTitle(title, cleanPFSubtitle(subtitleMatch?.[1]));
 
     const dateMatch = block.match(/<div class="small"><div>([^<]+)<\/div>/);
     const date = dateMatch ? parseDutchDate(dateMatch[1]) : null;
@@ -73,7 +80,7 @@ export function parsePFSearchResults(html: string): PFSearchResult[] {
     const imageMatch = block.match(/data-lazy-style="background-image:\s*url\('([^']+)'\)"/);
     const imageUrl = imageMatch ? `https://partyflock.nl${imageMatch[1]}` : null;
 
-    results.push({ pfId, name, date, venue, location, imageUrl });
+    results.push({ pfId, name, title, date, venue, location, imageUrl });
   }
 
   return results;
@@ -309,7 +316,11 @@ function parsePFGenres(html: string): string[] {
 
 export function parsePFEventPage(html: string): ParsedPFEvent {
   const h1Match = html.match(/<h1[^>]*itemprop="name"[^>]*>(?:<a[^>]*>)?([^<]+)/);
-  const name = h1Match ? decodeHtmlEntities(h1Match[1].trim()) : null;
+  // The subtitle follows the <h1>: `</h1> &middot; <span class="subtitle">…</span>`.
+  const subtitleMatch = html.match(/<\/h1>[^<]*<span class="subtitle">([^<]+)<\/span>/);
+  const name = h1Match
+    ? joinPFTitle(decodeHtmlEntities(h1Match[1].trim()), cleanPFSubtitle(subtitleMatch?.[1]))
+    : null;
 
   const startDateMatch = html.match(/<time[^>]*itemprop="startDate"[^>]*datetime="([^"]+)"/);
   let date: string | null = null;

@@ -68,6 +68,11 @@ export async function mergeFestivalsCore(winnerId: string, loserIds: string[]): 
     throw new Error(`Winner festival ${winnerId} not found`);
   }
 
+  // The winner is a live row, so a record of it as an earlier merge loser is
+  // stale: left in place it would point the winner's id at another row and,
+  // once this merge records the reverse direction, form a cycle.
+  await db.delete(festivalMerges).where(eq(festivalMerges.loserId, winnerId));
+
   const loserRows = await db.select().from(festivals).where(inArray(festivals.id, uniqueLoserIds));
   const loserById = new Map(loserRows.map((r) => [r.id, r]));
 

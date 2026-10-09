@@ -27,6 +27,7 @@ npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock f
 npx tsx --env-file=.env.local scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one (all dates)
 npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sync timetables of festivals in the next 2 weeks (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
+npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--start-after <id>] [--limit <n>] # Re-verify stored Spotify artist matches
 ```

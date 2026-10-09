@@ -201,6 +201,19 @@ function isSamePartyflockBatch(a: MatchRow, b: MatchRow): boolean {
   return Number.isFinite(gap) && gap <= PF_BATCH_MAX_ID_GAP;
 }
 
+/**
+ * Both rows are Partyflock pages and only one name carries a subtitle tail
+ * ("Intercell" vs "Intercell: Fumi Invites" — see services/partyflock/title.ts).
+ * Partyflock gives each separate party of one organiser its own subtitle, so
+ * this is evidence of two parties. Limited to Partyflock pairs: an RA name's
+ * tail is usually a lineup list, not a subtitle.
+ */
+function hasPartyflockSubtitleMismatch(a: MatchRow, b: MatchRow): boolean {
+  const isPf = (r: MatchRow) => /^pf-\d+$/.test(r.id);
+  if (!isPf(a) || !isPf(b)) return false;
+  return (tailTokens(a.name).size > 0) !== (tailTokens(b.name).size > 0);
+}
+
 function sameSets(a: Set<string>, b: Set<string>): boolean {
   return a.size === b.size && isSubset(a, b);
 }
@@ -241,6 +254,9 @@ export function classifyPair(a: MatchRow, b: MatchRow): PairVerdict {
   const name = compareNames(a.name, b.name);
   const lineup = compareLineups(a, b);
   const lineupNote = lineup.comparable ? `lineup overlap ${pct(lineup.overlap)}` : "lineup not comparable";
+  if (name !== "none" && hasPartyflockSubtitleMismatch(a, b)) {
+    return { verdict: "review", reason: `name ${name} but only one Partyflock page has a subtitle, ${lineupNote}` };
+  }
   // "contains" alone is only trusted on the same day: on consecutive days a
   // shared brand ("Verknipt" / "Verknipt ADE") is often a different night.
   const strongName = name === "exact" || name === "similar" || (name === "contains" && sameDay);

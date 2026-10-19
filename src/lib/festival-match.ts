@@ -37,6 +37,9 @@ const LINEUP_AGREES = 0.6;
 const LINEUP_CONTRADICTS = 0.2;
 const LINEUP_SAME_EVENT = 0.8;
 const MIN_SHARED_FOR_LINEUP_ONLY = 8;
+// Same day + same venue is strong context, so a one-stage day event (5–8
+// artists, never 8 shared) can still be flagged on lineup alone.
+const MIN_SHARED_SAME_VENUE_DAY = 5;
 const MIN_CONTAINED_CORE_CHARS = 4;
 const NAME_SIMILAR_JACCARD = 0.7;
 const TAILS_DIFFER_JACCARD = 0.5;
@@ -150,6 +153,12 @@ function distanceKm(a: MatchRow, b: MatchRow): number | null {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
+function isSameVenue(a: MatchRow, b: MatchRow): boolean {
+  const venueA = a.venue ? normalizeText(a.venue) : "";
+  const venueB = b.venue ? normalizeText(b.venue) : "";
+  return venueA.length > 0 && venueA === venueB;
+}
+
 /** Same city (either containing the other: "Dortmund / Essen" ~ "Dortmund"), same venue, or ≤3 km apart. */
 export function isSamePlace(a: MatchRow, b: MatchRow): boolean {
   const cityA = cityKey(a.location);
@@ -158,9 +167,7 @@ export function isSamePlace(a: MatchRow, b: MatchRow): boolean {
     const [small, large] = cityA.length <= cityB.length ? [cityA, cityB] : [cityB, cityA];
     if (isSubset(new Set(small.split(" ")), new Set(large.split(" ")))) return true;
   }
-  const venueA = a.venue ? normalizeText(a.venue) : "";
-  const venueB = b.venue ? normalizeText(b.venue) : "";
-  if (venueA && venueA === venueB) return true;
+  if (isSameVenue(a, b)) return true;
   const km = distanceKm(a, b);
   return km !== null && km <= MAX_SAME_PLACE_KM;
 }
@@ -274,6 +281,12 @@ export function classifyPair(a: MatchRow, b: MatchRow): PairVerdict {
   }
   if (lineup.comparable && lineup.overlap >= LINEUP_SAME_EVENT && lineup.shared >= MIN_SHARED_FOR_LINEUP_ONLY) {
     return { verdict: "review", reason: `different names but ${lineupNote} (${lineup.shared} shared artists)` };
+  }
+  // Review only, never auto: two sources can name one night completely
+  // differently ("ADE: Awakenings x Joris Voorn" vs "Awakenings: Joris Voorn
+  // presents Trip To Galaxy"), but a venue can also host two parties a day.
+  if (sameDay && isSameVenue(a, b) && lineup.comparable && lineup.overlap >= LINEUP_SAME_EVENT && lineup.shared >= MIN_SHARED_SAME_VENUE_DAY) {
+    return { verdict: "review", reason: `different names but same day and venue, ${lineupNote} (${lineup.shared} shared artists)` };
   }
   return { verdict: "none", reason: "no evidence" };
 }

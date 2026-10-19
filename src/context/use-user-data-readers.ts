@@ -1,51 +1,31 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { UserDataState, B2bSetData } from './user-data-state'
 
-/** Derived read-only accessors for user data state.
- * Uses a ref internally so returned functions are stable across re-renders. */
-export function useUserDataReaders(state: UserDataState) {
-  const stateRef = useRef(state)
-  useEffect(() => { stateRef.current = state })
+/** Builds read-only accessors that close over one snapshot of user data state. */
+function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set<string>) {
+  const isAttended = (eventId: string) => attended.has(eventId)
+  const isUpcoming = (eventId: string) => upcoming.has(eventId)
+  const didSeeArtist = (eventId: string, artistId: string) =>
+    (state.seenArtists[eventId] ?? []).includes(artistId)
+  const didWantToSee = (eventId: string, artistId: string) =>
+    (state.wantToSee[eventId] ?? []).includes(artistId)
+  const getSeenCount = (eventId: string) => {
+    if (!attended.has(eventId) && !upcoming.has(eventId)) return 0
+    return (state.seenArtists[eventId] ?? []).length
+  }
+  const getRating = (artistId: string) => state.artistRatings[artistId] ?? 0
+  const getPerformanceRating = (eventId: string, artistId: string) =>
+    state.performanceRatings[`${eventId}::${artistId}`] ?? 0
+  const getFestivalRating = (eventId: string) => state.festivalRatings?.[eventId] ?? 0
+  const getNotes = (artistId: string) => state.artistNotes[artistId] ?? ''
+  const getFestivalNotes = (eventId: string) => state.festivalNotes[eventId] ?? ''
+  const getFestivalPublicComment = (eventId: string) => state.festivalPublicComments[eventId] ?? ''
+  const getFestivalMeta = (eventId: string) => state.festivalMeta[eventId] ?? null
+  const getArtistMeta = (artistId: string) => state.artistMeta[artistId] ?? null
 
-  const attendedSet = useMemo(() => new Set(state.attendedFestivals), [state.attendedFestivals])
-  const upcomingSet = useMemo(() => new Set(state.upcomingFestivals), [state.upcomingFestivals])
-  const setsRef = useRef({ attended: attendedSet, upcoming: upcomingSet })
-  useEffect(() => { setsRef.current = { attended: attendedSet, upcoming: upcomingSet } })
-
-  // Stable reader functions that never recreate - they read from refs
-  const isAttended = useCallback((eventId: string) => setsRef.current.attended.has(eventId), [])
-  const isUpcoming = useCallback((eventId: string) => setsRef.current.upcoming.has(eventId), [])
-  const didSeeArtist = useCallback((eventId: string, artistId: string) =>
-    (stateRef.current.seenArtists[eventId] ?? []).includes(artistId),
-  [])
-  const didWantToSee = useCallback((eventId: string, artistId: string) =>
-    (stateRef.current.wantToSee[eventId] ?? []).includes(artistId),
-  [])
-  const getSeenCount = useCallback((eventId: string) => {
-    if (!setsRef.current.attended.has(eventId) && !setsRef.current.upcoming.has(eventId)) return 0
-    return (stateRef.current.seenArtists[eventId] ?? []).length
-  }, [])
-  const getRating = useCallback((artistId: string) => stateRef.current.artistRatings[artistId] ?? 0, [])
-  const getPerformanceRating = useCallback((eventId: string, artistId: string) =>
-    stateRef.current.performanceRatings[`${eventId}::${artistId}`] ?? 0,
-  [])
-  const getFestivalRating = useCallback((eventId: string) =>
-    stateRef.current.festivalRatings?.[eventId] ?? 0,
-  [])
-  const getNotes = useCallback((artistId: string) => stateRef.current.artistNotes[artistId] ?? '', [])
-  const getFestivalNotes = useCallback((eventId: string) => stateRef.current.festivalNotes[eventId] ?? '', [])
-  const getFestivalPublicComment = useCallback((eventId: string) => stateRef.current.festivalPublicComments[eventId] ?? '', [])
-  const getFestivalMeta = useCallback((eventId: string) => {
-    return stateRef.current.festivalMeta[eventId] ?? null
-  }, [])
-  const getArtistMeta = useCallback((artistId: string) => stateRef.current.artistMeta[artistId] ?? null, [])
-
-  const getArtistSeenCounts = useCallback(() => {
-    const s = stateRef.current
-    const attended = setsRef.current.attended
-    const upcoming = setsRef.current.upcoming
+  const getArtistSeenCounts = () => {
     const counts: Record<string, { count: number; events: string[] }> = {}
-    for (const [eventId, artistIds] of Object.entries(s.seenArtists)) {
+    for (const [eventId, artistIds] of Object.entries(state.seenArtists)) {
       if (!attended.has(eventId) && !upcoming.has(eventId)) continue
       for (const artistId of artistIds) {
         if (!counts[artistId]) counts[artistId] = { count: 0, events: [] }
@@ -54,47 +34,55 @@ export function useUserDataReaders(state: UserDataState) {
       }
     }
     return counts
-  }, [])
+  }
 
-  const getAverageArtistRating = useCallback((artistId: string) => {
+  const getAverageArtistRating = (artistId: string) => {
     const ratings: number[] = []
-    for (const [key, value] of Object.entries(stateRef.current.performanceRatings)) {
+    for (const [key, value] of Object.entries(state.performanceRatings)) {
       if (!value) continue
       const keyArtistId = key.split('::')[1]
       if (keyArtistId === artistId) ratings.push(value)
     }
     if (ratings.length === 0) return 0
     return ratings.reduce((sum, r) => sum + r, 0) / ratings.length
-  }, [])
+  }
 
-  const getB2bSets = useCallback((festivalId: string): B2bSetData[] =>
-    stateRef.current.b2bSets[festivalId] ?? [],
-  [])
+  const getB2bSets = (festivalId: string): B2bSetData[] => state.b2bSets[festivalId] ?? []
 
-  const exportData = useCallback(() => {
-    const blob = new Blob([JSON.stringify(stateRef.current, null, 2)], { type: 'application/json' })
+  const exportData = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = 'goodraves-data.json'
     a.click()
     URL.revokeObjectURL(url)
-  }, [])
+  }
 
-  // Keyed on `state`, not `[]`: the individual reader functions above are
-  // stable forever (they read from refs), but this wrapping object is what
-  // UserDataContext spreads into UserDataActionsContext's value. React skips
-  // re-rendering a context's consumers when its value's reference is
-  // unchanged — so with `[]` here, a memo'd list item (FestivalCard,
-  // ArtistCard, ...) that only subscribes via useUserDataActions() never
-  // re-rendered on a state change at all, since nothing it was actually
-  // subscribed to ever changed identity. The reader functions themselves
-  // still return fresh data (via stateRef) either way; this is what makes a
-  // component actually look at that fresh data again.
-  return useMemo(() => ({
+  return {
     isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalPublicComment, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
     getB2bSets,
-  }), [state])
+  }
+}
+
+/** Derived read-only accessors for user data state.
+ *
+ * The readers close over the current `state` and are rebuilt whenever it
+ * changes, so a component calling them during render always sees the state
+ * it is rendering with. Don't move them back to refs synced in an effect:
+ * effects run after render, so readers called on the render where data first
+ * arrives would return the previous state.
+ *
+ * Rebuilding on `state` also gives the returned object a new identity per
+ * state change, which UserDataContext spreads into UserDataActionsContext's
+ * value. That is what makes memo'd list items (FestivalCard, ArtistCard, ...)
+ * that only subscribe via useUserDataActions() re-render on a state change;
+ * with a never-changing value React would skip them. Reader functions changing
+ * identity also invalidates consumers' `useMemo`s that list them as deps. */
+export function useUserDataReaders(state: UserDataState) {
+  const attendedSet = useMemo(() => new Set(state.attendedFestivals), [state.attendedFestivals])
+  const upcomingSet = useMemo(() => new Set(state.upcomingFestivals), [state.upcomingFestivals])
+  return useMemo(() => buildReaders(state, attendedSet, upcomingSet), [state, attendedSet, upcomingSet])
 }

@@ -147,7 +147,9 @@ slots; `slot_date` distinguishes days once a multi-day festival's rows are merge
 enough to auto-merge; resolved on `/admin/duplicates`; dismissed pairs stay so they're never
 re-suggested), `festival_merges` (audit trail for the hard-merge dedup in `festival-merge.ts` — old
 `/festival/<id>` URLs for a merged-away row redirect via `getMergeRedirectTarget`, and every
-importer checks `resolveMergedFestivalId` first so a merged-away id is never re-created).
+importer checks `resolveMergedFestivalId` first so a merged-away id is never re-created),
+`cron_runs` (one row per cron run, written by `recordCronRun` in `cron-runs-core.ts`, which wraps
+both cron routes; read by the `/admin` dashboard; pruned after 90 days).
 
 ## Conventions
 

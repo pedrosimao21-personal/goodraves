@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getOptionalUserId, isUserAdmin } from '@/db/actions/festival-helpers'
 import { listPendingDuplicates } from '@/db/actions/festival-duplicates-core'
@@ -19,6 +20,7 @@ export default async function AdminDuplicatesPage() {
   return (
     <div className="page fade-in">
       <div className="container" style={{ paddingTop: 32 }}>
+        <Link href="/admin" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>← Admin</Link>
         <h1 className="section-title" style={{ fontSize: '2rem', marginBottom: 8 }}>Possible duplicates</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
           The daily check found these pairs but wasn&apos;t sure enough to merge them. Merging keeps the chosen

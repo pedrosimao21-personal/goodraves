@@ -237,6 +237,27 @@ export const rateLimitCounters = pgTable(
   ]
 );
 
+// ── Cron Runs (history for the /admin dashboard) ───────
+// One row per Vercel Cron run, written by recordCronRun (cron-runs-core.ts).
+// Inserted as 'running' when the job starts; a run killed at maxDuration
+// keeps finishedAt null. Rows older than CRON_RUN_RETENTION_DAYS are pruned
+// by each new run.
+export const cronRuns = pgTable(
+  "cron_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    job: text("job").notNull(), // "import-pf-agenda" | "daily-maintenance"
+    status: text("status").notNull().default("running"), // "running" | "ok" | "partial" | "error"
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    summary: text("summary"), // JSON.stringify'd route response
+    error: text("error"),
+  },
+  (t) => [
+    index("cron_runs_job_started_at_idx").on(t.job, sql`${t.startedAt} DESC`),
+  ]
+);
+
 // ── User Festival Artist Ratings (per-festival performance) ─
 export const userFestivalArtistRatings = pgTable(
   "user_festival_artist_ratings",

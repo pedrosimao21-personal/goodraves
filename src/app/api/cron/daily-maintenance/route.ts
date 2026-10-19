@@ -4,6 +4,7 @@ import { runDedupe } from "@/db/actions/festival-dedupe-core";
 import { refreshUpcomingTimetables } from "@/db/actions/festival-timetable-refresh";
 import { autoLinkPFTimetables } from "@/db/actions/festival-timetable-autolink";
 import { timetableCacheTag } from "@/db/actions/festival-helpers";
+import { recordCronRun } from "@/db/actions/cron-runs-core";
 import { isValidCronBearer } from "@/lib/cron-auth";
 import { toIsoDate, addDays } from "@/lib/dates";
 import { PF_AUTOLINK_DAYS_AHEAD, PF_AUTOLINK_RECHECK_DAYS } from "@/lib/constants";
@@ -49,6 +50,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const summary = await recordCronRun("daily-maintenance", runMaintenance);
+  return NextResponse.json(summary);
+}
+
+async function runMaintenance() {
   const startedAt = Date.now();
   const dedupe = await runDedupe({
     onMerged: (winnerId, loserIds) => {
@@ -71,5 +77,5 @@ export async function GET(request: Request) {
     onLinked: revalidateFestival,
   });
 
-  return NextResponse.json({ dedupe, timetables, autoLink });
+  return { dedupe, timetables, autoLink };
 }

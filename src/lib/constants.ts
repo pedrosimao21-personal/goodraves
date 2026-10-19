@@ -84,3 +84,14 @@ export const TIMETABLE_REFRESH_DAYS_AHEAD = 14;
 export const PF_AUTOLINK_DAYS_AHEAD = 30;
 /** Don't search Partyflock again for the same unmatched festival more often than this. */
 export const PF_AUTOLINK_RECHECK_DAYS = 3;
+
+/** cron_runs rows older than this are pruned by each new cron run. */
+export const CRON_RUN_RETENTION_DAYS = 90;
+/** Runs per job listed in the /admin run history. */
+export const ADMIN_CRON_HISTORY_LIMIT = 14;
+/** /admin flags a daily job as overdue once its last finished run is older than this (24h + Hobby's ~59 min trigger slack). */
+export const CRON_OVERDUE_HOURS = 26;
+/** A cron_runs row still 'running' after this long was killed (routes cap at maxDuration = 300s). */
+export const CRON_RUN_STUCK_MINUTES = 10;
+/** Window for the /admin "recent activity" counts. */
+export const ADMIN_RECENT_DAYS = 7;

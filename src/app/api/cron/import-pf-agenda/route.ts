@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { importPFAgenda } from "@/db/actions/festival-import-pf-agenda";
 import { refreshDuePFFestivals } from "@/db/actions/festival-refresh-pf";
+import { recordCronRun } from "@/db/actions/cron-runs-core";
 import { isValidCronBearer } from "@/lib/cron-auth";
 
 // rate_limit_counters buckets are only ever cleaned up for the specific
@@ -41,6 +42,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const summary = await recordCronRun("import-pf-agenda", runImport);
+  return NextResponse.json(summary);
+}
+
+async function runImport() {
   const startedAt = Date.now();
   const refresh = await refreshDuePFFestivals({ deadlineMs: DEADLINE_MS });
   const importDeadline = Math.max(0, DEADLINE_MS - (Date.now() - startedAt));
@@ -53,5 +59,5 @@ export async function GET(request: Request) {
     .execute(sql`DELETE FROM rate_limit_counters WHERE window_start < now() - interval '1 hour' * ${RATE_LIMIT_COUNTER_MAX_AGE_HOURS}`)
     .catch((err) => console.error("[cron] rate_limit_counters cleanup failed:", err));
 
-  return NextResponse.json({ refresh, import: importSummary });
+  return { refresh, import: importSummary };
 }

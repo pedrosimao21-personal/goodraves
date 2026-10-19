@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useRef, useEffect } from 'react'
 import { useTheme } from '@/context/ThemeContext'
+import { useUserData } from '@/context/UserDataContext'
 
 const LogoIcon = () => (
   <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
@@ -85,6 +86,7 @@ export default function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const { theme, toggleTheme } = useTheme()
+  const { isAdmin } = useUserData()
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -169,6 +171,15 @@ export default function Navbar() {
                     >
                       Go to Profile
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{ padding: '12px 16px', color: 'inherit', textDecoration: 'none', fontSize: '0.9rem', borderBottom: '1px solid var(--border)' }}
+                      >
+                        Admin
+                      </Link>
+                    )}
                     <button
                       onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: '/' }) }}
                       style={{ padding: '12px 16px', background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', fontSize: '0.9rem' }}

@@ -39,7 +39,9 @@ Festival and artist data is ingested through the import server actions in
 `src/db/actions/` (Resident Advisor, FestivalFans, Partyflock), driven from the app
 UI and two daily crons (`vercel.json`): the Partyflock agenda import, and a maintenance run that
 merges duplicate festivals, re-syncs upcoming timetables and links missing ones to Partyflock
-(uncertain duplicates wait for an admin on `/admin/duplicates`). For a manual backfill or ad-hoc run:
+(uncertain duplicates wait for an admin on `/admin/duplicates`). Each cron run is recorded in
+`cron_runs`; the admin dashboard at `/admin` shows run history, open review work and festival
+counts. For a manual backfill or ad-hoc run:
 
 ```bash
 npx tsx --env-file=.env scripts/import-pf-agenda.ts     # Partyflock agenda backfill
@@ -95,6 +97,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 | `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering). `slot_date` distinguishes days once a multi-day festival's per-day rows are merged into one — see `festival_merges` |
 | `festival_merges` | Audit trail for the hard-merge duplicate-festival dedup (`src/db/actions/festival-merge.ts`, `scripts/dedupe-festivals.ts`): records which festival id was merged into which winner, plus a JSON snapshot of the loser's full state. Old `/festival/<id>` links for a merged-away row redirect to the winner instead of 404ing, and importers resolve a merged-away id to its winner instead of re-creating it |
 | `festival_duplicate_candidates` | Review queue for the daily dedupe: festival pairs that might be the same event but weren't certain enough to auto-merge. Resolved by an admin on `/admin/duplicates` — merged (row cascades away with the loser) or dismissed (kept, so the pair is never suggested again) |
+| `cron_runs` | One row per Vercel Cron run (`job`, `status`, start/finish times, the route's JSON `summary`, thrown `error`), written by `recordCronRun` in `src/db/actions/cron-runs-core.ts` and shown on `/admin`. Inserted as `running` before the job starts, so a run killed at `maxDuration` stays visible with no `finished_at`. Rows older than 90 days are pruned by each run |
 | `user_festivals` | A user's attendance/interest, with optional `rating` and `notes` |
 | `user_festival_artist_ratings` | Per-festival, per-artist performance ratings |
 | `user_artist_global` | A user's overall rating/notes for an artist |

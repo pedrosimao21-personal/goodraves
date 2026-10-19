@@ -10,6 +10,7 @@ import { getFollowSuggestions, type FollowSuggestion } from '@/db/actions/follow
 import FollowingGigList from './FollowingGigList'
 import FollowedArtistsGrid from './FollowedArtistsGrid'
 import FollowSuggestions from './FollowSuggestions'
+import FollowingArtistSearch from './FollowingArtistSearch'
 
 const SKELETON_ROWS = [1, 2, 3]
 
@@ -29,7 +30,7 @@ function FollowingSkeleton() {
 function EmptyFollowing() {
   return (
     <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-      You don&apos;t follow anyone yet. Tap ♡ on an artist in a{' '}
+      You don&apos;t follow anyone yet. Search above, or tap ♡ on an artist in a{' '}
       <Link href="/" style={{ color: 'var(--accent-purple)' }}>festival lineup</Link> or on their profile, and
       their upcoming festivals show up here.
     </p>
@@ -84,6 +85,7 @@ export default function FollowingPage() {
           Upcoming festivals of the artists you follow, straight from Goodraves lineups.
         </p>
 
+        <FollowingArtistSearch />
         {!hasArtists && <EmptyFollowing />}
         <FollowSuggestions suggestions={suggestions} />
 

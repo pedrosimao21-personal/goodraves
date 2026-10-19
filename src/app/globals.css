@@ -4096,6 +4096,36 @@ img {
   border-radius: 12px;
 }
 
+.artist-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.artist-search-results {
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.artist-search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.artist-search-result:last-child {
+  border-bottom: none;
+}
+
 .follow-suggestions-row {
   display: flex;
   gap: 10px;

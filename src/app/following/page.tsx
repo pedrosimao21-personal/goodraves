@@ -87,7 +87,6 @@ export default function FollowingPage() {
 
         <FollowingArtistSearch />
         {!hasArtists && <EmptyFollowing />}
-        <FollowSuggestions suggestions={suggestions} />
 
         {hasArtists && (
           <>
@@ -104,6 +103,10 @@ export default function FollowingPage() {
             </section>
           </>
         )}
+
+        <div style={{ marginTop: hasArtists ? 40 : 0 }}>
+          <FollowSuggestions suggestions={suggestions} />
+        </div>
       </div>
     </div>
   )

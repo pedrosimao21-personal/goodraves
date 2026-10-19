@@ -1,13 +1,13 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, and, or, inArray, lt, desc, sql } from "drizzle-orm";
-import { friendships, users, userFestivals, festivals, userFestivalArtistRatings, artists } from "@/db/schema";
+import { eq, and, or, inArray, desc, sql } from "drizzle-orm";
+import { friendships, users, userFestivalArtistRatings, artists } from "@/db/schema";
 import { requireAuth, enforceRateLimit } from "./festival-helpers";
+import { fetchUsernamesByIds } from "./friend-ids";
 import { RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 
 const MAX_USERNAME_LENGTH = 30;
-const FEED_PAGE_SIZE = 20;
 const MIN_USER_SEARCH_LENGTH = 2;
 const MAX_USER_SEARCH_RESULTS = 8;
 
@@ -36,15 +36,6 @@ async function findUserByUsername(username: string) {
     .where(sql`lower(${users.username}) = lower(${username})`)
     .limit(1);
   return row ?? null;
-}
-
-async function fetchUsernamesByIds(ids: string[]): Promise<Map<string, string>> {
-  if (ids.length === 0) return new Map();
-  const rows = await db
-    .select({ id: users.id, username: users.username })
-    .from(users)
-    .where(inArray(users.id, ids));
-  return new Map(rows.map((r) => [r.id, r.username]));
 }
 
 // ── Send / respond / remove ─────────────────────────────
@@ -196,79 +187,13 @@ export async function getFriendsData(): Promise<{
   return { friends, incoming, outgoing };
 }
 
-export type FeedItem = {
-  userId: string;
-  username: string;
-  festivalId: string;
-  festivalName: string;
-  festivalDate: string;
-  festivalImage: string | null;
-  rating: number | null;
-  publicComment: string | null;
-  updatedAt: string;
-  seenCount: number;
-};
-
-/**
- * Friends' recent festival activity (attended/upcoming, ratings, public
- * comments), newest first. `cursor` is the `updatedAt` of the last item from
- * a previous page — keyset pagination, not OFFSET, so paging stays cheap as
- * a user's (or their friends') history grows.
- */
-export async function getFriendsFeed(cursor?: string): Promise<{ items: FeedItem[]; nextCursor: string | null }> {
-  const userId = await requireAuth();
-
-  const friendRows = await db
-    .select({ requesterId: friendships.requesterId, addresseeId: friendships.addresseeId })
-    .from(friendships)
-    .where(and(eq(friendships.status, "accepted"), or(eq(friendships.requesterId, userId), eq(friendships.addresseeId, userId))));
-
-  const friendIds = friendRows.map((r) => (r.requesterId === userId ? r.addresseeId : r.requesterId));
-  if (friendIds.length === 0) return { items: [], nextCursor: null };
-
-  const conditions = [inArray(userFestivals.userId, friendIds)];
-  if (cursor) conditions.push(lt(userFestivals.updatedAt, new Date(cursor)));
-
-  const rows = await db
-    .select({
-      userId: userFestivals.userId,
-      username: users.username,
-      festivalId: userFestivals.festivalId,
-      festivalName: festivals.name,
-      festivalDate: festivals.date,
-      festivalImage: festivals.imageUrl,
-      rating: userFestivals.rating,
-      publicComment: userFestivals.publicComment,
-      updatedAt: userFestivals.updatedAt,
-      // Covered by the user_festival_artist_ratings PK (userId, festivalId,
-      // artistId) — no new index needed for this correlated count.
-      seenCount: sql<number>`(
-        SELECT count(*)::int FROM ${userFestivalArtistRatings}
-        WHERE ${userFestivalArtistRatings.userId} = ${userFestivals.userId}
-          AND ${userFestivalArtistRatings.festivalId} = ${userFestivals.festivalId}
-      )`,
-    })
-    .from(userFestivals)
-    .innerJoin(festivals, eq(userFestivals.festivalId, festivals.id))
-    .innerJoin(users, eq(userFestivals.userId, users.id))
-    .where(and(...conditions))
-    // Secondary key is purely for determinism on any remaining exact
-    // updated_at ties, not meaningful chronology on its own.
-    .orderBy(desc(userFestivals.updatedAt), userFestivals.festivalId)
-    .limit(FEED_PAGE_SIZE);
-
-  const items = rows.map((r) => ({ ...r, updatedAt: r.updatedAt.toISOString() }));
-  const nextCursor = items.length === FEED_PAGE_SIZE ? items[items.length - 1].updatedAt : null;
-  return { items, nextCursor };
-}
-
 export type FriendArtistRating = { artistName: string; rating: number | null };
 
 /**
  * The artists a friend saw at a specific festival, fetched on demand from
  * the feed's "N DJs seen" pill rather than embedded in every feed row.
  * `friendUserId`/`festivalId` come from the client, so — unlike the ids
- * used inside getFriendsFeed, which are derived server-side from the
+ * used inside getFriendsFeed (friends-feed.ts), which are derived server-side from the
  * caller's own friendships — this re-verifies the friendship itself before
  * returning anything: without that check, anyone could read anyone else's
  * seen-artist history by guessing a userId/festivalId pair.

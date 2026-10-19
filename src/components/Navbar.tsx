@@ -36,6 +36,11 @@ const TopDjsIcon = () => (
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
   </svg>
 )
+const FollowingIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+  </svg>
+)
 const ExploreIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
@@ -70,6 +75,7 @@ const MoonIcon = () => (
 const NAV_ITEMS = [
   { to: '/', label: 'Discover', icon: <DiscoverIcon />, end: true },
   { to: '/dashboard', label: 'My Festivals', icon: <MyFestivalsIcon />, end: false },
+  { to: '/following', label: 'Following', icon: <FollowingIcon />, end: false },
   { to: '/top-djs', label: 'Top DJs', icon: <TopDjsIcon />, end: false },
   { to: '/insights', label: 'Insights', icon: <ChartIcon />, end: false },
   { to: '/friends', label: 'Friends', icon: <FriendsIcon />, end: false },

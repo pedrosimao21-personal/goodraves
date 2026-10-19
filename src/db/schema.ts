@@ -284,6 +284,28 @@ export const userArtistWantToSee = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.festivalId, t.artistId] })]
 );
 
+// ── Artist Follows ──────────────────────────────────────
+// A user follows an artist to see that artist's upcoming festivals (from our
+// own festival_artists lineups, whatever source the festival came from) on
+// /following. Visible to the user's accepted friends, never public.
+export const userArtistFollows = pgTable(
+  "user_artist_follows",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    artistId: uuid("artist_id")
+      .notNull()
+      .references(() => artists.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.artistId] }),
+    index("user_artist_follows_artist_id_idx").on(t.artistId),
+    index("user_artist_follows_user_created_idx").on(t.userId, sql`${t.createdAt} DESC`),
+  ]
+);
+
 // ── Genres ─────────────────────────────────────────────
 export const genres = pgTable("genres", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -13,6 +13,7 @@ import { useUserData } from '@/context/UserDataContext'
 import { BackIcon } from '@/components/icons'
 import { SimilarArtistCard } from './SimilarArtistCard'
 import { ArtistHeader, AlbumList, TopTracksList, UpcomingShowsList } from './ArtistSections'
+import ArtistFollowSection from './ArtistFollowSection'
 
 const MAX_TAGS = 8
 
@@ -207,6 +208,9 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
           setNotes={setNotes}
           getAverageArtistRating={getAverageArtistRating}
         />
+        {/* The URL id can be a not-yet-resolved one (see getOrCreateArtistByName
+            above), so follow the DB row once it's loaded, never the URL id. */}
+        {artist && <ArtistFollowSection artistId={artist.id} />}
 
         <div className="divider" />
 

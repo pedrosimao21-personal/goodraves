@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getFriendsFeed, getFriendArtistRatingsForFestival, type FeedItem, type FriendArtistRating } from '@/db/actions/friends'
+import { getFriendArtistRatingsForFestival, type FriendArtistRating } from '@/db/actions/friends'
+import { getFriendsFeed, type FeedItem, type FestivalFeedItem, type FollowFeedItem } from '@/db/actions/friends-feed'
 import { formatDate, formatRelativeTime } from '@/lib/format-date'
 import { isFestivalPast } from '@/lib/festival-date'
 
@@ -11,7 +12,7 @@ const STAR_COUNT = 5
 
 /** "{user} rated / went to / is going to {festival}" — derived from data
  * already on the row, no separate action-type column needed. */
-function getVerb(item: FeedItem): string {
+function getVerb(item: FestivalFeedItem): string {
   if (item.rating) return 'rated'
   return isFestivalPast(item.festivalDate) ? 'went to' : 'is going to'
 }
@@ -60,7 +61,7 @@ function DjsSeenPill({ friendUserId, festivalId, seenCount }: { friendUserId: st
   )
 }
 
-function FeedRow({ item }: { item: FeedItem }) {
+function FestivalFeedRow({ item }: { item: FestivalFeedItem }) {
   return (
     <div style={{
       display: 'flex', gap: 12, padding: '14px 16px', background: 'var(--bg-card)',
@@ -98,6 +99,36 @@ function FeedRow({ item }: { item: FeedItem }) {
   )
 }
 
+function FollowFeedRow({ item }: { item: FollowFeedItem }) {
+  const artistHref = `/artist/${item.artistId}/${encodeURIComponent(item.artistName)}`
+  return (
+    <div style={{
+      display: 'flex', gap: 12, padding: '14px 16px', background: 'var(--bg-card)',
+      border: '1px solid var(--border)', borderRadius: 12, alignItems: 'center',
+    }}>
+      {item.artistImage ? (
+        <Image src={item.artistImage} alt={item.artistName} width={48} height={48} sizes="48px" style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+      ) : (
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--gradient-card)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎤</div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+          <span><strong style={{ color: 'var(--text-primary)' }}>{item.username}</strong> started following</span>
+          <span style={{ flexShrink: 0, fontSize: '0.78rem' }}>{formatRelativeTime(item.updatedAt)}</span>
+        </div>
+        <Link href={artistHref} style={{ fontWeight: 600, color: 'inherit', textDecoration: 'none' }}>
+          {item.artistName}
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function FeedRow({ item }: { item: FeedItem }) {
+  if (item.kind === 'follow') return <FollowFeedRow item={item} />
+  return <FestivalFeedRow item={item} />
+}
+
 export default function FriendsFeed({ hasFriends }: { hasFriends: boolean }) {
   const [items, setItems] = useState<FeedItem[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
@@ -123,7 +154,7 @@ export default function FriendsFeed({ hasFriends }: { hasFriends: boolean }) {
   }
 
   if (!hasFriends) {
-    return <p style={{ color: 'var(--text-muted)' }}>Add a friend above to see their festival activity here.</p>
+    return <p style={{ color: 'var(--text-muted)' }}>Add a friend above to see their festival and follow activity here.</p>
   }
 
   if (loading) {
@@ -143,7 +174,7 @@ export default function FriendsFeed({ hasFriends }: { hasFriends: boolean }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {items.map((item, i) => (
-        <FeedRow key={`${item.userId}-${item.festivalId}-${i}`} item={item} />
+        <FeedRow key={`${item.kind}-${item.userId}-${item.updatedAt}-${i}`} item={item} />
       ))}
       {cursor && (
         <button className="btn btn-ghost btn-sm" onClick={handleLoadMore} disabled={loadingMore} style={{ alignSelf: 'center', marginTop: 8 }}>

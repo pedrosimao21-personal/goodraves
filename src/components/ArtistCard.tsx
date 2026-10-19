@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import StarRating from './StarRating'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
+import FollowButton from './FollowButton'
 
 const ArtistRenameModal = lazy(() => import('./ArtistRenameModal'))
 const B2bSplitModal = lazy(() => import('./B2bSplitModal'))
@@ -135,6 +136,8 @@ const ArtistCard = memo(function ArtistCard({
             </button>
           </div>
         )}
+
+        <FollowButton artistId={dbId} artistName={displayName} variant="icon" />
 
         {/* Options button — visible on card hover only, admin-only */}
         {isAdmin && (

@@ -6,6 +6,7 @@ import { type ArtistData } from '@/db/actions/artists'
 import { type RAUpcomingEvent } from '@/services/ra/client'
 import { getCountryFlag } from '@/services/ra/country-flags'
 import { ResidentAdvisorIcon, SpotifyIcon } from '@/components/icons'
+import FollowButton from '@/components/FollowButton'
 import { formatFollowers, formatPlaycount } from './format-counts'
 
 import { MAX_NOTES_LENGTH } from '@/lib/constants'
@@ -93,7 +94,11 @@ export function ArtistHeader({
       )}
 
       <div className="artist-detail-info">
-        <h1 className="artist-detail-name">{displayName}</h1>
+        <div className="artist-detail-name-row">
+          <h1 className="artist-detail-name">{displayName}</h1>
+          {/* Follow the loaded DB row, never the URL id (it can be a not-yet-resolved one). */}
+          {artist && <FollowButton artistId={artist.id} artistName={artist.name} />}
+        </div>
 
         {artist?.countryName && (
           <div className="artist-country">

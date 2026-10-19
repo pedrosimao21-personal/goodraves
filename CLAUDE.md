@@ -138,7 +138,9 @@ pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock ti
 `artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
-`user_festival_artist_ratings`, `user_artist_global`, `festival_b2b_sets`/`_members`
+`user_festival_artist_ratings`, `user_artist_global`, `user_artist_follows` (followed artists →
+`/following`, which reads their upcoming festivals from `festival_artists` only; follows are
+visible to friends, never public), `festival_b2b_sets`/`_members`
 (splitting back-to-back DJ sets into individuals), `festival_timetable_slots` (per-stage
 slots; `slot_date` distinguishes days once a multi-day festival's rows are merged),
 `festival_duplicate_candidates` (review queue for the daily dedupe — pairs that weren't certain

@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { SpotifyIcon } from '@/components/icons'
+import FollowButton from '@/components/FollowButton'
 
 const STAR_COUNT = 5
 const STAR_COLOR_FILLED = 'var(--star-filled)'
@@ -187,6 +188,11 @@ function ArtistRow({ artist, index, displayImage, hasSpotifyImage, onSelect }: {
         ) : (
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>No rating yet</div>
         )}
+      </div>
+
+      {/* FollowButton stops the click, so following doesn't also open the row's modal. */}
+      <div style={{ flexShrink: 0 }}>
+        <FollowButton artistId={artist.id} artistName={artist.name} isCompactOnMobile />
       </div>
 
       <div style={{ textAlign: 'center', flexShrink: 0 }}>

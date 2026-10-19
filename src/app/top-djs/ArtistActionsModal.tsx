@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/format-date'
+import FollowButton from '@/components/FollowButton'
 
 const MODAL_Z_INDEX = 1000
 const MODAL_MAX_WIDTH = 400
@@ -100,6 +101,9 @@ function MainOptionsView({
           Seen {artist.count} {artist.count === 1 ? 'time' : 'times'}
         </div>
         {artist.avgSetRating > 0 && <InlineStarRating rating={artist.avgSetRating} />}
+        <div style={{ marginTop: 12 }}>
+          <FollowButton artistId={artist.id} artistName={artist.name} />
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

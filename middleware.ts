@@ -4,10 +4,11 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Protect dashboard/friends routes — require authentication
+  // Protect dashboard/friends/following routes — require authentication
   const isProtected =
     pathname === "/dashboard" || pathname.startsWith("/dashboard/") ||
-    pathname === "/friends" || pathname.startsWith("/friends/");
+    pathname === "/friends" || pathname.startsWith("/friends/") ||
+    pathname === "/following" || pathname.startsWith("/following/");
 
   if (isProtected && !req.auth) {
     const loginUrl = new URL("/login", req.url);
@@ -22,5 +23,5 @@ export const config = {
   // /api/auth and /api/register are excluded here (rather than checked and
   // passed through inside the handler above) so NextAuth's auth() wrapper
   // skips its session decode entirely for routes that never need it.
-  matcher: ["/dashboard/:path*", "/friends/:path*", "/api/((?!auth|register).*)"],
+  matcher: ["/dashboard/:path*", "/friends/:path*", "/following/:path*", "/api/((?!auth|register).*)"],
 };

@@ -37,6 +37,14 @@ function overlaps(a: [number, number], b: [number, number]): boolean {
   return a[0] < b[1] && b[0] < a[1]
 }
 
+/** True if two same-day sets overlap in time (overnight sets handled). */
+export function doSetsOverlap(
+  a: { startTime: string; endTime: string },
+  b: { startTime: string; endTime: string }
+): boolean {
+  return overlaps(toRange(a), toRange(b))
+}
+
 /**
  * Find overlapping pairs among the timetable's slots, restricted to the
  * given artist ids (in practice: the ones a user has marked "want to see" —
@@ -65,7 +73,7 @@ export function findClashes(timetable: TimetableData, artistIds: Set<string>): C
         const a = slots[i]
         const b = slots[j]
         if (a.stageName === b.stageName) continue
-        if (overlaps(toRange(a), toRange(b))) clashes.push({ slotDate: day, a, b })
+        if (doSetsOverlap(a, b)) clashes.push({ slotDate: day, a, b })
       }
     }
   }

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
+import { FollowsProvider } from '@/context/FollowsContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { THEME_STORAGE_KEY, THEME_COLORS } from '@/lib/theme-constants'
 import { auth } from '../../auth'
@@ -89,12 +90,14 @@ export default async function RootLayout({
         <ThemeProvider>
           <Providers session={session}>
             <UserDataProvider>
-              <Navbar />
-              <ErrorBoundary>
-                <Suspense fallback={null}>
-                  {children}
-                </Suspense>
-              </ErrorBoundary>
+              <FollowsProvider>
+                <Navbar />
+                <ErrorBoundary>
+                  <Suspense fallback={null}>
+                    {children}
+                  </Suspense>
+                </ErrorBoundary>
+              </FollowsProvider>
             </UserDataProvider>
           </Providers>
         </ThemeProvider>

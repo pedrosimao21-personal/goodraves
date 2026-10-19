@@ -8,6 +8,7 @@ import {
   festivalB2bSetMembers,
   userFestivalArtistRatings,
   userArtistGlobal,
+  userArtistFollows,
   artistGenres,
 } from "@/db/schema";
 import { requireAdmin } from "./festival-helpers";
@@ -113,6 +114,9 @@ async function mergeArtistInto(
 
   // Re-point global artist ratings/notes
   await reassignRows(userArtistGlobal, "artistId", sourceId, targetId);
+
+  // Re-point follows
+  await reassignRows(userArtistFollows, "artistId", sourceId, targetId);
 
   // Re-point genre associations
   await reassignRows(artistGenres, "artistId", sourceId, targetId);

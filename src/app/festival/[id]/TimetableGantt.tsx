@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import type { TimetableStage } from '@/db/actions/festivals'
+import { toDayRange } from '@/lib/timetable-time'
 import {
-  parseTimeToMinutes,
   formatMinutesToTime,
   calculateTimeRange,
   generateHourMarkers,
@@ -58,9 +58,14 @@ function getBlockClass(group: SlotGroup, { pickedArtistIds, clashArtistIds }: Hi
   return ''
 }
 
-function ArtistBlock({ group, rangeStart, rangeEnd, highlights }: Range & { group: SlotGroup; highlights: Highlights }) {
-  const leftPct = toPercent(parseTimeToMinutes(group.startTime), rangeStart, rangeEnd)
-  const widthPct = toPercent(parseTimeToMinutes(group.endTime), rangeStart, rangeEnd) - leftPct
+function ArtistBlock({ group, dayStart, rangeStart, rangeEnd, highlights }: Range & {
+  group: SlotGroup
+  dayStart: number
+  highlights: Highlights
+}) {
+  const [start, end] = toDayRange(group, dayStart)
+  const leftPct = toPercent(start, rangeStart, rangeEnd)
+  const widthPct = toPercent(end, rangeStart, rangeEnd) - leftPct
   const timeLabel = `${group.startTime}–${group.endTime}`
   const isB2b = group.artists.length > 1
 
@@ -87,8 +92,9 @@ function ArtistBlock({ group, rangeStart, rangeEnd, highlights }: Range & { grou
   )
 }
 
-function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, highlights }: Range & {
+function StageRow({ stage, dayStart, rangeStart, rangeEnd, hourMarkers, highlights }: Range & {
   stage: TimetableStage
+  dayStart: number
   hourMarkers: number[]
   highlights: Highlights
 }) {
@@ -110,6 +116,7 @@ function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, highlights }: Rang
           <ArtistBlock
             key={`${group.startTime}-${group.slotOrder}`}
             group={group}
+            dayStart={dayStart}
             rangeStart={rangeStart}
             rangeEnd={rangeEnd}
             highlights={highlights}
@@ -122,7 +129,7 @@ function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, highlights }: Rang
 
 /** Stages as rows, time across. Board: Festival (timetable). */
 export default function TimetableGantt({ stages, pickedArtistIds, clashArtistIds }: Props) {
-  const { startMinutes, endMinutes } = calculateTimeRange(stages)
+  const { dayStart, startMinutes, endMinutes } = calculateTimeRange(stages)
   const hourMarkers = generateHourMarkers(startMinutes, endMinutes)
   const highlights = { pickedArtistIds, clashArtistIds }
   const trackWidth = Math.max(MIN_TRACK_WIDTH_PX, ((endMinutes - startMinutes) / MINUTES_PER_HOUR) * HOUR_WIDTH_PX)
@@ -136,6 +143,7 @@ export default function TimetableGantt({ stages, pickedArtistIds, clashArtistIds
           <StageRow
             key={stage.stageOrder}
             stage={stage}
+            dayStart={dayStart}
             rangeStart={startMinutes}
             rangeEnd={endMinutes}
             hourMarkers={hourMarkers}

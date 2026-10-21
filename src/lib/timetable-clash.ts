@@ -1,6 +1,5 @@
 import type { TimetableData } from '@/db/actions/festival-timetable'
-
-const MINUTES_PER_DAY = 1440
+import { type MinuteRange, collectStartTimes, findDayStart, toDayRange } from './timetable-time'
 
 export type ClashSlot = {
   artistId: string
@@ -16,33 +15,23 @@ export type Clash = {
   b: ClashSlot
 }
 
-function toMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number)
-  return h * 60 + m
-}
-
-/**
- * [start, end) in minutes past `slotDate`'s midnight. An overnight set (e.g.
- * 23:00 -> 01:00) has its raw end time smaller than its start — push it past
- * MINUTES_PER_DAY rather than treating it as a negative-length slot.
- */
-function toRange(slot: { startTime: string; endTime: string }): [number, number] {
-  const start = toMinutes(slot.startTime)
-  const rawEnd = toMinutes(slot.endTime)
-  const end = rawEnd <= start ? rawEnd + MINUTES_PER_DAY : rawEnd
-  return [start, end]
-}
-
-function overlaps(a: [number, number], b: [number, number]): boolean {
+function overlaps(a: MinuteRange, b: MinuteRange): boolean {
   return a[0] < b[1] && b[0] < a[1]
 }
 
-/** True if two same-day sets overlap in time (overnight sets handled). */
+/**
+ * True if two same-day sets overlap in time, including sets after midnight.
+ * `dayStart` (see findDayStart) should come from the whole day when known;
+ * without it the two sets' own starts are used, which places them correctly
+ * relative to each other whenever they are less than 12 hours apart, so
+ * every real overlap is still found.
+ */
 export function doSetsOverlap(
   a: { startTime: string; endTime: string },
-  b: { startTime: string; endTime: string }
+  b: { startTime: string; endTime: string },
+  dayStart: number = findDayStart([a.startTime, b.startTime]),
 ): boolean {
-  return overlaps(toRange(a), toRange(b))
+  return overlaps(toDayRange(a, dayStart), toDayRange(b, dayStart))
 }
 
 /**
@@ -59,8 +48,10 @@ export function findClashes(timetable: TimetableData, artistIds: Set<string>): C
   const clashes: Clash[] = []
 
   for (const day of timetable.days) {
+    const stages = timetable.stagesByDay[day] ?? []
+    const dayStart = findDayStart(collectStartTimes(stages))
     const slots: ClashSlot[] = []
-    for (const stage of timetable.stagesByDay[day] ?? []) {
+    for (const stage of stages) {
       for (const slot of stage.slots) {
         if (artistIds.has(slot.artistId)) {
           slots.push({ artistId: slot.artistId, artistName: slot.artistName, stageName: stage.stageName, startTime: slot.startTime, endTime: slot.endTime })
@@ -73,7 +64,7 @@ export function findClashes(timetable: TimetableData, artistIds: Set<string>): C
         const a = slots[i]
         const b = slots[j]
         if (a.stageName === b.stageName) continue
-        if (doSetsOverlap(a, b)) clashes.push({ slotDate: day, a, b })
+        if (doSetsOverlap(a, b, dayStart)) clashes.push({ slotDate: day, a, b })
       }
     }
   }

@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import type { TimetableStage } from '@/db/actions/festivals'
-import { groupSlotsByTime, type SlotGroup } from './timetable-utils'
+import { collectStartTimes, findDayStart } from '@/lib/timetable-time'
+import { groupSlotsByTime, sortGroupsByStart, type SlotGroup } from './timetable-utils'
 import styles from './Timetable.module.css'
 
 type Highlights = {
@@ -46,10 +47,11 @@ function SlotRow({ group, highlights }: { group: SlotGroup; highlights: Highligh
 /** Mobile timetable: one block of rows per stage. Board: FestivalMobile (by stage). */
 export default function TimetableList({ stages, pickedArtistIds, clashArtistIds }: Props) {
   const highlights = { pickedArtistIds, clashArtistIds }
+  const dayStart = findDayStart(collectStartTimes(stages))
   return (
     <div>
       {stages.map(stage => {
-        const slotGroups = groupSlotsByTime(stage.slots)
+        const slotGroups = sortGroupsByStart(groupSlotsByTime(stage.slots), dayStart)
         return (
           <section key={stage.stageOrder} className={styles.listStage}>
             <h3 className={`mono ${styles.listStageName}`}>

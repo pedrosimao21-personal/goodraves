@@ -1,7 +1,5 @@
 import type { TimetableStage, TimetableSlotRow } from '@/db/actions/festivals'
-
-// Minutes in a standard day — used to normalise overnight end times.
-const MINUTES_PER_DAY = 1440
+import { MINUTES_PER_DAY, collectStartTimes, findDayStart, toDayRange } from '@/lib/timetable-time'
 
 export type SlotGroup = {
   startTime: string
@@ -38,21 +36,18 @@ export function groupSlotsByTime(slots: TimetableSlotRow[]): SlotGroup[] {
 }
 
 /**
- * Convert an "HH:MM" string to minutes since midnight.
- * "00:00" is returned as MINUTES_PER_DAY (1440) so that midnight-end
- * slots sort and render correctly after any same-day start time.
+ * Slot groups in time order on the day axis, so a set after midnight comes
+ * after the evening ones. Falls back to the source's slot order on a tie.
  */
-export function parseTimeToMinutes(time: string): number {
-  const [hourStr, minuteStr] = time.split(':')
-  const hours = parseInt(hourStr, 10)
-  const minutes = parseInt(minuteStr, 10)
-  const total = hours * 60 + minutes
-  return total === 0 ? MINUTES_PER_DAY : total
+export function sortGroupsByStart(groups: SlotGroup[], dayStart: number): SlotGroup[] {
+  return [...groups].sort((a, b) =>
+    toDayRange(a, dayStart)[0] - toDayRange(b, dayStart)[0] || a.slotOrder - b.slotOrder,
+  )
 }
 
 /**
- * Convert a minute offset back to an "HH:MM" display string.
- * 1440 renders as "00:00".
+ * Convert a minute offset on the day axis back to an "HH:MM" display string.
+ * 1440 and later wrap round, so 1500 renders as "01:00".
  */
 export function formatMinutesToTime(minutes: number): string {
   const normalised = minutes % MINUTES_PER_DAY
@@ -62,34 +57,37 @@ export function formatMinutesToTime(minutes: number): string {
 }
 
 export type TimeRange = {
+  /** Where the day begins (see findDayStart); slot ranges are relative to it. */
+  dayStart: number
   startMinutes: number
   endMinutes: number
 }
 
 /**
- * Scan all stages and slots to find the earliest start time and latest
- * end time across the entire timetable.
+ * The earliest start and latest end across one day's stages, on the day
+ * axis: a night that runs 22:00–06:00 spans 1320–1800.
  */
 export function calculateTimeRange(stages: TimetableStage[]): TimeRange {
-  let startMinutes = MINUTES_PER_DAY
-  let endMinutes = 0
+  const dayStart = findDayStart(collectStartTimes(stages))
+  let startMinutes = Infinity
+  let endMinutes = -Infinity
 
   for (const stage of stages) {
     for (const slot of stage.slots) {
-      const slotStart = parseTimeToMinutes(slot.startTime)
-      const slotEnd = parseTimeToMinutes(slot.endTime)
-      if (slotStart < startMinutes) startMinutes = slotStart
-      if (slotEnd > endMinutes) endMinutes = slotEnd
+      const [slotStart, slotEnd] = toDayRange(slot, dayStart)
+      startMinutes = Math.min(startMinutes, slotStart)
+      endMinutes = Math.max(endMinutes, slotEnd)
     }
   }
 
-  return { startMinutes, endMinutes }
+  if (startMinutes > endMinutes) return { dayStart, startMinutes: dayStart, endMinutes: dayStart }
+  return { dayStart, startMinutes, endMinutes }
 }
 
 /**
  * Return the minute values of every full hour within the given range,
  * inclusive of the boundary hours.
- * Example: range 780 (13:00) – 1440 (00:00) → [780, 840, …, 1380, 1440]
+ * Example: range 1320 (22:00) – 1800 (06:00) → [1320, 1380, …, 1740, 1800]
  */
 export function generateHourMarkers(startMinutes: number, endMinutes: number): number[] {
   const firstHour = Math.ceil(startMinutes / 60) * 60

@@ -25,13 +25,12 @@ interface B2bSetCardProps {
 }
 
 const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canRate }: B2bSetCardProps) {
-  const { getPerformanceRating, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
+  const { getPerformanceRating, didSeeArtist, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
   const firstMember = b2bSet.members[0]
   const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
-  const [isRatingVisible, setIsRatingVisible] = useState(false)
   const [showUnsplitConfirm, setShowUnsplitConfirm] = useState(false)
   const [showMembersModal, setShowMembersModal] = useState(false)
-  const hasRating = currentRating > 0
+  const isSeenUnrated = currentRating === 0 && Boolean(firstMember) && didSeeArtist(eventId, firstMember.artistId)
   const avatarMembers = b2bSet.members.slice(0, MAX_AVATARS)
   const ariaDisplayName = b2bSet.members.map((m) => m.artistName).join(' b2b ')
 
@@ -88,24 +87,15 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canR
           ))}
         </h3>
 
+        {/* One tap rates every member and marks them as seen (rateB2bSet). */}
         {canRate && (
           <div className={styles.controls}>
-            {hasRating || isRatingVisible ? (
-              <RatingInput
-                value={currentRating}
-                onChange={(rating) => rateB2bSet(b2bSet.id, rating)}
-                label={`Rate ${ariaDisplayName}`}
-              />
-            ) : (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={(e) => { e.stopPropagation(); setIsRatingVisible(true) }}
-                aria-label={`Mark ${ariaDisplayName} as seen`}
-              >
-                Mark seen
-              </button>
-            )}
+            <RatingInput
+              value={currentRating}
+              onChange={(rating) => rateB2bSet(b2bSet.id, rating)}
+              label={`Rate ${ariaDisplayName}`}
+            />
+            {isSeenUnrated && <span className={`mono ${styles.seenNote}`}>Seen</span>}
           </div>
         )}
       </article>

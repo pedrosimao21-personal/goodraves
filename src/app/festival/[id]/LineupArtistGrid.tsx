@@ -30,21 +30,24 @@ export default function LineupArtistGrid({ id, event, spotifyData, canPick, canR
   }, [b2bSets, event])
 
   return (
-    <div className={styles.grid}>
-      {b2bSets.map(b2bSet => (
-        <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} canRate={canRate} />
-      ))}
-      {soloArtists.map((artist: any) => (
-        <ArtistCard
-          key={artist.id}
-          artist={artist}
-          eventId={id}
-          spotifyData={spotifyData[artist.name]}
-          canPick={canPick}
-          canRate={canRate}
-          availableArtistsForB2b={allSoloForB2b}
-        />
-      ))}
-    </div>
+    <>
+      {canRate && <p className={styles.hint}>Tap a square to rate a set. Rating it marks it as seen.</p>}
+      <div className={styles.grid}>
+        {b2bSets.map(b2bSet => (
+          <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} canRate={canRate} />
+        ))}
+        {soloArtists.map((artist: any) => (
+          <ArtistCard
+            key={artist.id}
+            artist={artist}
+            eventId={id}
+            spotifyData={spotifyData[artist.name]}
+            canPick={canPick}
+            canRate={canRate}
+            availableArtistsForB2b={allSoloForB2b}
+          />
+        ))}
+      </div>
+    </>
   )
 }

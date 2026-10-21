@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useUserData } from '@/context/UserDataContext'
 import type { TimetableData } from '@/db/actions/festivals'
 import { findClashes } from '@/lib/timetable-clash'
 import type { FestivalPhase } from '@/lib/festival-date'
@@ -40,6 +41,7 @@ interface FestivalLineupProps {
 
 /** Lineup heading, the view switch and the selected view. Boards: Festival and FestivalMobile. */
 export default function FestivalLineup({ id, event, timetable, spotifyData, phase }: FestivalLineupProps) {
+  const { getSeenCount } = useUserData()
   const { pickedArtistIds, togglePick } = usePicks(id)
   // Read once, so picking the first set doesn't move the visitor to another view.
   const [hadPicksOnLoad] = useState(() => pickedArtistIds.size > 0)
@@ -65,9 +67,11 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
 
   const artistCount = event.attractions.length
   const stageCount = countStages(timetable)
+  const seenCount = getSeenCount(id)
   const summary = [
     `${artistCount} artist${artistCount === 1 ? '' : 's'}`,
     stageCount > 0 ? `${stageCount} stage${stageCount === 1 ? '' : 's'}` : null,
+    seenCount > 0 ? `${seenCount} seen` : null,
   ].filter(Boolean).join(' · ')
 
   if (artistCount === 0) {

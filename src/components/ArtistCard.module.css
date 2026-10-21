@@ -107,6 +107,11 @@
   gap: 4px;
 }
 
+.seenNote {
+  margin-left: 8px;
+  color: var(--gr-tx3);
+}
+
 .pick {
   width: 36px;
   height: 36px;
@@ -133,18 +138,3 @@
   color: var(--gr-on-acc);
 }
 
-.linkButton {
-  min-height: 44px;
-  padding: 0;
-  background: none;
-  border: 0;
-  color: var(--gr-tx2);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.linkButton:hover {
-  color: var(--gr-tx);
-}

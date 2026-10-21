@@ -42,14 +42,14 @@ const ArtistCard = memo(function ArtistCard({
   canRate?: boolean
   availableArtistsForB2b?: { id: string; name: string }[]
 }) {
-  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin, didWantToSee, toggleWantToSee } = useUserDataActions()
+  const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin, didWantToSee, didSeeArtist, toggleWantToSee } = useUserDataActions()
   const averageRating = getAverageArtistRating(artist.id)
   const performanceRating = getPerformanceRating(eventId, artist.id)
   const wantsToSee = didWantToSee(eventId, artist.id)
-  const [isStarRatingVisible, setIsStarRatingVisible] = useState(false)
   const [menuState, setMenuState] = useState<MenuState>('closed')
   const [nameOverride, setNameOverride] = useState<string | null>(null)
-  const hasRating = performanceRating > 0
+  // A set can be stored as seen with no rating; empty squares alone would read as untouched.
+  const isSeenUnrated = performanceRating === 0 && didSeeArtist(eventId, artist.id)
 
   const displayName = nameOverride ?? artist.name
   const displayImage = artist.image || spotifyData?.image || null
@@ -135,35 +135,12 @@ const ArtistCard = memo(function ArtistCard({
           )}
         </div>
 
+        {/* One tap rates the set and marks it as seen; tapping the current
+            square again clears both (setPerformanceRating). */}
         {canRate && (
           <div className={styles.controls}>
-            {hasRating || isStarRatingVisible ? (
-              <>
-                <StarRating artistId={artist.id} eventId={eventId} artistName={displayName} />
-                {/* Escape hatch for a mis-tap: only while the squares were opened
-                    manually and nothing has been rated yet, so there is no
-                    saved rating to undo — just hide them again. */}
-                {isStarRatingVisible && !hasRating && (
-                  <button
-                    type="button"
-                    className={styles.linkButton}
-                    onClick={() => setIsStarRatingVisible(false)}
-                    aria-label={`Cancel marking ${displayName} as seen`}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => setIsStarRatingVisible(true)}
-                aria-label={`Mark ${displayName} as seen`}
-              >
-                Mark seen
-              </button>
-            )}
+            <StarRating artistId={artist.id} eventId={eventId} artistName={displayName} />
+            {isSeenUnrated && <span className={`mono ${styles.seenNote}`}>Seen</span>}
           </div>
         )}
       </article>

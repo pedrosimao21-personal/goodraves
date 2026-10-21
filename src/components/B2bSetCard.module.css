@@ -66,6 +66,11 @@
   align-items: center;
 }
 
+.seenNote {
+  margin-left: 8px;
+  color: var(--gr-tx3);
+}
+
 .adminButton {
   position: absolute;
   top: 4px;

@@ -111,6 +111,12 @@
   gap: 16px;
 }
 
+.hint {
+  margin-bottom: 16px;
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
 .footnote {
   margin-top: 12px;
   color: var(--gr-tx3);

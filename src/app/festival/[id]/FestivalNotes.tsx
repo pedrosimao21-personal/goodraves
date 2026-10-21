@@ -1,17 +1,22 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useId } from 'react'
 import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
+import styles from './FestivalYourNight.module.css'
 
 const SAVED_MESSAGE_DURATION_MS = 2000
+const NOTES_MAX_LENGTH = 5000
+const DEFAULT_ROWS = 3
 
-export default function FestivalNotes({ eventId, notes, onSave, label = 'Personal Notes', placeholder = 'Add notes about this event...' }: {
+export default function FestivalNotes({ eventId, notes, onSave, label, placeholder, rows = DEFAULT_ROWS }: {
   eventId: string
   notes: string
   onSave: (eventId: string, notes: string) => Promise<void>
-  label?: string
-  placeholder?: string
+  label: string
+  placeholder: string
+  rows?: number
 }) {
+  const fieldId = useId()
   const [value, setValue] = useState(notes)
   const [savedValue, setSavedValue] = useState(notes)
   const [saving, setSaving] = useState(false)
@@ -25,8 +30,8 @@ export default function FestivalNotes({ eventId, notes, onSave, label = 'Persona
 
   const isDirty = value !== savedValue
 
-  // Warn before closing the tab / reloading with unsaved changes, since
-  // saving is now an explicit action rather than autosave-as-you-type.
+  // Saving is an explicit action, so warn before closing the tab or
+  // reloading with unsaved changes.
   useEffect(() => {
     if (!isDirty) return
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -43,10 +48,6 @@ export default function FestivalNotes({ eventId, notes, onSave, label = 'Persona
     }
   }, [])
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value)
-  }
-
   const handleSave = useCallback(async () => {
     setSaving(true)
     await onSave(eventId, value)
@@ -58,52 +59,29 @@ export default function FestivalNotes({ eventId, notes, onSave, label = 'Persona
   }, [eventId, value, onSave])
 
   return (
-    <div style={{ marginTop: 0, flex: 1, minWidth: 200 }}>
-      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-        {label}
-        {saving && (
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>
-            Saving...
-          </span>
-        )}
-        {!saving && justSaved && (
-          <span style={{ fontSize: '0.7rem', color: 'var(--accent-green)', fontStyle: 'italic', textTransform: 'none' }}>
-            Saved &#10003;
-          </span>
-        )}
-      </div>
+    <div>
+      <label className={`mono ${styles.label}`} htmlFor={fieldId}>{label}</label>
       <textarea
+        id={fieldId}
+        className="form-input"
         value={value}
-        onChange={handleChange}
+        onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        maxLength={5000}
-        rows={1}
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          background: 'var(--surface-hover)',
-          border: '1px solid var(--border-medium)',
-          borderRadius: 8,
-          padding: '6px 12px',
-          color: 'var(--text-primary)',
-          fontSize: '0.85rem',
-          resize: 'none',
-          fontFamily: 'inherit',
-          outline: 'none',
-          transition: 'border-color 150ms ease',
-        }}
-        onFocus={e => e.currentTarget.style.borderColor = 'var(--border-focus)'}
-        onBlur={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
+        maxLength={NOTES_MAX_LENGTH}
+        rows={rows}
       />
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+      <div className={styles.noteFooter}>
+        <span className={`mono ${styles.saveStatus}`} aria-live="polite">
+          {saving ? 'Saving…' : justSaved ? 'Saved' : ''}
+        </span>
         <button
+          type="button"
           onClick={handleSave}
           onPointerDown={keepKeyboardOpenOnTap}
           disabled={!isDirty || saving}
-          className="btn btn-secondary btn-sm"
-          style={{ opacity: (!isDirty || saving) ? 0.5 : 1, cursor: (!isDirty || saving) ? 'default' : 'pointer' }}
+          className="btn btn-sm"
         >
-          {saving ? 'Saving...' : 'Save'}
+          Save
         </button>
       </div>
     </div>

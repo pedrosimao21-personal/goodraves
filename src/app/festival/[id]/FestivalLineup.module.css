@@ -1,0 +1,149 @@
+/* Board: docs/redesign/boards/Festival.dc.html (lineup section). */
+
+.section {
+  padding-bottom: 72px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  padding-bottom: 20px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.title {
+  font-size: 56px;
+}
+
+.summary {
+  color: var(--gr-tx2);
+}
+
+.empty {
+  margin-top: 16px;
+  color: var(--gr-tx2);
+}
+
+/* Segmented control: the selected option is a white (light: black) fill. */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+}
+
+.seg button {
+  min-height: 40px;
+  padding: 0 14px;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg button:hover {
+  color: var(--gr-tx);
+}
+
+.seg .segOn,
+.seg .segOn:hover {
+  background: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+/* Day tabs: underline on the selected day. */
+.days {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex-shrink: 0;
+  min-height: 72px;
+  margin-bottom: -1px;
+  padding: 10px 0;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--gr-tx3);
+  text-align: left;
+  cursor: pointer;
+}
+
+.day:hover {
+  color: var(--gr-tx2);
+}
+
+.dayOn,
+.dayOn:hover {
+  color: var(--gr-tx);
+  border-bottom-color: var(--gr-tx);
+}
+
+.dayName {
+  font-size: 28px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.footnote {
+  margin-top: 12px;
+  color: var(--gr-tx3);
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding-bottom: 40px;
+  }
+
+  .header {
+    padding-top: 20px;
+  }
+
+  .heading {
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  .title {
+    font-size: 40px;
+  }
+
+  .days {
+    gap: 24px;
+  }
+
+  .dayName {
+    font-size: 22px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}

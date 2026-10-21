@@ -1,5 +1,7 @@
 'use client'
 
+import styles from './FestivalDetail.module.css'
+
 export default function Error({
   reset,
 }: {
@@ -7,15 +9,14 @@ export default function Error({
   reset: () => void
 }) {
   return (
-    <div className="page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <div style={{ fontSize: '3rem', marginBottom: 16 }}>⚠️</div>
-      <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: 8 }}>Failed to load festival</h2>
-      <p style={{ color: 'var(--text-muted)', marginBottom: 24, textAlign: 'center', maxWidth: 500 }}>
-        Could not load festival details. Try refreshing the page.
-      </p>
-      <button className="btn btn-primary" onClick={reset}>
-        Try again
-      </button>
+    <div className="page">
+      <div className="container">
+        <div className={styles.error} role="alert">
+          <h1 className={`display ${styles.errorTitle}`}>Couldn&apos;t load this festival.</h1>
+          <p className={styles.errorText}>Something went wrong while loading the festival details. Try again, or refresh the page.</p>
+          <button type="button" className="btn btn-primary" onClick={reset}>Try again</button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -11,250 +11,108 @@ import {
   groupSlotsByTime,
   type SlotGroup,
 } from './timetable-utils'
+import styles from './Timetable.module.css'
 
-// ── Layout constants ────────────────────────────────────────────────────────
+const LABEL_WIDTH_PX = 140
+// Minimum track width, so blocks don't become unreadably narrow. Long days
+// get HOUR_WIDTH_PX per hour instead, so hour labels never collide.
+const MIN_TRACK_WIDTH_PX = 860
+const HOUR_WIDTH_PX = 96
+const MINUTES_PER_HOUR = 60
 
-const LABEL_WIDTH_PX = 120
-// Minimum track width for mobile — prevents blocks becoming unreadably narrow.
-const MIN_TRACK_WIDTH_PX = 400
-const ROW_HEIGHT_PX = 72
-const BLOCK_VERTICAL_PAD_PX = 6
-const TIME_AXIS_HEIGHT_PX = 32
+type Highlights = {
+  pickedArtistIds: Set<string>
+  clashArtistIds: Set<string>
+}
 
-// ── Local types ─────────────────────────────────────────────────────────────
-
-type Props = {
+type Props = Highlights & {
   stages: TimetableStage[]
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+type Range = { rangeStart: number; rangeEnd: number }
 
-type TimeAxisProps = {
-  hourMarkers: number[]
-  rangeStart: number
-  rangeEnd: number
-}
-
-function TimeAxis({ hourMarkers, rangeStart, rangeEnd }: TimeAxisProps) {
+function TimeAxis({ hourMarkers, rangeStart, rangeEnd }: Range & { hourMarkers: number[] }) {
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: TIME_AXIS_HEIGHT_PX,
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
+    <div className={styles.axis}>
       {hourMarkers.map((marker, index) => {
-        const isFirst = index === 0
-        const isLast = index === hourMarkers.length - 1
-        // Align first label left and last label right so neither bleeds
-        // past the track boundary and triggers a scroll container overflow.
-        const transform = isFirst
-          ? 'none'
-          : isLast
-            ? 'translateX(-100%)'
-            : 'translateX(-50%)'
+        // First label aligns left and last label right, so neither bleeds
+        // past the track edge and widens the scroll container.
+        const alignClass = index === 0 ? styles.axisFirst : index === hourMarkers.length - 1 ? styles.axisLast : ''
         return (
-          <div
+          <span
             key={marker}
-            style={{
-              position: 'absolute',
-              left: `${toPercent(marker, rangeStart, rangeEnd)}%`,
-              top: 0,
-              transform,
-              height: '100%',
-            }}
+            className={`mono ${styles.axisLabel} ${alignClass}`}
+            style={{ left: `${toPercent(marker, rangeStart, rangeEnd)}%` }}
           >
-            <span
-              style={{
-                fontSize: '0.7rem',
-                color: 'var(--text-muted)',
-                fontWeight: 500,
-                lineHeight: `${TIME_AXIS_HEIGHT_PX}px`,
-                whiteSpace: 'nowrap',
-                display: 'block',
-              }}
-            >
-              {formatMinutesToTime(marker)}
-            </span>
-          </div>
+            {formatMinutesToTime(marker)}
+          </span>
         )
       })}
     </div>
   )
 }
 
-type ArtistBlockProps = {
-  group: SlotGroup
-  rangeStart: number
-  rangeEnd: number
+function getBlockClass(group: SlotGroup, { pickedArtistIds, clashArtistIds }: Highlights): string {
+  if (group.artists.some((a) => clashArtistIds.has(a.artistId))) return styles.blockClash
+  if (group.artists.some((a) => pickedArtistIds.has(a.artistId))) return styles.blockPicked
+  return ''
 }
 
-function ArtistBlock({ group, rangeStart, rangeEnd }: ArtistBlockProps) {
-  const startMinutes = parseTimeToMinutes(group.startTime)
-  const endMinutes = parseTimeToMinutes(group.endTime)
-  const leftPct = toPercent(startMinutes, rangeStart, rangeEnd)
-  const widthPct = toPercent(endMinutes, rangeStart, rangeEnd) - leftPct
-  const timeLabel = `${group.startTime} – ${group.endTime}`
-  const tooltipNames = group.artists.map(a => a.artistName).join(' b2b ')
+function ArtistBlock({ group, rangeStart, rangeEnd, highlights }: Range & { group: SlotGroup; highlights: Highlights }) {
+  const leftPct = toPercent(parseTimeToMinutes(group.startTime), rangeStart, rangeEnd)
+  const widthPct = toPercent(parseTimeToMinutes(group.endTime), rangeStart, rangeEnd) - leftPct
+  const timeLabel = `${group.startTime}–${group.endTime}`
+  const isB2b = group.artists.length > 1
 
   return (
     <div
-      title={`${tooltipNames}\n${timeLabel}`}
-      style={{
-        position: 'absolute',
-        left: `${leftPct}%`,
-        width: `${widthPct}%`,
-        top: BLOCK_VERTICAL_PAD_PX,
-        bottom: BLOCK_VERTICAL_PAD_PX,
-        background: 'var(--accent-purple-glow-12)',
-        borderRadius: '0 4px 4px 0',
-        borderLeftStyle: 'solid',
-        borderLeftWidth: 2,
-        borderLeftColor: 'var(--accent-purple)',
-        padding: '3px 8px',
-        textAlign: 'left',
-        overflow: 'hidden',
-        transition: 'background 120ms',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: 1,
-      }}
+      className={`${styles.block} ${getBlockClass(group, highlights)}`}
+      title={`${group.artists.map(a => a.artistName).join(' & ')}\n${timeLabel}`}
+      style={{ left: `${leftPct}%`, width: `calc(${widthPct}% - 4px)` }}
     >
-      {/* Artist name(s) — each is its own link so middle-click / right-click works
-          for every artist, including B2B partners. */}
-      <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0 4px' }}>
+      {/* Each artist is its own link, so middle-click works for B2B partners too. */}
+      <span className={styles.blockNames}>
+        {isB2b && <span className={styles.b2bTag}>B2B</span>}
         {group.artists.map((artist, index) => (
-          <span key={artist.artistId} style={{ display: 'contents' }}>
-            <Link
-              href={`/artist/${artist.artistId}/${encodeURIComponent(artist.artistName)}`}
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 500,
-                color: 'var(--text-primary)',
-                whiteSpace: 'nowrap',
-                textDecoration: 'none',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
-              onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
-            >
+          <span key={artist.artistId}>
+            <Link href={`/artist/${artist.artistId}/${encodeURIComponent(artist.artistName)}`} className={styles.blockLink}>
               {artist.artistName}
             </Link>
-            {index < group.artists.length - 1 && (
-              <span
-                style={{
-                  fontSize: '0.58rem',
-                  fontWeight: 400,
-                  color: 'var(--text-muted)',
-                  flexShrink: 0,
-                  letterSpacing: '0.03em',
-                }}
-              >
-                b2b
-              </span>
-            )}
+            {index < group.artists.length - 1 && ' & '}
           </span>
         ))}
       </span>
-
-      {/* Time range */}
-      <span
-        style={{
-          fontSize: '0.62rem',
-          color: 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {timeLabel}
-      </span>
+      <span className={`mono ${styles.blockTime}`}>{timeLabel}</span>
     </div>
   )
 }
 
-type StageRowProps = {
+function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, highlights }: Range & {
   stage: TimetableStage
-  rangeStart: number
-  rangeEnd: number
   hourMarkers: number[]
-  isEven: boolean
-}
-
-function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, isEven }: StageRowProps) {
+  highlights: Highlights
+}) {
   const slotGroups = groupSlotsByTime(stage.slots)
 
   return (
-    <div style={{ display: 'contents' }}>
-      {/* Stage label — sticks to the left while track scrolls */}
-      <div
-        style={{
-          position: 'sticky',
-          left: 0,
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          height: ROW_HEIGHT_PX,
-          paddingRight: 12,
-          background: isEven
-            ? 'var(--bg-primary)'
-            : 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '0.68rem',
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: LABEL_WIDTH_PX - 16,
-          }}
-        >
-          {stage.stageName}
-        </span>
+    <div className={styles.stageRow}>
+      {/* Stays at the left edge while the track scrolls. */}
+      <div className={styles.stageLabel}>
+        <span className={`mono ${styles.stageName}`}>{stage.stageName}</span>
+        <span className={`mono ${styles.stageCount}`}>{slotGroups.length} sets</span>
       </div>
-
-      {/* Track — contains artist blocks and hour grid lines */}
-      <div
-        style={{
-          position: 'relative',
-          height: ROW_HEIGHT_PX,
-          background: isEven
-            ? 'var(--bg-primary)'
-            : 'var(--bg-secondary)',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        {/* Vertical hour grid lines — skip the last marker (it sits at
-            left: 100% and a 1px div there overflows the container) */}
+      <div className={styles.track}>
+        {/* The last marker sits at left: 100%; a 1px line there would overflow. */}
         {hourMarkers.slice(0, -1).map(marker => (
-          <div
-            key={marker}
-            style={{
-              position: 'absolute',
-              left: `${toPercent(marker, rangeStart, rangeEnd)}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'var(--border)',
-              pointerEvents: 'none',
-            }}
-          />
+          <div key={marker} className={styles.gridLine} style={{ left: `${toPercent(marker, rangeStart, rangeEnd)}%` }} />
         ))}
-
-        {/* Artist blocks */}
         {slotGroups.map(group => (
           <ArtistBlock
             key={`${group.startTime}-${group.slotOrder}`}
             group={group}
             rangeStart={rangeStart}
             rangeEnd={rangeEnd}
+            highlights={highlights}
           />
         ))}
       </div>
@@ -262,47 +120,26 @@ function StageRow({ stage, rangeStart, rangeEnd, hourMarkers, isEven }: StageRow
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
-export default function TimetableGantt({ stages }: Props) {
+/** Stages as rows, time across. Board: Festival (timetable). */
+export default function TimetableGantt({ stages, pickedArtistIds, clashArtistIds }: Props) {
   const { startMinutes, endMinutes } = calculateTimeRange(stages)
   const hourMarkers = generateHourMarkers(startMinutes, endMinutes)
+  const highlights = { pickedArtistIds, clashArtistIds }
+  const trackWidth = Math.max(MIN_TRACK_WIDTH_PX, ((endMinutes - startMinutes) / MINUTES_PER_HOUR) * HOUR_WIDTH_PX)
 
   return (
-    <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `${LABEL_WIDTH_PX}px 1fr`,
-          minWidth: LABEL_WIDTH_PX + MIN_TRACK_WIDTH_PX,
-        }}
-      >
-        {/* Time axis header row */}
-        <div
-          style={{
-            position: 'sticky',
-            left: 0,
-            zIndex: 3,
-            height: TIME_AXIS_HEIGHT_PX,
-            background: 'var(--bg-primary)',
-            borderBottom: '1px solid var(--border)',
-          }}
-        />
-        <TimeAxis
-          hourMarkers={hourMarkers}
-          rangeStart={startMinutes}
-          rangeEnd={endMinutes}
-        />
-
-        {/* Stage rows */}
-        {stages.map((stage, index) => (
+    <div className={styles.ganttScroll}>
+      <div className={styles.gantt} style={{ gridTemplateColumns: `${LABEL_WIDTH_PX}px 1fr`, minWidth: LABEL_WIDTH_PX + trackWidth }}>
+        <div className={styles.axisCorner} />
+        <TimeAxis hourMarkers={hourMarkers} rangeStart={startMinutes} rangeEnd={endMinutes} />
+        {stages.map(stage => (
           <StageRow
             key={stage.stageOrder}
             stage={stage}
             rangeStart={startMinutes}
             rangeEnd={endMinutes}
             hourMarkers={hourMarkers}
-            isEven={index % 2 === 0}
+            highlights={highlights}
           />
         ))}
       </div>

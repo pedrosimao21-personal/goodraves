@@ -1,0 +1,86 @@
+/* Board: docs/redesign/boards/FestivalAttendedMobile.dc.html ("Your night"). */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 64px;
+  padding: 28px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line);
+}
+
+.title {
+  font-size: 36px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gr-tx2);
+}
+
+.vibeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.vibeBars {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.vibeBar {
+  height: 48px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--gr-off);
+  border-radius: var(--gr-radius);
+  cursor: pointer;
+}
+
+.vibeBar:hover {
+  border-color: var(--gr-acc-ink);
+}
+
+/* acc-ink edge: lime on paper has no visible edge in light mode. */
+.vibeBarOn {
+  background: var(--gr-acc);
+  border-color: var(--gr-acc-ink);
+}
+
+.noteFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.saveStatus {
+  color: var(--gr-tx3);
+}
+
+@media (max-width: 900px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .panel {
+    margin: 0 -20px 32px;
+    padding: 28px 20px;
+    border-left: 0;
+    border-right: 0;
+  }
+}

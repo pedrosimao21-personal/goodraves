@@ -1,0 +1,272 @@
+/* Boards: docs/redesign/boards/Festival.dc.html (desktop: full flyer left,
+   details right) and FestivalMobile.dc.html (title first, flyer thumbnail
+   beside the details). */
+
+.header {
+  padding-bottom: 64px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  cursor: pointer;
+}
+
+.back:hover {
+  color: var(--gr-tx);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 400px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-areas:
+    "flyer chips"
+    "flyer title"
+    "flyer facts"
+    "flyer actions"
+    "flyer note";
+  column-gap: 56px;
+  row-gap: 24px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+/* ── Flyer ── */
+
+.flyer {
+  grid-area: flyer;
+  margin: 0;
+}
+
+.flyerImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--gr-line);
+}
+
+.flyerEmpty {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid var(--gr-line);
+  background-color: var(--gr-s2);
+  background-image: repeating-linear-gradient(135deg, var(--gr-line) 0 1px, transparent 1px 9px);
+}
+
+.monogram {
+  position: absolute;
+  right: -4px;
+  bottom: -18px;
+  font-size: 160px;
+  color: var(--gr-line);
+}
+
+.caption {
+  margin-top: 8px;
+  color: var(--gr-tx3);
+}
+
+/* ── Details ── */
+
+.chips {
+  grid-area: chips;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.title {
+  grid-area: title;
+  font-size: clamp(56px, 7vw, 112px);
+  overflow-wrap: anywhere;
+}
+
+.titleLong {
+  font-size: clamp(40px, 4.5vw, 72px);
+}
+
+.facts {
+  grid-area: facts;
+  margin: 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--gr-line);
+}
+
+.fact dt {
+  color: var(--gr-tx3);
+}
+
+.fact dd {
+  margin: 0;
+}
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionButton {
+  min-height: 52px;
+}
+
+.iconAction {
+  width: 52px;
+  height: 52px;
+}
+
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-left: 8px;
+  color: var(--gr-tx2);
+}
+
+.sourceLink:hover {
+  color: var(--gr-tx);
+}
+
+.note {
+  grid-area: note;
+  color: var(--gr-tx2);
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 640px) {
+  .header {
+    padding-bottom: 32px;
+  }
+
+  .layout {
+    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "chips chips"
+      "title title"
+      "flyer facts"
+      "actions actions"
+      "note note";
+    column-gap: 14px;
+    row-gap: 16px;
+    margin-top: 8px;
+  }
+
+  .flyerImage,
+  .flyerEmpty {
+    height: 120px;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .flyerEmpty {
+    aspect-ratio: auto;
+  }
+
+  .monogram {
+    bottom: -8px;
+    font-size: 64px;
+  }
+
+  .caption {
+    display: none;
+  }
+
+  .title {
+    font-size: 56px;
+  }
+
+  .titleLong {
+    font-size: 40px;
+  }
+
+  .facts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: 0;
+  }
+
+  .fact {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .fact dt {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .fact dd {
+    color: var(--gr-tx2);
+  }
+
+  .fact .date {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gr-tx);
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+  }
+
+  .actions > :first-child {
+    flex: 1;
+  }
+
+  .actionButton {
+    width: 52px;
+    padding: 0;
+  }
+
+  .hideOnMobile {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .sourceLink {
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    margin-left: 0;
+    border: 1px solid var(--gr-line2);
+  }
+}

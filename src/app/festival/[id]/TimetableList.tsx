@@ -1,137 +1,66 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import type { TimetableStage } from '@/db/actions/festivals'
 import { groupSlotsByTime, type SlotGroup } from './timetable-utils'
+import styles from './Timetable.module.css'
 
-const AVATAR_SIZE_PX = 40
+type Highlights = {
+  pickedArtistIds: Set<string>
+  clashArtistIds: Set<string>
+}
 
-type Props = {
+type Props = Highlights & {
   stages: TimetableStage[]
 }
 
-function SlotArtist({ artist, showSeparator }: {
-  artist: SlotGroup['artists'][number]
-  showSeparator: boolean
-}) {
-  return (
-    <>
-      <Link
-        href={`/artist/${artist.artistId}/${encodeURIComponent(artist.artistName)}`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          textDecoration: 'none',
-          color: 'var(--text-primary)',
-        }}
-      >
-        {artist.artistImageUrl ? (
-          <Image
-            src={artist.artistImageUrl}
-            alt={artist.artistName}
-            width={AVATAR_SIZE_PX}
-            height={AVATAR_SIZE_PX}
-            quality={85}
-            sizes={`${AVATAR_SIZE_PX}px`}
-            style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-          />
-        ) : (
-          <div
-            style={{
-              width: AVATAR_SIZE_PX,
-              height: AVATAR_SIZE_PX,
-              borderRadius: '50%',
-              background: 'var(--bg-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1rem',
-              flexShrink: 0,
-            }}
-          >
-            🎤
-          </div>
-        )}
-        <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{artist.artistName}</span>
-      </Link>
-      {showSeparator && (
-        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', flexShrink: 0 }}>b2b</span>
-      )}
-    </>
-  )
+function getRowClass(group: SlotGroup, { pickedArtistIds, clashArtistIds }: Highlights): string {
+  if (group.artists.some((a) => clashArtistIds.has(a.artistId))) return styles.rowClash
+  if (group.artists.some((a) => pickedArtistIds.has(a.artistId))) return styles.rowPicked
+  return ''
 }
 
-function SlotRow({ group }: { group: SlotGroup }) {
+function SlotRow({ group, highlights }: { group: SlotGroup; highlights: Highlights }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: '10px 0',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
-          whiteSpace: 'nowrap',
-          width: 84,
-          flexShrink: 0,
-        }}
-      >
+    <div className={`${styles.row} ${getRowClass(group, highlights)}`}>
+      <div className={`mono ${styles.rowTime}`}>
         {group.startTime}
         <br />
-        {group.endTime}
+        <span className={styles.rowEnd}>{group.endTime}</span>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, flex: 1 }}>
+      <div className={styles.rowNames}>
+        {group.artists.length > 1 && <span className={styles.b2bTag}>B2B</span>}
         {group.artists.map((artist, index) => (
-          <SlotArtist
-            key={artist.artistId}
-            artist={artist}
-            showSeparator={index < group.artists.length - 1}
-          />
+          <span key={artist.artistId}>
+            <Link href={`/artist/${artist.artistId}/${encodeURIComponent(artist.artistName)}`} className={styles.rowLink}>
+              {artist.artistName}
+            </Link>
+            {index < group.artists.length - 1 && ' & '}
+          </span>
         ))}
       </div>
     </div>
   )
 }
 
-function StageSection({ stage }: { stage: TimetableStage }) {
-  const slotGroups = groupSlotsByTime(stage.slots)
-
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <h3
-        style={{
-          fontSize: '0.72rem',
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--text-muted)',
-          marginBottom: 4,
-        }}
-      >
-        {stage.stageName}
-      </h3>
-      <div>
-        {slotGroups.map(group => (
-          <SlotRow key={`${group.startTime}-${group.slotOrder}`} group={group} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-export default function TimetableList({ stages }: Props) {
+/** Mobile timetable: one block of rows per stage. Board: FestivalMobile (by stage). */
+export default function TimetableList({ stages, pickedArtistIds, clashArtistIds }: Props) {
+  const highlights = { pickedArtistIds, clashArtistIds }
   return (
     <div>
-      {stages.map(stage => (
-        <StageSection key={stage.stageOrder} stage={stage} />
-      ))}
+      {stages.map(stage => {
+        const slotGroups = groupSlotsByTime(stage.slots)
+        return (
+          <section key={stage.stageOrder} className={styles.listStage}>
+            <h3 className={`mono ${styles.listStageName}`}>
+              {stage.stageName}<span className={styles.stageCount}> · {slotGroups.length} sets</span>
+            </h3>
+            {slotGroups.map(group => (
+              <SlotRow key={`${group.startTime}-${group.slotOrder}`} group={group} highlights={highlights} />
+            ))}
+          </section>
+        )
+      })}
     </div>
   )
 }

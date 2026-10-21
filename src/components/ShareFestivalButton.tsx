@@ -1,22 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckIcon, ShareIcon } from '@/components/icons'
 
 const COPIED_FEEDBACK_DELAY_MS = 2000
 
-function ShareIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-    </svg>
-  )
-}
-
-export default function ShareFestivalButton({ name, date, venue }: {
+/** Icon button: the native share sheet where there is one, else copies the link. */
+export default function ShareFestivalButton({ name, date, venue, className = '' }: {
   name: string
   date?: string | null
   venue?: string | null
+  className?: string
 }) {
   const [copied, setCopied] = useState(false)
 
@@ -42,9 +36,10 @@ export default function ShareFestivalButton({ name, date, venue }: {
     }
   }
 
+  const label = copied ? 'Link copied' : 'Share festival'
   return (
-    <button onClick={handleShare} className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <ShareIcon /> {copied ? 'Link copied!' : 'Share'}
+    <button type="button" onClick={handleShare} className={`btn btn-icon ${className}`} aria-label={label} title={label}>
+      {copied ? <CheckIcon size={18} strokeWidth={2} /> : <ShareIcon size={18} />}
     </button>
   )
 }

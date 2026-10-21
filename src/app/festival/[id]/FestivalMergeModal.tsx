@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { mergeFestivals, type MergeResult } from '@/db/actions/festivals'
 import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
+import Sheet, { SheetActions } from '@/components/Sheet'
 
-const MODAL_Z_INDEX = 1000
-const MODAL_MAX_WIDTH = 480
+const TEXTAREA_ROWS = 3
 
 interface FestivalMergeModalProps {
   /** The festival currently being viewed — becomes the merge winner. */
@@ -53,113 +53,44 @@ export default function FestivalMergeModal({ winnerId, onClose, onMerged }: Fest
     }
   }
 
-  const textareaStyle: React.CSSProperties = {
-    width: '100%',
-    minHeight: 80,
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    color: 'var(--text-primary)',
-    fontSize: '0.9rem',
-    fontFamily: 'var(--font-sans)',
-    outline: 'none',
-    boxSizing: 'border-box',
-    resize: 'vertical',
-  }
-
   return (
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        padding: '0 0 env(safe-area-inset-bottom, 0)',
-      }}
-    >
-      <div
-        className="fade-in"
-        style={{
-          background: 'var(--bg-card)',
-          width: '100%', maxWidth: MODAL_MAX_WIDTH,
-          borderRadius: '20px 20px 0 0',
-          border: '1px solid var(--border)',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{
-          padding: '18px 20px 14px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>
-            Merge Duplicate Festivals
-          </span>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}
-          >
-            &times;
-          </button>
-        </div>
-
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-            Paste the other festival ID(s) or <code>/festival/&lt;id&gt;</code> URLs that are the
-            same real event as this one (one per line, or comma-separated). Their lineup,
-            timetable, genres, and any user attendance/ratings are copied onto <strong>this</strong>{' '}
-            festival, then the other rows are deleted. This is destructive but recorded — old
-            links to the merged rows will redirect here.
-          </p>
-
+    <Sheet title="Merge duplicate festivals" eyebrow="Admin · festival" onClose={onClose}>
+      <div className="form-stack">
+        <p className="form-hint">
+          Paste the other festival IDs or <code>/festival/&lt;id&gt;</code> URLs that are the same real event as
+          this one (one per line, or comma-separated). Their lineup, timetable, genres and any user
+          attendance and ratings are copied onto <strong>this</strong> festival, then the other rows are deleted.
+          Old links to the merged rows redirect here.
+        </p>
+        <div>
+          <label className="form-label" htmlFor="festival-merge-ids">Festivals to merge into this one</label>
           <textarea
-            style={textareaStyle}
+            id="festival-merge-ids"
+            className="form-input"
+            rows={TEXTAREA_ROWS}
             placeholder={'ra-2312934\npf-482070, pf-490100'}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             autoFocus
             disabled={merging || !!result}
           />
-
-          {error && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--error-text)', margin: 0 }}>{error}</p>
-          )}
-
-          {result && (
-            <div style={{
-              padding: '10px 12px',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              fontSize: '0.85rem',
-              color: 'var(--accent-green)',
-            }}>
-              Merged {result.mergedLoserIds.length} festival{result.mergedLoserIds.length !== 1 ? 's' : ''} into this one.
-              {result.skippedLoserIds.length > 0 && (
-                <> Skipped (not found): {result.skippedLoserIds.join(', ')}.</>
-              )}
-            </div>
-          )}
         </div>
-
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
-          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>
-            {result ? 'Close' : 'Cancel'}
-          </button>
-          {!result && (
-            <button
-              onClick={handleMerge}
-              onPointerDown={keepKeyboardOpenOnTap}
-              className="btn btn-primary"
-              style={{ flex: 2, background: 'var(--accent-red)', borderColor: 'var(--accent-red)' }}
-              disabled={merging}
-            >
-              {merging ? 'Merging…' : `Merge ${loserIds.length || ''} into this festival`.trim()}
-            </button>
-          )}
-        </div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        {result && (
+          <p className="form-hint" role="status">
+            Merged {result.mergedLoserIds.length} festival{result.mergedLoserIds.length !== 1 ? 's' : ''} into this one.
+            {result.skippedLoserIds.length > 0 && <> Skipped (not found): {result.skippedLoserIds.join(', ')}.</>}
+          </p>
+        )}
       </div>
-    </div>
+      <SheetActions>
+        <button type="button" onClick={onClose} className="btn">{result ? 'Close' : 'Cancel'}</button>
+        {!result && (
+          <button type="button" onClick={handleMerge} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-danger" disabled={merging}>
+            {merging ? 'Merging…' : `Merge ${loserIds.length || ''} into this festival`.replace('  ', ' ')}
+          </button>
+        )}
+      </SheetActions>
+    </Sheet>
   )
 }

@@ -1,0 +1,132 @@
+/* Festival page pieces outside the header and lineup: the playlist panel,
+   the loading skeleton and the error state. Board: Festival.dc.html. */
+
+/* ── Playlist ── */
+
+.playlist {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 96px;
+  padding: 24px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line);
+}
+
+.playlistHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.playlistEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gr-tx3);
+}
+
+.playlistTitle {
+  margin-top: 6px;
+  font-size: 32px;
+}
+
+.playlistEmbed {
+  display: block;
+  border: 0;
+}
+
+.playlistMissing {
+  color: var(--gr-tx2);
+}
+
+/* ── Skeleton ── */
+
+.skeletonHeader {
+  display: grid;
+  grid-template-columns: minmax(260px, 400px) minmax(0, 1fr);
+  gap: 56px;
+  padding: 60px 0 64px;
+}
+
+.skeletonFlyer {
+  aspect-ratio: 4 / 5;
+}
+
+.skeletonDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeletonLine {
+  height: 22px;
+  width: 30%;
+}
+
+.skeletonTitle {
+  height: 96px;
+  width: 80%;
+}
+
+.skeletonLineWide {
+  height: 40px;
+  width: 70%;
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.skeletonArtist {
+  aspect-ratio: 1 / 1;
+}
+
+/* ── Error ── */
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 640px;
+  padding: 64px 0;
+}
+
+.errorTitle {
+  font-size: 56px;
+}
+
+.errorText {
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .playlist {
+    margin-bottom: 48px;
+    padding: 20px;
+  }
+
+  .skeletonHeader {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 14px;
+    padding: 40px 0 32px;
+  }
+
+  .skeletonTitle {
+    height: 56px;
+  }
+
+  .skeletonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .errorTitle {
+    font-size: 40px;
+  }
+}

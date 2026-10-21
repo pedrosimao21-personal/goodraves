@@ -1,0 +1,167 @@
+/* Boards: docs/redesign/boards/Friends.dc.html, FriendsMobile.dc.html,
+   FriendsEmptyMobile.dc.html. The feed is in FriendsFeed.module.css. */
+
+.eyebrow {
+  color: var(--gr-tx2);
+}
+
+.title {
+  margin-top: 16px;
+  font-size: 56px;
+}
+
+.muted {
+  color: var(--gr-tx3);
+}
+
+.goText {
+  color: var(--gr-go);
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  margin-top: 48px;
+}
+
+.aside {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.main {
+  flex: 999 1 640px;
+  min-width: 0;
+}
+
+/* ── Add a friend ── */
+
+.addFriend {
+  position: relative;
+}
+
+.addRow {
+  display: flex;
+  gap: 8px;
+}
+
+.addRow :global(.btn) {
+  min-height: 48px;
+}
+
+.results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+  border-top: 0;
+}
+
+.result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 52px;
+  padding: 4px 8px 4px 14px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.result:last-child {
+  border-bottom: 0;
+}
+
+/* ── Lists ── */
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.listTitle {
+  font-size: 28px;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  font-size: 18px;
+  color: var(--gr-tx2);
+}
+
+.personName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.removeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  cursor: pointer;
+}
+
+.removeButton:hover {
+  color: var(--gr-err);
+}
+
+.empty {
+  margin-top: 16px;
+  color: var(--gr-tx2);
+}
+
+.skeletonTitle {
+  height: 56px;
+  width: 240px;
+  max-width: 100%;
+  margin-bottom: 48px;
+}
+
+.skeletonBlock {
+  height: 320px;
+}
+
+@media (max-width: 640px) {
+  .title {
+    margin-top: 10px;
+    font-size: 40px;
+  }
+
+  .layout {
+    gap: 40px;
+    margin-top: 28px;
+  }
+}

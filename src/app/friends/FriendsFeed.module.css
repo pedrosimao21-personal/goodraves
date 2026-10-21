@@ -1,0 +1,172 @@
+/* Board: docs/redesign/boards/Friends.dc.html (activity feed). */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.title {
+  font-size: 40px;
+}
+
+.empty {
+  margin-top: 16px;
+  color: var(--gr-tx2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  font-size: 22px;
+  color: var(--gr-tx2);
+}
+
+.body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.headline {
+  font-size: 16px;
+}
+
+.verb {
+  color: var(--gr-tx2);
+}
+
+.target {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.target:hover {
+  text-decoration: underline;
+}
+
+.ago {
+  margin-left: 8px;
+  color: var(--gr-tx3);
+}
+
+.festival {
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line);
+}
+
+.thumb,
+.artistThumb {
+  display: block;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.artistThumb {
+  width: 48px;
+  height: 48px;
+}
+
+.thumb img,
+.artistThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.festivalInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quote {
+  font-style: italic;
+  color: var(--gr-tx2);
+}
+
+.djsToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  cursor: pointer;
+}
+
+.djsToggle:hover {
+  color: var(--gr-tx);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.djs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.dj {
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.djRating {
+  margin-left: 6px;
+  color: var(--gr-acc-ink);
+}
+
+.more {
+  margin-top: 24px;
+}
+
+.skeletonRow {
+  height: 96px;
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px 0;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+}

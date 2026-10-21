@@ -1,0 +1,218 @@
+/* Boards: docs/redesign/boards/Insights.dc.html, InsightsMobile.dc.html. */
+
+.muted {
+  color: var(--gr-tx2);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.panel {
+  min-width: 0;
+  padding: 24px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line);
+}
+
+.mapPanel {
+  flex: 999 1 560px;
+}
+
+.sidePanel {
+  flex: 1 1 300px;
+}
+
+.halfPanel {
+  flex: 1 1 480px;
+}
+
+.panelHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  font-size: 32px;
+}
+
+/* ── Bars ── */
+
+.bar {
+  width: 100%;
+  background: var(--gr-off);
+}
+
+.fill {
+  height: 100%;
+  background: var(--gr-off);
+}
+
+/* The top value is yours: lime (olive on paper in light mode). */
+.barTop {
+  background: var(--gr-acc-ink);
+}
+
+.yearBars {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+  height: 220px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.yearColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+}
+
+.yearLabels {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  color: var(--gr-tx3);
+  text-align: center;
+}
+
+.genreList {
+  display: flex;
+  flex-direction: column;
+}
+
+.genreRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 44px;
+  gap: 14px;
+  align-items: center;
+  min-height: 40px;
+}
+
+.genreName {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  height: 12px;
+  background: var(--gr-s3);
+}
+
+.genrePercent {
+  text-align: right;
+}
+
+.cityRow {
+  padding: 12px 0;
+  border-top: 1px solid var(--gr-line);
+}
+
+.cityHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.cityName {
+  font-weight: 600;
+}
+
+.thinTrack {
+  height: 4px;
+  margin-top: 8px;
+  background: var(--gr-s3);
+}
+
+/* ── Passport ── */
+
+.passport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 48px;
+  margin-top: 56px;
+}
+
+.passportIntro {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.passportTitle {
+  font-size: 56px;
+}
+
+.passportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.select {
+  width: auto;
+}
+
+.passportPreview {
+  flex: 0 0 auto;
+  border: 1px solid var(--gr-line);
+}
+
+.captureHost {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+  pointer-events: none;
+}
+
+.skeletonBlock {
+  height: 420px;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 18px;
+  }
+
+  .panelTitle {
+    font-size: 26px;
+  }
+
+  .genreRow {
+    grid-template-columns: 100px 1fr 40px;
+    gap: 10px;
+  }
+
+  .passport {
+    gap: 24px;
+    margin-top: 40px;
+  }
+
+  .passportTitle {
+    font-size: 40px;
+  }
+
+  /* The 360px card is wider than a phone's content box; scale it to fit. */
+  .passportPreview {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .passportPreview > * {
+    transform: scale(0.92);
+    transform-origin: top left;
+  }
+}

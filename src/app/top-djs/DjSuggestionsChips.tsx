@@ -2,37 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getPopularArtists, type PopularArtist } from '@/db/actions/popular-artists'
+import styles from './TopDjs.module.css'
+
+const POPULAR_ARTIST_COUNT = 12
 
 function buildArtistHref(artist: PopularArtist): string {
   const slugName = artist.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
   return `/artist/${artist.id}/${slugName}`
 }
 
-function ArtistChip({ artist }: { artist: PopularArtist }) {
-  return (
-    <Link href={buildArtistHref(artist)} className="dj-suggestion-chip">
-      {artist.imageUrl && (
-        <Image
-          src={artist.imageUrl}
-          alt={artist.name}
-          width={20}
-          height={20}
-          sizes="20px"
-          className="dj-suggestion-chip-img"
-        />
-      )}
-      {artist.name}
-    </Link>
-  )
-}
-
+/** Popular artists to explore while your own ranking is empty. */
 export default function DjSuggestionsChips() {
   const [popularArtists, setPopularArtists] = useState<PopularArtist[]>([])
 
   useEffect(() => {
-    getPopularArtists(12)
+    getPopularArtists(POPULAR_ARTIST_COUNT)
       .then(setPopularArtists)
       .catch(() => setPopularArtists([]))
   }, [])
@@ -40,11 +25,11 @@ export default function DjSuggestionsChips() {
   if (popularArtists.length === 0) return null
 
   return (
-    <div className="dj-suggestions-section">
-      <div className="dj-suggestions-label">Popular DJs &amp; Artists</div>
-      <div className="dj-suggestions-chips">
+    <div className={styles.suggestions}>
+      <p className={`mono ${styles.sheetLabel}`}>Popular on Goodraves</p>
+      <div className={styles.chips}>
         {popularArtists.map((artist) => (
-          <ArtistChip key={artist.id} artist={artist} />
+          <Link key={artist.id} href={buildArtistHref(artist)} className="chip">{artist.name}</Link>
         ))}
       </div>
     </div>

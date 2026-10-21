@@ -1,0 +1,53 @@
+/* Map panel. Board: docs/redesign/boards/Insights.dc.html ("Where you raved"). */
+
+.map {
+  height: 380px;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--gr-line);
+}
+
+.canvas {
+  height: 100%;
+  width: 100%;
+  background: var(--gr-s2);
+}
+
+/* Greyscale OpenStreetMap tiles in light mode; inverted to a dark map in dark mode. */
+.map :global(.leaflet-tile-pane) {
+  filter: grayscale(1) contrast(0.9);
+}
+
+.dark :global(.leaflet-tile-pane) {
+  filter: grayscale(1) invert(1) brightness(0.8) contrast(0.9);
+}
+
+/* Leaflet's controls and attribution, on the site tokens. */
+.map :global(.leaflet-bar) {
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+}
+
+.map :global(.leaflet-bar a),
+.map :global(.leaflet-bar a:hover) {
+  background: var(--gr-s1);
+  border-bottom-color: var(--gr-line);
+  color: var(--gr-tx);
+}
+
+.map :global(.leaflet-control-attribution) {
+  background: var(--gr-bg);
+  color: var(--gr-tx3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.map :global(.leaflet-control-attribution a) {
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .map {
+    height: 300px;
+  }
+}

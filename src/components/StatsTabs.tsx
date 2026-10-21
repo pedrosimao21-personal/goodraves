@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import styles from './StatsTabs.module.css'
 
@@ -8,11 +9,14 @@ const STATS_TABS = [
 
 type StatsTabKey = (typeof STATS_TABS)[number]['key']
 
-/** Page title and tabs for the Stats section (Top DJs and Insights). */
-export default function StatsTabs({ active }: { active: StatsTabKey }) {
+/** Page title and tabs for the Stats section (Top DJs and Insights). `action` sits beside the title. */
+export default function StatsTabs({ active, action }: { active: StatsTabKey; action?: ReactNode }) {
   return (
     <div className={styles.header}>
-      <h1 className={`display ${styles.title}`}>Stats</h1>
+      <div className={styles.titleRow}>
+        <h1 className={`display ${styles.title}`}>Stats</h1>
+        {action}
+      </div>
       <nav className={styles.tabs} aria-label="Stats sections">
         {STATS_TABS.map((tab) => {
           const isActive = tab.key === active

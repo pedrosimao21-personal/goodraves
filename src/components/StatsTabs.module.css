@@ -5,6 +5,14 @@
   margin-bottom: 32px;
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
 .title {
   font-size: 56px;
 }

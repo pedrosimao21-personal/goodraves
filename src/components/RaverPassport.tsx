@@ -1,137 +1,91 @@
 'use client'
 
-import React, { forwardRef } from 'react'
+import { forwardRef } from 'react'
 import { normalizeLocation } from '@/utils/location-normalizer'
+import styles from './RaverPassport.module.css'
 
-// Colors here are deliberately hardcoded, not CSS custom properties: this
-// card is exported as a shareable image (see html2canvas in insights/page.tsx)
-// and is meant to look identical regardless of the viewer's site theme.
-const CARD_STYLE: React.CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.05)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 12,
-  padding: '12px 14px',
+const RANK_DIGITS = 2
+// Fixed bar widths (px) for the decorative barcode; a fixed pattern avoids an SSR/client mismatch.
+const BARCODE_BARS = [2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 2, 2, 4]
+
+function findTopCity(events: any[]): string | null {
+  const counts: Record<string, number> = {}
+  events.forEach(e => {
+    const city = normalizeLocation(e.venue?.city || e.location || null)
+    if (city) counts[city] = (counts[city] || 0) + 1
+  })
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+  // "Rotterdam, Netherlands" → "Rotterdam": the card has room for the city only.
+  return top ? top.split(',')[0] : null
 }
 
-const LABEL_STYLE: React.CSSProperties = {
-  fontSize: '0.65rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: '#888',
-  marginBottom: 3,
-}
-
+/**
+ * Shareable "passport" card, exported as an image with html2canvas (see
+ * insights/PassportSection). Its colours are fixed in the stylesheet, not
+ * theme tokens, so the image looks the same in dark and light mode.
+ * Board: Insights (Raver passport).
+ */
 const RaverPassport = forwardRef<HTMLDivElement, {
   events: any[]
   topArtists: string[]
-  topGenre: string
+  topGenre?: string
   totalArtists: number
   periodLabel?: string
-}>(({ events, topArtists, topGenre, totalArtists, periodLabel = 'All Time' }, ref) => {
-
-  // Calculate top city
-  const cityCounts: Record<string, number> = {}
-  events.forEach(e => {
-    const rawCity = e.venue?.city || e.location || null
-    const city = normalizeLocation(rawCity)
-    if (city) {
-      cityCounts[city] = (cityCounts[city] || 0) + 1
-    }
-  })
-
-  const topCity = Object.entries(cityCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(entry => entry[0])[0] ?? null
+}>(({ events, topArtists, topGenre, totalArtists, periodLabel = 'All time' }, ref) => {
+  const topCity = findTopCity(events)
 
   return (
-    <div
-      ref={ref}
-      style={{
-        width: '360px',
-        height: '640px',
-        background: 'linear-gradient(135deg, #120e1f 0%, #000000 100%)',
-        color: '#ffffff',
-        padding: '28px 28px 24px',
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-        fontFamily: 'var(--font-primary, sans-serif)',
-      }}
-    >
-      {/* Decorative background elements */}
-      <div style={{ position: 'absolute', top: -50, right: -50, width: 200, height: 200, background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(30px)' }} />
-      <div style={{ position: 'absolute', bottom: -50, left: -50, width: 250, height: 250, background: 'radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(40px)' }} />
-
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 16, zIndex: 1 }}>
-        <div style={{ fontSize: '0.7rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c4b5fd', marginBottom: 3 }}>
-          Goodraves Official
-        </div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, margin: 0, lineHeight: 1.1, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#ffffff' }}>
-          Raver Passport
-        </h1>
-        <div style={{ fontSize: '0.85rem', color: '#fff', opacity: 0.7, marginTop: 3, fontStyle: 'italic' }}>
-          {periodLabel} Edition
-        </div>
+    <div ref={ref} className={styles.card}>
+      <div className={styles.band}>
+        <span className={styles.brand}>
+          <span className={styles.brandMark} aria-hidden="true" />
+          <span className={`display ${styles.brandName}`}>Goodraves</span>
+        </span>
+        <span className="mono">{periodLabel} edition</span>
       </div>
 
-      {/* Stats Body */}
-      <div style={{ zIndex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-        {/* Lifetime Shows */}
-        <div style={CARD_STYLE}>
-          <div style={LABEL_STYLE}>{periodLabel === 'All Time' ? 'Lifetime Shows' : 'Shows'}</div>
-          <div style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, lineHeight: 1 }}>{events.length}</div>
-          <div style={{ fontSize: '0.78rem', color: '#aaa', marginTop: 3 }}>Across {totalArtists} unique artists</div>
+      <div className={styles.body}>
+        <div>
+          <span className={`display ${styles.bigNumber}`}>{events.length}</span>
+          <p className={`mono ${styles.bigLabel}`}>
+            Festival{events.length === 1 ? '' : 's'} · {totalArtists} unique artist{totalArtists === 1 ? '' : 's'}
+          </p>
         </div>
 
-        {/* Top Genre & Home Base */}
-        <div style={{ display: 'grid', gridTemplateColumns: topCity ? '1fr 1fr' : '1fr', gap: 10 }}>
-          <div style={CARD_STYLE}>
-            <div style={LABEL_STYLE}>Top Genre</div>
-            <div style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', color: '#ec4899' }}>{topGenre || 'None'}</div>
+        <div className={styles.pair}>
+          <div>
+            <p className={`mono ${styles.label}`}>Top genre</p>
+            <p className={`display ${styles.value}`}>{topGenre || '–'}</p>
           </div>
-          {topCity && (
-            <div style={CARD_STYLE}>
-              <div style={LABEL_STYLE}>Home Base</div>
-              <div style={{ fontSize: '0.95rem', fontFamily: 'var(--font-display)', fontWeight: 800, lineHeight: 1.2, wordBreak: 'break-word' }}>{topCity}</div>
-            </div>
+          <div>
+            <p className={`mono ${styles.label}`}>Home base</p>
+            <p className={`display ${styles.value}`}>{topCity || '–'}</p>
+          </div>
+        </div>
+
+        <div className={styles.section}>
+          <p className={`mono ${styles.label}`}>Top DJs</p>
+          {topArtists.length > 0 ? (
+            <ol className={styles.list}>
+              {topArtists.map((artist, idx) => (
+                <li key={artist} className={styles.listItem}>
+                  <span className={`mono ${styles.rank}`}>{String(idx + 1).padStart(RANK_DIGITS, '0')}</span>
+                  <span className={styles.artist}>{artist}</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className={styles.empty}>No artists yet</p>
           )}
         </div>
-
-        {/* Top DJs */}
-        <div style={CARD_STYLE}>
-          <div style={LABEL_STYLE}>Top DJs</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {topArtists.length > 0 ? topArtists.map((artist, idx) => (
-              <div key={artist} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: '#8b5cf6', fontWeight: 800, fontSize: '0.95rem', minWidth: 16 }}>{idx + 1}</span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{artist}</span>
-              </div>
-            )) : <div style={{ fontSize: '0.85rem', color: '#ccc' }}>No artists found</div>}
-          </div>
-        </div>
-
       </div>
 
-      {/* Spacer — pushes footer to bottom */}
-      <div style={{ flex: 1 }} />
-
-      {/* Footer / Barcode decoration */}
-      <div style={{ zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div style={{ fontSize: '0.65rem', color: '#666', letterSpacing: '0.1em' }}>
-          TRACKED VIA GOODRAVES
+      <div className={styles.footer}>
+        <div className={styles.barcode} aria-hidden="true">
+          {BARCODE_BARS.map((width, i) => <span key={i} style={{ width }} />)}
         </div>
-        {/* Fake barcode - fixed pattern to avoid SSR/client mismatch */}
-        <div style={{ display: 'flex', gap: 2, height: 20, opacity: 0.5 }}>
-          {[2,4,2,2,4,2,4,4,2,4,2,2,4,2,4].map((w, i) => (
-            <div key={i} style={{ width: w, height: '100%', background: '#fff' }} />
-          ))}
-        </div>
+        <span className="mono">Tracked on Goodraves</span>
       </div>
-
     </div>
   )
 })

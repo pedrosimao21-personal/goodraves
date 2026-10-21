@@ -2,16 +2,23 @@
 
 import React, { useEffect, useRef } from 'react'
 import 'leaflet/dist/leaflet.css'
+import { useTheme } from '@/context/ThemeContext'
+import styles from './RaveMap.module.css'
 
 const DEFAULT_CENTER: [number, number] = [48.8566, 2.3522] // Paris
 const DEFAULT_ZOOM = 4
 const BASE_MARKER_RADIUS = 10
 const MARKER_RADIUS_GROWTH = 3
 const MAX_MARKER_RADIUS = 30
-const MARKER_FILL_COLOR = 'var(--accent-purple)'
-const MARKER_BORDER_COLOR = 'var(--accent-purple-lighter)'
-const MARKER_FILL_OPACITY = 0.6
-const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+const MARKER_FILL_OPACITY = 0.22
+// OpenStreetMap's standard tiles; RaveMap.module.css tints them to the theme.
+const TILE_LAYER_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+/** Leaflet writes colours into SVG attributes, which can't hold var(), so read the token's value. */
+function readToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
 
 // Fallback dictionary for events that have no stored coordinates.
 // Entries are looked up when e.latitude / e.longitude are absent.
@@ -185,6 +192,7 @@ function buildClusters(events: EventWithCoords[]): ClusterEntry[] {
 }
 
 export default function RaveMap({ events }: { events: EventWithCoords[] }) {
+  const { theme } = useTheme()
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
 
@@ -209,16 +217,14 @@ export default function RaveMap({ events }: { events: EventWithCoords[] }) {
       })
       mapRef.current = map
 
-      L.tileLayer(TILE_LAYER_URL, {
-        attribution: '&copy; CARTO',
-      }).addTo(map)
+      L.tileLayer(TILE_LAYER_URL, { attribution: TILE_ATTRIBUTION }).addTo(map)
 
       for (const cluster of clusters) {
         L.circleMarker(cluster.coords, {
           radius: Math.min(BASE_MARKER_RADIUS + cluster.count * MARKER_RADIUS_GROWTH, MAX_MARKER_RADIUS),
-          fillColor: MARKER_FILL_COLOR,
-          color: MARKER_BORDER_COLOR,
-          weight: 2,
+          fillColor: readToken('--gr-acc'),
+          color: readToken('--gr-acc-ink'),
+          weight: 1.5,
           fillOpacity: MARKER_FILL_OPACITY,
         })
           .addTo(map)
@@ -232,11 +238,11 @@ export default function RaveMap({ events }: { events: EventWithCoords[] }) {
         mapRef.current = null
       }
     }
-  }, [events])
+  }, [events, theme])
 
   return (
-    <div style={{ height: '400px', width: '100%', borderRadius: '16px', overflow: 'hidden' }}>
-      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+    <div className={`${styles.map} ${theme === 'dark' ? styles.dark : ''}`}>
+      <div ref={containerRef} className={styles.canvas} />
     </div>
   )
 }

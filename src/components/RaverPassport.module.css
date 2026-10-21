@@ -1,0 +1,138 @@
+/* The exported passport image. Colours are fixed hex values, not theme
+   tokens: the saved image must look the same whichever theme the viewer
+   uses. Board: docs/redesign/boards/Insights.dc.html (Raver passport). */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  height: 640px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #f2f0ea;
+  color: #0b0b0c;
+  font-family: var(--font-sans);
+}
+
+.band {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: #0b0b0c;
+  color: #f2f0ea;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brandMark {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: #d4ff3f;
+}
+
+.brandName {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.bigNumber {
+  font-size: 120px;
+}
+
+.bigLabel {
+  margin-top: 6px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(11, 11, 12, 0.2);
+}
+
+.pair > div {
+  min-width: 0;
+}
+
+.label {
+  color: #55534d;
+}
+
+.value {
+  margin-top: 4px;
+  overflow: hidden;
+  font-size: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section {
+  padding-top: 16px;
+  border-top: 1px solid rgba(11, 11, 12, 0.2);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listItem {
+  display: flex;
+  gap: 12px;
+}
+
+.rank {
+  color: #55534d;
+}
+
+.artist {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.empty {
+  margin-top: 8px;
+  color: #55534d;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: auto;
+  padding: 16px 24px 20px;
+  border-top: 2px dashed rgba(11, 11, 12, 0.3);
+}
+
+.barcode {
+  display: flex;
+  gap: 2px;
+  height: 44px;
+}
+
+.barcode span {
+  display: block;
+  height: 100%;
+  background: #0b0b0c;
+}

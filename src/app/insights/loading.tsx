@@ -1,12 +1,12 @@
+import StatsTabs from '@/components/StatsTabs'
+import styles from './Insights.module.css'
+
 export default function Loading() {
   return (
-    <div className="page">
+    <div className="page" aria-busy="true" aria-label="Loading your insights">
       <div className="container">
-        <div className="grid">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton skeleton-card" />
-          ))}
-        </div>
+        <StatsTabs active="insights" />
+        <div className={`skeleton ${styles.skeletonBlock}`} />
       </div>
     </div>
   )

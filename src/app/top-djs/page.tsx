@@ -3,88 +3,53 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserData } from '@/context/UserDataContext'
+import StatsTabs from '@/components/StatsTabs'
 import { useSpotifyEnrichment } from './useSpotifyEnrichment'
 import ArtistActionsModal from './ArtistActionsModal'
-import { PageHeader, SortModeControl, StatsBar, ArtistRankingList } from './TopDjsSections'
 import DjSuggestionsChips from './DjSuggestionsChips'
-import StatsTabs from '@/components/StatsTabs'
+import { Podium, RankingRows } from './TopDjsRanking'
+import { type RankedArtist, type SortMode, useTopDjsRanking } from './use-top-djs-ranking'
+import styles from './TopDjs.module.css'
 
 const TOP_ENRICHMENT_LIMIT = 15
+const SKELETON_ROWS = [1, 2, 3, 4, 5]
+const SORT_LABELS: Record<SortMode, string> = { count: 'Times seen', rating: 'Your rating' }
 
+function YearSelect({ years, value, onChange }: { years: string[]; value: string; onChange: (year: string) => void }) {
+  if (years.length === 0) return null
+  return (
+    <label className={styles.period}>
+      <span className="mono">Period</span>
+      <select className={`form-input ${styles.periodSelect}`} value={value} onChange={e => onChange(e.target.value)}>
+        <option value="all">All time</option>
+        {years.map((y) => <option key={y} value={y}>{y}</option>)}
+      </select>
+    </label>
+  )
+}
+
+/** Stats › Top DJs. Boards: TopDJs, TopDJsMobile. */
 export default function TopDJs() {
   const router = useRouter()
-  const { getArtistSeenCounts, artistMeta, performanceRatings, getFestivalMeta, batchEnrichArtists, loaded } = useUserData()
+  const { artistMeta, performanceRatings, batchEnrichArtists, loaded } = useUserData()
   const [selectedYear, setSelectedYear] = useState('all')
-  const [sortMode, setSortMode] = useState<'count' | 'rating'>('count')
-  const [artistToManage, setArtistToManage] = useState(null)
-
-  const { ranking, availableYears } = useMemo(() => {
-    const counts = getArtistSeenCounts()
-    const years = new Set<string>()
-
-    const list = Object.entries(counts)
-      .map(([artistId, { count, events }]: [string, any]) => {
-        const meta = artistMeta[artistId]
-        const festivals = events.map((eid: string) => {
-          const fm = getFestivalMeta(eid)
-          return { id: eid, name: fm?.name ?? eid, date: fm?.date ?? null }
-        })
-
-        festivals.forEach((f: any) => { if (f.date) years.add(f.date.substring(0, 4)) })
-
-        const filtered = selectedYear === 'all'
-          ? festivals
-          : festivals.filter((f: any) => f.date?.startsWith(selectedYear))
-
-        if (filtered.length === 0) return null
-
-        const ratings = filtered.map((f: any) => performanceRatings[`${f.id}::${artistId}`]).filter((r: number) => r > 0)
-        const avgSetRating = ratings.length > 0
-          ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length
-          : 0
-
-        return {
-          id: artistId,
-          name: meta?.name ?? artistId,
-          image: meta?.image ?? null,
-          count: filtered.length,
-          avgSetRating,
-          festivals: filtered.sort((a: any, b: any) => (a.date || '').localeCompare(b.date || '')),
-        }
-      })
-      .filter(Boolean)
-      .sort((a: any, b: any) => {
-        if (sortMode === 'rating') {
-          // Primary: avg rating desc, secondary: count desc, tertiary: name
-          if (b.avgSetRating !== a.avgSetRating) return b.avgSetRating - a.avgSetRating
-          if (b.count !== a.count) return b.count - a.count
-          return a.name.localeCompare(b.name)
-        }
-        // Default: times seen desc, then rating, then name
-        if (b.count !== a.count) return b.count - a.count
-        if (b.avgSetRating !== a.avgSetRating) return b.avgSetRating - a.avgSetRating
-        return a.name.localeCompare(b.name)
-      })
-
-    return {
-      ranking: list,
-      availableYears: [...years].sort((a: any, b: any) => b.localeCompare(a)),
-    }
-  }, [getArtistSeenCounts, artistMeta, performanceRatings, getFestivalMeta, selectedYear, sortMode])
+  const [sortMode, setSortMode] = useState<SortMode>('count')
+  const [artistToManage, setArtistToManage] = useState<RankedArtist | null>(null)
+  const { ranking, availableYears } = useTopDjsRanking(selectedYear, sortMode)
 
   const artistNames = useMemo(() => {
     return ranking
       .slice(0, TOP_ENRICHMENT_LIMIT)
-      .filter((a: any) => {
+      .filter((a) => {
         const meta = artistMeta[a.id]
         return !meta?.genres || meta.genres.length === 0 || !meta?.image
       })
-      .map((a: any) => a.name)
+      .map((a) => a.name)
   }, [ranking, artistMeta])
 
   const spotifyData = useSpotifyEnrichment(artistNames, (results) => {
     const metaUpdates: Record<string, any> = {}
-    ranking.slice(0, TOP_ENRICHMENT_LIMIT).forEach((artist: any) => {
+    ranking.slice(0, TOP_ENRICHMENT_LIMIT).forEach((artist) => {
       const enriched = results[artist.name.toLowerCase()]
       if (!enriched) return
 
@@ -104,16 +69,15 @@ export default function TopDJs() {
     }
   })
 
+  const imageFor = (artist: RankedArtist) => artist.image || spotifyData[artist.name.toLowerCase()]?.image || null
+  const totalSets = ranking.reduce((sum, a) => sum + a.count, 0)
+
   if (!loaded) {
     return (
-      <div className="page">
-        <div className="container" style={{ paddingTop: 32 }}>
-          <div style={{ height: 40, width: 200, marginBottom: 24, borderRadius: 8, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} style={{ height: 82, borderRadius: 14, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
-            ))}
-          </div>
+      <div className="page" aria-busy="true" aria-label="Loading your top DJs">
+        <div className="container">
+          <StatsTabs active="top-djs" />
+          {SKELETON_ROWS.map(i => <div key={i} className={`skeleton ${styles.skeletonRow}`} />)}
         </div>
       </div>
     )
@@ -122,44 +86,41 @@ export default function TopDJs() {
   return (
     <div className="page">
       <div className="container">
-        <StatsTabs active="top-djs" />
-        <PageHeader
-          availableYears={availableYears}
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-        />
-
-        {ranking.length > 0 && <StatsBar ranking={ranking} />}
-
-        {ranking.length > 0 && (
-          <SortModeControl sortMode={sortMode} onSortModeChange={setSortMode} />
-        )}
+        <StatsTabs active="top-djs" action={<YearSelect years={availableYears} value={selectedYear} onChange={setSelectedYear} />} />
 
         {ranking.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">&#127908;</div>
-            <h3>No artists tracked yet</h3>
-            <p>Go to a festival page and mark artists you&apos;ve seen to start building your ranking.</p>
-            <button className="btn btn-primary" onClick={() => router.push('/')} id="go-discover-djs">
-              Discover Festivals
+          <div className={styles.empty}>
+            <h2 className={`display ${styles.emptyTitle}`}>No artists tracked yet.</h2>
+            <p className={styles.emptyText}>Mark the sets you saw on a festival page and your ranking builds itself.</p>
+            <button type="button" className="btn btn-primary" onClick={() => router.push('/')} id="go-discover-djs">
+              Discover festivals
             </button>
-            <div style={{ marginTop: 32, width: '100%' }}>
-              <DjSuggestionsChips />
-            </div>
+            <DjSuggestionsChips />
           </div>
         ) : (
-          <ArtistRankingList
-            ranking={ranking}
-            spotifyData={spotifyData}
-            artistMeta={artistMeta}
-            onSelectArtist={setArtistToManage}
-          />
-        )}
-
-        {ranking.length > 0 && (
-          <div style={{ marginTop: 24, padding: '0 4px', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-            Click an artist to see history or go to profile
-          </div>
+          <>
+            <div className={styles.controls}>
+              <p className={`mono ${styles.summary}`}>
+                <span className={styles.summaryNumber}>{ranking.length}</span> unique artists ·{' '}
+                <span className={styles.summaryNumber}>{totalSets}</span> sets seen
+              </p>
+              <div className={styles.seg} role="group" aria-label="Sort by">
+                {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={sortMode === mode ? styles.segOn : undefined}
+                    aria-pressed={sortMode === mode}
+                    onClick={() => setSortMode(mode)}
+                  >
+                    {SORT_LABELS[mode]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Podium ranking={ranking} imageFor={imageFor} onSelectArtist={setArtistToManage} />
+            <RankingRows ranking={ranking} imageFor={imageFor} onSelectArtist={setArtistToManage} />
+          </>
         )}
 
         <ArtistActionsModal

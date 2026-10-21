@@ -1,0 +1,145 @@
+/* Boards: docs/redesign/boards/TopDJs.dc.html, TopDJsMobile.dc.html. */
+
+.muted {
+  color: var(--gr-tx3);
+}
+
+/* ── Period select (beside the Stats title) ── */
+
+.period {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gr-tx3);
+}
+
+.periodSelect {
+  width: auto;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+/* ── Summary + sort ── */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.summary {
+  color: var(--gr-tx2);
+}
+
+.summaryNumber {
+  font-size: 14px;
+  color: var(--gr-tx);
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--gr-line2);
+}
+
+.seg button {
+  min-height: 40px;
+  padding: 0 16px;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg .segOn {
+  background: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+/* ── Empty ── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 720px;
+  padding: 16px 0;
+}
+
+.emptyTitle {
+  font-size: 40px;
+}
+
+.emptyText {
+  color: var(--gr-tx2);
+}
+
+.suggestions {
+  margin-top: 24px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── History sheet ── */
+
+.sheetFollow {
+  margin-bottom: 20px;
+}
+
+.sheetLabel {
+  margin-bottom: 8px;
+  color: var(--gr-tx2);
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.historyInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.historyName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.historyRow:hover .historyName {
+  text-decoration: underline;
+}
+
+.skeletonRow {
+  height: 76px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .emptyTitle {
+    font-size: 32px;
+  }
+}

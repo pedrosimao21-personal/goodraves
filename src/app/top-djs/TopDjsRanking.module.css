@@ -1,0 +1,221 @@
+/* Podium and ranking rows. Board: docs/redesign/boards/TopDJs.dc.html. */
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gr-tx2);
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.podiumCard {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line);
+  color: var(--gr-tx);
+  text-align: left;
+  cursor: pointer;
+}
+
+.podiumCard:hover {
+  border-color: var(--gr-line2);
+}
+
+/* Number one is yours: lime (olive in light) edge and rank. */
+.podiumFirst,
+.podiumFirst:hover {
+  border-color: var(--gr-acc-ink);
+}
+
+.podiumTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.podiumRank {
+  font-size: 96px;
+}
+
+.podiumFirst .podiumRank {
+  color: var(--gr-acc-ink);
+}
+
+.podiumAvatar,
+.rowAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  color: var(--gr-tx3);
+}
+
+.podiumAvatar {
+  width: 96px;
+  height: 96px;
+  font-size: 40px;
+}
+
+.podiumAvatar img,
+.rowAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.podiumBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+.podiumName {
+  font-size: 40px;
+  overflow-wrap: anywhere;
+}
+
+.podiumMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.rows {
+  margin-top: 40px;
+  border-top: 1px solid var(--gr-line2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 56px 52px minmax(0, 1fr) 160px auto 80px;
+  gap: 20px;
+  align-items: center;
+  min-height: 76px;
+  border-bottom: 1px solid var(--gr-line);
+  cursor: pointer;
+}
+
+.rowRank {
+  font-size: 32px;
+  color: var(--gr-tx3);
+}
+
+.rowAvatar {
+  width: 52px;
+  height: 52px;
+  font-size: 20px;
+}
+
+.rowInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.rowName {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx);
+  font: 600 18px var(--font-sans);
+  text-align: left;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.row:hover .rowName {
+  text-decoration: underline;
+}
+
+.rowRatingMobile {
+  display: none;
+}
+
+.rowSeen {
+  text-align: right;
+  font-size: 40px;
+}
+
+.more {
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .podium {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .podiumRank {
+    font-size: 72px;
+  }
+
+  .podiumAvatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .podiumName {
+    font-size: 32px;
+  }
+
+  .rows {
+    margin-top: 24px;
+  }
+
+  .row {
+    grid-template-columns: 34px 44px minmax(0, 1fr) auto auto;
+    gap: 12px;
+    min-height: 72px;
+  }
+
+  .rowRank {
+    font-size: 24px;
+  }
+
+  .rowAvatar {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .rowName {
+    font-size: 16px;
+  }
+
+  .rowRating {
+    display: none;
+  }
+
+  .rowRatingMobile {
+    display: block;
+  }
+
+  .rowSeen {
+    font-size: 28px;
+  }
+}
+
+.muted {
+  color: var(--gr-tx3);
+}

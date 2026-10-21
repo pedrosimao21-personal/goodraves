@@ -1,13 +1,16 @@
+import StatsTabs from '@/components/StatsTabs'
+import styles from './TopDjs.module.css'
+
+const SKELETON_ROWS = 6
+
 export default function Loading() {
   return (
-    <div className="page">
+    <div className="page" aria-busy="true" aria-label="Loading your top DJs">
       <div className="container">
-        <div className="skeleton" style={{ height: 48, borderRadius: 8, marginBottom: 24, maxWidth: 300 }} />
-        <div className="grid">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="skeleton skeleton-card" />
-          ))}
-        </div>
+        <StatsTabs active="top-djs" />
+        {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+          <div key={i} className={`skeleton ${styles.skeletonRow}`} />
+        ))}
       </div>
     </div>
   )

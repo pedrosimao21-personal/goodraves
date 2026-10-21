@@ -23,6 +23,8 @@ const MINUTES_PER_HOUR = 60
 type Highlights = {
   pickedArtistIds: Set<string>
   clashArtistIds: Set<string>
+  /** Makes each block a pick toggle; omitted once the festival is over. */
+  onTogglePick?: (group: SlotGroup) => void
 }
 
 type Props = Highlights & {
@@ -67,18 +69,18 @@ function ArtistBlock({ group, dayStart, rangeStart, rangeEnd, highlights }: Rang
   const leftPct = toPercent(start, rangeStart, rangeEnd)
   const widthPct = toPercent(end, rangeStart, rangeEnd) - leftPct
   const timeLabel = `${group.startTime}–${group.endTime}`
+  const names = group.artists.map(a => a.artistName).join(' & ')
   const isB2b = group.artists.length > 1
+  const highlightClass = getBlockClass(group, highlights)
+  const position = { left: `${leftPct}%`, width: `calc(${widthPct}% - 4px)` }
+  const { onTogglePick } = highlights
 
-  return (
-    <div
-      className={`${styles.block} ${getBlockClass(group, highlights)}`}
-      title={`${group.artists.map(a => a.artistName).join(' & ')}\n${timeLabel}`}
-      style={{ left: `${leftPct}%`, width: `calc(${widthPct}% - 4px)` }}
-    >
-      {/* Each artist is its own link, so middle-click works for B2B partners too. */}
+  const content = (
+    <>
       <span className={styles.blockNames}>
         {isB2b && <span className={styles.b2bTag}>B2B</span>}
-        {group.artists.map((artist, index) => (
+        {onTogglePick ? names : group.artists.map((artist, index) => (
+          // Each artist is its own link, so middle-click works for B2B partners too.
           <span key={artist.artistId}>
             <Link href={`/artist/${artist.artistId}/${encodeURIComponent(artist.artistName)}`} className={styles.blockLink}>
               {artist.artistName}
@@ -88,7 +90,27 @@ function ArtistBlock({ group, dayStart, rangeStart, rangeEnd, highlights }: Rang
         ))}
       </span>
       <span className={`mono ${styles.blockTime}`}>{timeLabel}</span>
-    </div>
+    </>
+  )
+
+  if (!onTogglePick) {
+    return <div className={`${styles.block} ${highlightClass}`} title={`${names}\n${timeLabel}`} style={position}>{content}</div>
+  }
+
+  // A tap picks the set (board: "Tap a set to pick it"); artist pages stay
+  // one tap away in Your schedule and the A–Z view.
+  return (
+    <button
+      type="button"
+      className={`${styles.block} ${styles.blockButton} ${highlightClass}`}
+      title={`${names}\n${timeLabel}`}
+      style={position}
+      aria-pressed={highlightClass !== ''}
+      aria-label={`${names}, ${timeLabel}`}
+      onClick={() => onTogglePick(group)}
+    >
+      {content}
+    </button>
   )
 }
 
@@ -128,10 +150,10 @@ function StageRow({ stage, dayStart, rangeStart, rangeEnd, hourMarkers, highligh
 }
 
 /** Stages as rows, time across. Board: Festival (timetable). */
-export default function TimetableGantt({ stages, pickedArtistIds, clashArtistIds }: Props) {
+export default function TimetableGantt({ stages, pickedArtistIds, clashArtistIds, onTogglePick }: Props) {
   const { dayStart, startMinutes, endMinutes } = calculateTimeRange(stages)
   const hourMarkers = generateHourMarkers(startMinutes, endMinutes)
-  const highlights = { pickedArtistIds, clashArtistIds }
+  const highlights = { pickedArtistIds, clashArtistIds, onTogglePick }
   const trackWidth = Math.max(MIN_TRACK_WIDTH_PX, ((endMinutes - startMinutes) / MINUTES_PER_HOUR) * HOUR_WIDTH_PX)
 
   return (

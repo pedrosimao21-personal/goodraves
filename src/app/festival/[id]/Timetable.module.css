@@ -1,54 +1,6 @@
 /* Boards: docs/redesign/boards/Festival.dc.html (Gantt) and
-   FestivalMobile.dc.html (list). Both trees render; the media query picks
-   the visible one, so there is no viewport measuring on the client. */
-
-.ganttWrapper {
-  display: block;
-}
-
-.listWrapper {
-  display: none;
-}
-
-@media (max-width: 639px) {
-  .ganttWrapper {
-    display: none;
-  }
-
-  .listWrapper {
-    display: block;
-  }
-}
-
-/* ── Clash banner ── */
-
-.clash {
-  margin-bottom: 20px;
-  border: 1px solid var(--gr-warn);
-  background: color-mix(in srgb, var(--gr-warn) 6%, transparent);
-}
-
-.clashTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--gr-warn) 35%, transparent);
-  color: var(--gr-warn);
-}
-
-.clashRow {
-  padding: 10px 12px;
-  font-size: 14px;
-}
-
-.clashRow + .clashRow {
-  border-top: 1px solid var(--gr-line);
-}
-
-.clashRow .mono {
-  color: var(--gr-tx3);
-}
+   FestivalMobile.dc.html (list). Which one shows per breakpoint is decided
+   in FestivalLineup.module.css. */
 
 /* ── Gantt ── */
 
@@ -152,12 +104,28 @@
   border-radius: var(--gr-radius);
 }
 
+.blockButton {
+  color: var(--gr-tx);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.blockButton:hover {
+  border-color: var(--gr-tx3);
+}
+
 .blockPicked {
   background: color-mix(in srgb, var(--gr-acc) 14%, transparent);
   border-color: var(--gr-acc-ink);
 }
 
-.blockClash {
+.blockPicked:hover {
+  border-color: var(--gr-acc-ink);
+}
+
+.blockClash,
+.blockClash:hover {
   background: color-mix(in srgb, var(--gr-warn) 12%, transparent);
   border-color: var(--gr-warn);
 }

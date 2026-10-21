@@ -1,0 +1,247 @@
+/* Boards: docs/redesign/boards/Festival.dc.html ("Your schedule") and
+   FestivalMobile.dc.html (My schedule). */
+
+.schedule {
+  margin-top: 56px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.title {
+  font-size: 40px;
+}
+
+.summary {
+  color: var(--gr-tx2);
+}
+
+.empty {
+  max-width: 560px;
+  padding-top: 16px;
+  color: var(--gr-tx2);
+}
+
+.columns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 48px;
+  margin-top: 24px;
+}
+
+.main {
+  flex: 999 1 560px;
+  min-width: 0;
+}
+
+.side {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.day {
+  min-width: 0;
+}
+
+.dayTitle {
+  padding-bottom: 8px;
+  color: var(--gr-tx);
+}
+
+.dayTitleEmpty {
+  color: var(--gr-tx3);
+}
+
+.dayEmpty {
+  padding-top: 8px;
+  border-top: 1px solid var(--gr-line);
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
+.rows {
+  border-top: 1px solid var(--gr-line);
+}
+
+/* time | names | stage | pick */
+.row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 120px 44px;
+  grid-template-areas: 'time names stage pick';
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 60px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.side .row {
+  grid-template-columns: 100px minmax(0, 1fr) 44px;
+  grid-template-areas: 'time names pick' 'time stage pick';
+}
+
+.pick {
+  grid-area: pick;
+}
+
+.time {
+  grid-area: time;
+  font-size: 12px;
+}
+
+.timeEnd {
+  color: var(--gr-tx3);
+}
+
+.names {
+  grid-area: names;
+  min-width: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.stage {
+  grid-area: stage;
+  min-width: 0;
+  color: var(--gr-tx3);
+  overflow-wrap: anywhere;
+}
+
+.b2bTag {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  margin-right: 6px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+}
+
+.free {
+  padding: 10px 0 10px 116px;
+  border-bottom: 1px dashed var(--gr-line2);
+  color: var(--gr-tx3);
+}
+
+/* ── Clash group ── */
+
+.clash {
+  margin: 12px 0;
+  border: 1px solid var(--gr-warn);
+  background: color-mix(in srgb, var(--gr-warn) 6%, transparent);
+}
+
+.clashTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--gr-warn) 35%, transparent);
+  color: var(--gr-warn);
+}
+
+.clash .row {
+  padding-left: 12px;
+}
+
+.clash .row:last-child {
+  border-bottom: 0;
+}
+
+.rowClash .time,
+.rowClash .timeEnd {
+  color: var(--gr-warn);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+/* Desktop shows the Gantt above the schedule, so it needs no shortcut to it. */
+.browse {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  /* On mobile this is its own view, named by the switch above it. */
+  .schedule {
+    margin-top: 0;
+  }
+
+  .header {
+    display: none;
+  }
+
+  .columns {
+    margin-top: 8px;
+  }
+
+  /* The day tabs above switch days on mobile. */
+  .side {
+    display: none;
+  }
+
+  .row,
+  .side .row {
+    grid-template-columns: 52px minmax(0, 1fr) 44px;
+    grid-template-areas: 'time names pick' 'time stage pick';
+    gap: 2px 14px;
+    min-height: 68px;
+  }
+
+  .names {
+    font-size: 17px;
+  }
+
+  .time {
+    line-height: 1.5;
+  }
+
+  /* Start over end, as on the mobile timetable list. */
+  .timeSep {
+    display: none;
+  }
+
+  .timeEnd {
+    display: block;
+  }
+
+  .free {
+    padding-left: 66px;
+  }
+
+  .clashHint {
+    display: none;
+  }
+
+  .actions > * {
+    flex: 1 1 100%;
+  }
+
+  .browse {
+    display: inline-flex;
+  }
+}

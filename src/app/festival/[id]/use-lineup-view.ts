@@ -1,37 +1,47 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
-export type LineupView = 'artists' | 'timetable'
+/**
+ * `schedule` is the user's picks, `timetable` the full timetable (the Gantt on
+ * desktop, "By stage" on mobile), `artists` the A–Z cards. On desktop the
+ * schedule sits under the Gantt, so `schedule` and `timetable` look the same
+ * there; Lineup.module.css decides what each view shows per breakpoint.
+ */
+export type LineupView = 'schedule' | 'timetable' | 'artists'
 
-const TIMETABLE_HASH = '#timetable'
+const VIEWS: LineupView[] = ['schedule', 'timetable', 'artists']
 
-function readViewFromHash(): LineupView {
-  return typeof window !== 'undefined' && window.location.hash === TIMETABLE_HASH ? 'timetable' : 'artists'
+function subscribeToHash(onChange: () => void): () => void {
+  window.addEventListener('hashchange', onChange)
+  return () => window.removeEventListener('hashchange', onChange)
 }
 
-/** Artists / Timetable switch, mirrored in the URL hash so a link can open the timetable. */
-export function useLineupView() {
+function readHashView(): LineupView | null {
+  const hash = window.location.hash.slice(1)
+  return VIEWS.find((view) => view === hash) ?? null
+}
+
+/**
+ * The lineup view, mirrored in the URL hash so a link can open a view
+ * (`#timetable`, `#schedule`). Without a hash it falls back to `defaultView`.
+ * The server snapshot is "no hash", so the first client render matches the
+ * server's and the hash applies right after hydration.
+ */
+export function useLineupView(defaultView: LineupView) {
   const router = useRouter()
   const pathname = usePathname()
-  const [view, setView] = useState<LineupView>(readViewFromHash)
-
-  useEffect(() => {
-    function onHashChange() {
-      setView(readViewFromHash())
-    }
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
+  const hashView = useSyncExternalStore(subscribeToHash, readHashView, () => null)
+  const [chosen, setChosen] = useState<LineupView | null>(null)
 
   function switchView(next: LineupView) {
-    setView(next)
+    setChosen(next)
     // router.replace, not a raw `location.hash =`, so Next's client router
     // tracks this history entry and Back from a page opened here re-renders.
     // replace, not push, so switching views is not a Back-button stop.
-    router.replace(`${pathname}${next === 'timetable' ? TIMETABLE_HASH : ''}`, { scroll: false })
+    router.replace(`${pathname}#${next}`, { scroll: false })
   }
 
-  return { view, switchView }
+  return { view: chosen ?? hashView ?? defaultView, switchView }
 }

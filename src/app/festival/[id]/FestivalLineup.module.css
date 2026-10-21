@@ -147,3 +147,33 @@
     gap: 12px;
   }
 }
+
+/* ── Per-breakpoint views ──
+   Both trees render on the server; these decide which one shows, so the
+   client never measures the viewport. Kept last so they win over .seg. */
+
+.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .desktopOnly {
+    display: none;
+  }
+
+  .mobileOnly {
+    display: block;
+  }
+
+  /* Board FestivalMobile: the switch spans the width, options share it. */
+  .seg.mobileOnly {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg.mobileOnly button {
+    flex: 1;
+    min-height: 44px;
+    padding: 0 8px;
+  }
+}

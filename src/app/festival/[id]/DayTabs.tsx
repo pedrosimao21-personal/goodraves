@@ -7,7 +7,7 @@ import styles from './FestivalLineup.module.css'
 const DAY_DIGITS = 2
 
 /** Short day label, e.g. "Fri 06". */
-function formatDayTabLabel(isoDate: string): string {
+export function formatDayTabLabel(isoDate: string): string {
   const date = parseLocalDate(isoDate)
   const weekday = date.toLocaleDateString('en-US', { weekday: 'short' })
   return `${weekday} ${String(date.getDate()).padStart(DAY_DIGITS, '0')}`

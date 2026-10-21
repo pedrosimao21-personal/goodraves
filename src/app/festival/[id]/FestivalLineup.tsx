@@ -1,24 +1,33 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useUserData } from '@/context/UserDataContext'
 import type { TimetableData } from '@/db/actions/festivals'
-import ArtistCard from '@/components/ArtistCard'
-import B2bSetCard from '@/components/B2bSetCard'
 import { findClashes } from '@/lib/timetable-clash'
 import type { FestivalPhase } from '@/lib/festival-date'
-import ClashBanner from './ClashBanner'
 import DayTabs from './DayTabs'
-import TimetableView from './TimetableView'
+import TimetableGantt from './TimetableGantt'
+import TimetableList from './TimetableList'
+import YourSchedule from './YourSchedule'
+import LineupArtistGrid from './LineupArtistGrid'
+import LineupViewSwitch from './LineupViewSwitch'
 import type { FestivalEvent } from './festival-event'
 import { type LineupView, useLineupView } from './use-lineup-view'
+import { usePicks } from './use-picks'
 import styles from './FestivalLineup.module.css'
-
-const VIEW_LABELS: Record<LineupView, string> = { artists: 'Artists', timetable: 'Timetable' }
 
 function countStages(timetable: TimetableData): number {
   const names = Object.values(timetable.stagesByDay).flatMap((stages) => stages.map((stage) => stage.stageName))
   return new Set(names).size
+}
+
+/**
+ * The view a visitor lands on: A–Z without a timetable or once the festival is
+ * over (rating happens on the cards), else My schedule if they already had
+ * picks and By stage if not. Desktop shows the Gantt for both.
+ */
+function pickDefaultView(hasTimetable: boolean, phase: FestivalPhase, hasPicks: boolean): LineupView {
+  if (!hasTimetable || phase === 'past') return 'artists'
+  return hasPicks ? 'schedule' : 'timetable'
 }
 
 interface FestivalLineupProps {
@@ -29,14 +38,18 @@ interface FestivalLineupProps {
   phase: FestivalPhase
 }
 
-/** Lineup heading, Artists / Timetable switch and the selected view. Board: Festival. */
+/** Lineup heading, the view switch and the selected view. Boards: Festival and FestivalMobile. */
 export default function FestivalLineup({ id, event, timetable, spotifyData, phase }: FestivalLineupProps) {
-  const { getB2bSets, wantToSee } = useUserData()
-  const { view, switchView } = useLineupView()
+  const { pickedArtistIds, togglePick } = usePicks(id)
+  // Read once, so picking the first set doesn't move the visitor to another view.
+  const [hadPicksOnLoad] = useState(() => pickedArtistIds.size > 0)
+  const hasTimetable = timetable.days.length > 0
+  const { view, switchView } = useLineupView(pickDefaultView(hasTimetable, phase, hadPicksOnLoad))
   const [selectedDay, setSelectedDay] = useState<string | null>(() => timetable.days[0] ?? null)
   // While it runs you can still pick sets for later and rate the ones you saw.
   const canPick = phase !== 'past'
   const canRate = phase !== 'upcoming'
+  const onTogglePick = canPick ? togglePick : undefined
 
   // Keep the selected day valid when the day list changes (another festival,
   // or a refresh after linking a Partyflock timetable).
@@ -44,18 +57,6 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
     setSelectedDay((prev) => (prev && timetable.days.includes(prev) ? prev : (timetable.days[0] ?? null)))
   }, [timetable.days])
 
-  const b2bSets = getB2bSets(id)
-  const { soloArtists, allSoloForB2b } = useMemo(() => {
-    const b2bMemberIds = new Set(b2bSets.flatMap(s => s.members.map(m => m.artistId)))
-    const b2bOriginalNames = new Set(b2bSets.map(s => s.originalArtistName.toLowerCase()))
-    const solo = event.attractions.filter(
-      (artist: any) => !b2bMemberIds.has(artist.id) && !b2bOriginalNames.has(artist.name.toLowerCase())
-    )
-    // Computed once here rather than per card.
-    return { soloArtists: solo, allSoloForB2b: solo.map((a: any) => ({ id: a.id, name: a.name })) }
-  }, [b2bSets, event])
-
-  const pickedArtistIds = useMemo(() => new Set(wantToSee[id] ?? []), [wantToSee, id])
   const clashes = useMemo(() => findClashes(timetable, pickedArtistIds), [timetable, pickedArtistIds])
   const activeDay = selectedDay ?? timetable.days[0]
   const clashArtistIds = useMemo(() => new Set(
@@ -64,7 +65,6 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
 
   const artistCount = event.attractions.length
   const stageCount = countStages(timetable)
-  const hasTimetable = timetable.days.length > 0
   const summary = [
     `${artistCount} artist${artistCount === 1 ? '' : 's'}`,
     stageCount > 0 ? `${stageCount} stage${stageCount === 1 ? '' : 's'}` : null,
@@ -79,6 +79,9 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
     )
   }
 
+  const stages = timetable.stagesByDay[activeDay] ?? []
+  const highlights = { pickedArtistIds, clashArtistIds, onTogglePick }
+
   return (
     <section className={styles.section}>
       <div className={styles.header}>
@@ -86,54 +89,34 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
           <h2 className={`display ${styles.title}`}>Lineup</h2>
           <span className={`mono ${styles.summary}`}>{summary}</span>
         </div>
-        {hasTimetable && (
-          <div className={styles.seg} role="tablist" aria-label="View">
-            {(Object.keys(VIEW_LABELS) as LineupView[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={view === key}
-                className={view === key ? styles.segOn : undefined}
-                onClick={() => switchView(key)}
-              >
-                {VIEW_LABELS[key]}
-              </button>
-            ))}
-          </div>
-        )}
+        {hasTimetable && <LineupViewSwitch view={view} onSwitch={switchView} />}
       </div>
 
-      {view === 'timetable' && hasTimetable ? (
+      {view !== 'artists' && hasTimetable ? (
         <>
           {timetable.days.length > 1 && (
             <DayTabs timetable={timetable} selectedDay={activeDay} onSelectDay={setSelectedDay} pickedArtistIds={pickedArtistIds} />
           )}
-          <ClashBanner clashes={clashes} />
-          <TimetableView
-            stages={timetable.stagesByDay[activeDay] ?? []}
-            pickedArtistIds={pickedArtistIds}
-            clashArtistIds={clashArtistIds}
-          />
-          {pickedArtistIds.size > 0 && <p className={`mono ${styles.footnote}`}>Your picks are outlined in lime</p>}
+          <div className={styles.desktopOnly}>
+            <TimetableGantt stages={stages} {...highlights} />
+            {canPick && <p className={`mono ${styles.footnote}`}>Tap a set to pick it · your picks are outlined in lime</p>}
+          </div>
+          {view === 'timetable' && (
+            <div className={styles.mobileOnly}><TimetableList stages={stages} {...highlights} /></div>
+          )}
+          <div className={view === 'timetable' ? styles.desktopOnly : undefined}>
+            <YourSchedule
+              festival={{ id, name: event.name, venue: event.venue?.name }}
+              timetable={timetable}
+              activeDay={activeDay}
+              pickedArtistIds={pickedArtistIds}
+              onTogglePick={onTogglePick}
+              onBrowseStages={() => switchView('timetable')}
+            />
+          </div>
         </>
       ) : (
-        <div className={styles.grid}>
-          {b2bSets.map(b2bSet => (
-            <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} canRate={canRate} />
-          ))}
-          {soloArtists.map((artist: any) => (
-            <ArtistCard
-              key={artist.id}
-              artist={artist}
-              eventId={id}
-              spotifyData={spotifyData[artist.name]}
-              canPick={canPick}
-              canRate={canRate}
-              availableArtistsForB2b={allSoloForB2b}
-            />
-          ))}
-        </div>
+        <LineupArtistGrid id={id} event={event} spotifyData={spotifyData} canPick={canPick} canRate={canRate} />
       )}
     </section>
   )

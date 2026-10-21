@@ -1,0 +1,158 @@
+/* Board: docs/redesign/boards/MyFestivals.dc.html (year-grouped rows) and
+   MyFestivalsMobile.dc.html (date badge rows for upcoming). */
+
+.row {
+  display: grid;
+  grid-template-columns: 76px 56px minmax(0, 1fr) 90px 80px auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 76px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.upcoming {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  padding: 10px 0;
+}
+
+.date {
+  color: var(--gr-tx2);
+}
+
+.dateBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx3);
+}
+
+.dateDay {
+  font-size: 26px;
+  color: var(--gr-tx);
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.monogram {
+  position: absolute;
+  right: -2px;
+  bottom: -4px;
+  font-size: 36px;
+  color: var(--gr-line2);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--gr-tx2);
+}
+
+.seen {
+  color: var(--gr-tx2);
+}
+
+.seenCount {
+  font-size: 14px;
+  color: var(--gr-tx);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  color: var(--gr-tx);
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "thumb info actions"
+      "thumb meta actions";
+    gap: 2px 14px;
+    padding: 10px 0;
+  }
+
+  .upcoming {
+    grid-template-areas: none;
+    gap: 14px;
+  }
+
+  .row:not(.upcoming) .date {
+    grid-area: meta;
+    justify-self: start;
+  }
+
+  .row:not(.upcoming) .thumb {
+    grid-area: thumb;
+  }
+
+  .row:not(.upcoming) .info {
+    grid-area: info;
+  }
+
+  .row:not(.upcoming) .actions {
+    grid-area: actions;
+  }
+
+  /* Date and vibe share one line under the name; the seen count drops. */
+  .row:not(.upcoming) .seen {
+    display: none;
+  }
+
+  .row:not(.upcoming) .vibe {
+    grid-area: meta;
+    justify-self: end;
+  }
+}

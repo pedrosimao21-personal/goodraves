@@ -1,0 +1,18 @@
+/* Shared bits of the add-event and edit-festival sheets. */
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.invalid,
+.invalid:focus {
+  border-color: var(--gr-err);
+}
+
+@media (max-width: 640px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

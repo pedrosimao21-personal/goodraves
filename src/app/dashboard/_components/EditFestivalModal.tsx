@@ -5,10 +5,10 @@ import { useUserData } from '@/context/UserDataContext'
 import { isAllowedImageHost } from '@/lib/imageHosts'
 import { getFestivalLineupNames } from '@/db/actions/get-initial-data'
 import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
+import Sheet, { SheetActions } from '@/components/Sheet'
+import formStyles from './DashboardForms.module.css'
 
-const MODAL_Z_INDEX = 1000
-const MODAL_MAX_WIDTH = 480
-const IMAGE_ERROR_COLOR = 'var(--error-text)'
+const LINEUP_ROWS = 3
 const SAVED_FEEDBACK_DELAY_MS = 800
 
 export default function EditFestivalModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
@@ -54,101 +54,58 @@ export default function EditFestivalModal({ eventId, onClose }: { eventId: strin
     setTimeout(() => { setSaved(false); onClose() }, SAVED_FEEDBACK_DELAY_MS)
   }
 
-  const inputStyle = {
-    width: '100%',
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    color: 'var(--text-primary)',
-    fontSize: '0.9rem',
-    fontFamily: 'var(--font-sans)',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-  }
-  const labelStyle = { fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 5, display: 'block' as const, fontWeight: 600 }
-
   return (
-    <div
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'flex-end',
-        justifyContent: 'center',
-        padding: '0 0 env(safe-area-inset-bottom, 0)',
-      }}
-    >
-      <div
-        className="fade-in"
-        style={{
-          background: 'var(--bg-card)',
-          width: '100%', maxWidth: MODAL_MAX_WIDTH,
-          borderRadius: '20px 20px 0 0',
-          border: '1px solid var(--border)',
-          overflow: 'hidden',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>Edit Festival</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}>&times;</button>
+    <Sheet title="Edit festival" eyebrow="Admin · festival" onClose={onClose}>
+      <div className="form-stack">
+        <div>
+          <label className="form-label" htmlFor="edit-festival-name">Event name</label>
+          <input id="edit-festival-name" className="form-input" value={name} onChange={e => setName(e.target.value)} />
         </div>
-
-        <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div>
+          <label className="form-label" htmlFor="edit-festival-date">Date</label>
+          <input id="edit-festival-date" type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+        <div className={formStyles.pair}>
           <div>
-            <label style={labelStyle}>Event Name</label>
-            <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} />
+            <label className="form-label" htmlFor="edit-festival-venue">Venue</label>
+            <input id="edit-festival-venue" className="form-input" value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. Gashouder" />
           </div>
           <div>
-            <label style={labelStyle}>Date</label>
-            <input type="date" style={inputStyle} value={date} onChange={e => setDate(e.target.value)} />
-          </div>
-          <div className="form-grid">
-            <div>
-              <label style={labelStyle}>Venue</label>
-              <input style={inputStyle} value={venue} onChange={e => setVenue(e.target.value)} placeholder="e.g. Gashouder" />
-            </div>
-            <div>
-              <label style={labelStyle}>City</label>
-              <input style={inputStyle} value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Amsterdam" />
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Image URL</label>
-            <input
-              style={{ ...inputStyle, borderColor: isImageInvalid ? IMAGE_ERROR_COLOR : undefined }}
-              value={image}
-              onChange={e => setImage(e.target.value)}
-              placeholder="https://..."
-            />
-            {isImageInvalid && (
-              <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: IMAGE_ERROR_COLOR }}>
-                This image host is not allowed. The image won&apos;t display.
-              </p>
-            )}
-          </div>
-          <div>
-            <label style={labelStyle}>Lineup (comma-separated)</label>
-            <textarea
-              style={{ ...inputStyle, resize: 'vertical', minHeight: 72 }}
-              value={lineupLoading ? 'Loading lineup...' : lineup}
-              onChange={e => setLineup(e.target.value)}
-              placeholder="Artist 1, Artist 2, ..."
-              disabled={lineupLoading}
-            />
+            <label className="form-label" htmlFor="edit-festival-city">City</label>
+            <input id="edit-festival-city" className="form-input" value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Amsterdam" />
           </div>
         </div>
-
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-          <button onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" style={{ flex: 2 }}>
-            {saved ? 'Saved!' : 'Save Changes'}
-          </button>
+        <div>
+          <label className="form-label" htmlFor="edit-festival-image">Image URL</label>
+          <input
+            id="edit-festival-image"
+            className={`form-input ${isImageInvalid ? formStyles.invalid : ''}`}
+            value={image}
+            onChange={e => setImage(e.target.value)}
+            placeholder="https://..."
+            aria-invalid={Boolean(isImageInvalid)}
+          />
+          {isImageInvalid && <p className="form-error">This image host is not allowed. The image won&apos;t display.</p>}
+        </div>
+        <div>
+          <label className="form-label" htmlFor="edit-festival-lineup">Lineup (comma-separated)</label>
+          <textarea
+            id="edit-festival-lineup"
+            className="form-input"
+            rows={LINEUP_ROWS}
+            value={lineupLoading ? 'Loading lineup…' : lineup}
+            onChange={e => setLineup(e.target.value)}
+            placeholder="Artist 1, Artist 2, …"
+            disabled={lineupLoading}
+          />
         </div>
       </div>
-    </div>
+      <SheetActions>
+        <button type="button" onClick={onClose} className="btn">Cancel</button>
+        <button type="button" onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary">
+          {saved ? 'Saved' : 'Save changes'}
+        </button>
+      </SheetActions>
+    </Sheet>
   )
 }

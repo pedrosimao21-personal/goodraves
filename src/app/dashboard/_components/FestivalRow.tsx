@@ -4,12 +4,28 @@ import React, { useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '@/context/UserDataContext'
-import { formatDate } from '@/lib/format-date'
+import RatingSquares from '@/components/rating/RatingSquares'
+import { CloseIcon, EditIcon } from '@/components/icons'
+import { parseLocalDate } from '@/lib/dates'
+import styles from './FestivalRow.module.css'
 
-function getEventIcon(eventId: string): string {
-  if (eventId.startsWith('ra-')) return '\u{1F3A7}'
-  if (eventId.startsWith('custom-')) return '\u{1F3AA}'
-  return '\u{1F3B5}'
+const THUMB_SIZE = 112
+const MONOGRAM_WORDS = 2
+const DAY_DIGITS = 2
+
+function formatShortDate(isoDate: string): string {
+  const date = parseLocalDate(isoDate)
+  return `${String(date.getDate()).padStart(DAY_DIGITS, '0')} ${date.toLocaleString('en-US', { month: 'short' })}`
+}
+
+function DateBadge({ isoDate }: { isoDate: string }) {
+  const date = parseLocalDate(isoDate)
+  return (
+    <span className={styles.dateBadge}>
+      <span className="mono">{date.toLocaleString('en-US', { month: 'short' })}</span>
+      <span className={`display ${styles.dateDay}`}>{String(date.getDate()).padStart(DAY_DIGITS, '0')}</span>
+    </span>
+  )
 }
 
 const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
@@ -18,96 +34,62 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   isUpcomingTab: boolean
   onEdit?: (id: string) => void
 }) => {
-  const { getSeenCount, getFestivalMeta } = useUserDataActions()
+  const { getSeenCount, getFestivalMeta, getFestivalRating } = useUserDataActions()
 
-  const displayEvent = getFestivalMeta(eventId)
+  const meta = getFestivalMeta(eventId)
   const seenCount = getSeenCount(eventId)
+  const vibe = getFestivalRating(eventId)
+  const name = meta?.name ?? eventId
+  const image = meta?.image || meta?.imageUrl
+  const venue = meta?.venue && typeof meta.venue === 'object' ? meta.venue : null
+  const place = [venue?.name, venue?.city].filter(Boolean).join(' · ')
+  const href = `/festival/${eventId}`
 
-  const handleRemove = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleRemove = useCallback(() => {
     if (confirm('Are you sure you want to remove this festival from your list?')) {
       onRemove(eventId)
     }
   }, [eventId, onRemove])
 
-  const handleEdit = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    onEdit?.(eventId)
-  }, [eventId, onEdit])
-
   return (
-    <Link
-      href={`/festival/${eventId}`}
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: '12px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        cursor: 'pointer',
-        transition: 'border-color 250ms ease',
-        overflow: 'hidden',
-        textDecoration: 'none',
-        color: 'inherit',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
-    >
-      {(displayEvent?.image || displayEvent?.imageUrl) ? (
-        <Image src={(displayEvent.image || displayEvent.imageUrl)!} alt="" width={44} height={44} sizes="44px" style={{ borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
-      ) : (
-        <div style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--gradient-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
-          {getEventIcon(eventId)}
-        </div>
+    <div className={`${styles.row} ${isUpcomingTab ? styles.upcoming : ''}`}>
+      {isUpcomingTab
+        ? (meta?.date ? <DateBadge isoDate={meta.date} /> : <span />)
+        : <span className={`mono ${styles.date}`}>{meta?.date ? formatShortDate(meta.date) : ''}</span>}
+
+      {!isUpcomingTab && (
+        <Link href={href} className={styles.thumb} tabIndex={-1} aria-hidden="true">
+          {image
+            ? <Image src={image} alt="" width={THUMB_SIZE} height={THUMB_SIZE} sizes="56px" />
+            : <span className={`display ${styles.monogram}`}>{name.split(/\s+/).slice(0, MONOGRAM_WORDS).map((w: string) => w[0]).join('')}</span>}
+        </Link>
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.93rem', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
-          {displayEvent?.name ?? eventId}
-        </div>
-        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', lineHeight: 1.4, alignItems: 'center' }}>
-          {displayEvent?.date && <span style={{ whiteSpace: 'nowrap' }}>{formatDate(displayEvent.date)}</span>}
-          {displayEvent?.venue && typeof displayEvent.venue === 'object' && displayEvent.venue.city && (
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{displayEvent.venue.city}</span>
-          )}
-          {displayEvent?.genres?.map((genre: string) => (
-            <span key={genre} className="tag">{genre}</span>
-          ))}
-        </div>
+      <div className={styles.info}>
+        <Link href={href} className={styles.name}>{name}</Link>
+        {place && <span className={styles.place}>{place}</span>}
       </div>
 
-      {!isUpcomingTab && seenCount > 0 && (
-        <div style={{ textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, background: 'var(--gradient-hero)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{seenCount}</div>
-          <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Seen</div>
-        </div>
+      {!isUpcomingTab && (
+        <span className={`mono ${styles.seen}`}>
+          {seenCount > 0 && <><span className={styles.seenCount}>{seenCount}</span> seen</>}
+        </span>
+      )}
+      {!isUpcomingTab && (
+        <span className={styles.vibe}>{vibe > 0 && <RatingSquares value={vibe} size="sm" />}</span>
       )}
 
-      {onEdit && (
-        <button
-          className="btn-ghost"
-          onClick={handleEdit}
-          title="Edit festival details"
-          style={{ fontSize: '0.9rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
-        >
-          &#9998;
+      <div className={styles.actions}>
+        {onEdit && (
+          <button type="button" className={styles.iconButton} onClick={() => onEdit(eventId)} aria-label={`Edit ${name}`} title="Edit festival details">
+            <EditIcon size={16} />
+          </button>
+        )}
+        <button type="button" className={styles.iconButton} onClick={handleRemove} id={`remove-${eventId}`} aria-label={`Remove ${name}`} title="Remove from list">
+          <CloseIcon size={16} />
         </button>
-      )}
-
-      <button
-        className="btn-ghost"
-        style={{ fontSize: '0.85rem', color: 'var(--text-muted)', flexShrink: 0, padding: '4px 7px' }}
-        onClick={handleRemove}
-        id={`remove-${eventId}`}
-        title="Remove from list"
-      >
-        &times;
-      </button>
-    </Link>
+      </div>
+    </div>
   )
 })
 

@@ -1,0 +1,162 @@
+/* Timeline tab. Not drawn on the boards; uses the MyFestivals row language. */
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.years {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.month {
+  width: auto;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--gr-line);
+  background: var(--gr-s1);
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 56px;
+  height: 56px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.monogram {
+  position: absolute;
+  right: -2px;
+  bottom: -4px;
+  font-size: 36px;
+  color: var(--gr-line2);
+}
+
+.cardInfo {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardName {
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.cardName:hover {
+  color: var(--gr-tx2);
+}
+
+.cardDetails {
+  color: var(--gr-tx2);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.goingTag {
+  border-color: var(--gr-go);
+  color: var(--gr-go);
+}
+
+.seen {
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.seenLabel {
+  margin-bottom: 10px;
+  color: var(--gr-tx3);
+}
+
+.artists {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.artist {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--gr-line2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.artist:hover {
+  border-color: var(--gr-tx);
+}
+
+.artistName {
+  text-transform: uppercase;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 32px 0;
+}
+
+.emptyTitle {
+  font-size: 40px;
+}
+
+.emptyText {
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .cardHeader {
+    padding: 14px;
+  }
+
+  .seen {
+    padding: 12px 14px 14px;
+  }
+
+  .cardName {
+    font-size: 22px;
+  }
+}

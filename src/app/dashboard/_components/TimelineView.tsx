@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUserData } from '@/context/UserDataContext'
 import { parseLocalDate } from '@/lib/dates'
 import TimelineCard from './TimelineCard'
+import styles from './Timeline.module.css'
 
 const MONTHS = [
   'All', 'January', 'February', 'March', 'April', 'May', 'June',
@@ -110,40 +111,25 @@ export default function TimelineView({
 
   return (
     <div>
-      <div className="filters" style={{ marginBottom: 16 }}>
-        <span className="filter-label">Year:</span>
-        <div className="filter-chips" style={{ overflowX: 'auto', flexWrap: 'nowrap' }} role="group" aria-label="Filter by year">
+      <div className={styles.filters}>
+        <div className={styles.years} role="group" aria-label="Filter by year">
           {availableYears.map(year => (
             <button
               key={year}
+              type="button"
               className={`chip ${selectedYear === year ? 'active' : ''}`}
+              aria-pressed={selectedYear === year}
               onClick={() => handleYearChange(year)}
             >
               {year}
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="filters" style={{ marginBottom: 32 }}>
-        <span className="filter-label">Month:</span>
         <select
+          className={`form-input ${styles.month}`}
           value={selectedMonth}
           onChange={e => handleMonthChange(e.target.value)}
           aria-label="Filter by month"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-full)',
-            color: selectedMonth !== 'All' ? 'var(--accent-purple-light)' : 'var(--text-secondary)',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            fontFamily: 'inherit',
-            padding: '6px 14px',
-            cursor: 'pointer',
-            outline: 'none',
-            minHeight: 36,
-          }}
         >
           {MONTHS.map(month => (
             <option key={month} value={month}>
@@ -154,22 +140,21 @@ export default function TimelineView({
       </div>
 
       {filteredFestivals.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">📅</div>
-          <h3>No festivals in this period</h3>
-          <p>
+        <div className={styles.empty}>
+          <h2 className={`display ${styles.emptyTitle}`}>Nothing in this period.</h2>
+          <p className={styles.emptyText}>
             {hasNoFestivals
-              ? "You haven't marked any festivals yet. Head to Discover!"
-              : `No festivals found for ${selectedMonth !== 'All' ? selectedMonth + ' ' : ''}${selectedYear}.`}
+              ? "You haven't marked any festivals yet."
+              : `No festivals in ${selectedMonth !== 'All' ? selectedMonth + ' ' : ''}${selectedYear}.`}
           </p>
           {hasNoFestivals && (
-            <button className="btn btn-primary" onClick={() => router.push('/')}>
-              Discover Festivals
+            <button type="button" className="btn btn-primary" onClick={() => router.push('/')}>
+              Discover festivals
             </button>
           )}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className={styles.cards}>
           {filteredFestivals.map(f => (
             <TimelineCard
               key={f.id}

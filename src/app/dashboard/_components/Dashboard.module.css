@@ -1,0 +1,224 @@
+/* Boards: docs/redesign/boards/MyFestivals.dc.html, MyFestivalsMobile.dc.html,
+   MyFestivalsEmpty.dc.html. Rows live in FestivalRow.module.css. */
+
+.eyebrow {
+  color: var(--gr-tx2);
+}
+
+.title {
+  margin-top: 16px;
+  font-size: 56px;
+}
+
+.muted {
+  color: var(--gr-tx3);
+}
+
+/* ── Stats strip ── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 40px;
+  border-top: 1px solid var(--gr-line);
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--gr-line);
+  color: var(--gr-tx);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.stat:hover .statLabel {
+  color: var(--gr-tx);
+}
+
+.statValue {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 72px;
+}
+
+.goValue {
+  color: var(--gr-go);
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--gr-tx2);
+}
+
+/* ── Layout ── */
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  margin-top: 48px;
+}
+
+.main {
+  flex: 999 1 640px;
+  min-width: 0;
+  scroll-margin-top: 80px;
+}
+
+.aside {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.exportButton {
+  width: 100%;
+}
+
+/* ── Tabs: underline on the selected tab ── */
+
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tabs {
+  flex: 1;
+  display: flex;
+  gap: 28px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.tabs button {
+  min-height: 48px;
+  margin-bottom: -1px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tabs button:hover {
+  color: var(--gr-tx);
+}
+
+.tabs .tabOn {
+  color: var(--gr-tx);
+  border-bottom-color: var(--gr-tx);
+}
+
+/* ── Lists ── */
+
+.yearHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 28px 0 8px;
+}
+
+.yearTitle {
+  font-size: 40px;
+  color: var(--gr-tx2);
+}
+
+.upcomingList {
+  margin-top: 16px;
+}
+
+.clearButton {
+  min-height: 44px;
+  margin-top: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  cursor: pointer;
+}
+
+.clearButton:hover {
+  color: var(--gr-err);
+}
+
+/* ── Skeleton ── */
+
+.skeletonTitle {
+  height: 56px;
+  width: 320px;
+  max-width: 100%;
+}
+
+.skeletonStats {
+  height: 140px;
+  margin: 40px 0;
+}
+
+.skeletonRow {
+  height: 76px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .title {
+    margin-top: 10px;
+    font-size: 40px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 24px;
+  }
+
+  .stat {
+    padding: 16px;
+    border-bottom: 1px solid var(--gr-line);
+  }
+
+  .stat:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .stat:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .statValue {
+    font-size: 52px;
+  }
+
+  .layout {
+    gap: 40px;
+    margin-top: 24px;
+  }
+
+  .tabs {
+    gap: 20px;
+  }
+}

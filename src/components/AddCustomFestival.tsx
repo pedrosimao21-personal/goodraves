@@ -4,10 +4,14 @@ import { useState } from 'react'
 import { useUserData } from '../context/UserDataContext'
 import { isAllowedImageHost } from '../lib/imageHosts'
 import { keepKeyboardOpenOnTap } from '../lib/touch-tap'
+import Sheet, { SheetActions } from './Sheet'
+import formStyles from '@/app/dashboard/_components/DashboardForms.module.css'
 
 const SUCCESS_TOAST_DELAY_MS = 1200
+const LINEUP_ROWS = 3
 
-export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
+/** Sheet for adding an event that isn't in the database; it lands in the attended list. */
+export default function AddCustomEvent({ onClose }: { onClose: () => void }) {
   const { addCustomFestival } = useUserData()
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
@@ -32,7 +36,6 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
       image: imageUrl.trim() || null,
     }
 
-    // Parse lineup: comma or newline separated
     const lineup = lineupText
       .split(/[,\n]+/)
       .map(s => s.trim())
@@ -44,168 +47,71 @@ export default function AddCustomEvent({ onClose }: { onClose?: () => void }) {
 
     addCustomFestival(meta, lineup)
     setSaved(true)
-    setTimeout(() => {
-      onClose?.()
-    }, SUCCESS_TOAST_DELAY_MS)
+    setTimeout(onClose, SUCCESS_TOAST_DELAY_MS)
   }
+
+  const isImageInvalid = Boolean(imageUrl) && !isAllowedImageHost(imageUrl)
 
   if (saved) {
     return (
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--accent-green-glow)',
-        borderRadius: 16,
-        padding: '32px',
-        textAlign: 'center',
-      }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎉</div>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 4 }}>Event Added!</h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>It&apos;s now in your attended list.</p>
-      </div>
+      <Sheet title="Event added" onClose={onClose}>
+        <p className="form-hint" role="status">It&apos;s now in your attended list.</p>
+      </Sheet>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border)',
-      borderRadius: 16,
-      padding: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 16,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.2rem', margin: 0 }}>
-          Add Custom Event
-        </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-muted)',
-            fontSize: '1.2rem',
-            cursor: 'pointer',
-            padding: '4px 8px',
-          }}
-        >
-          ✕
-        </button>
-      </div>
-
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-        Add events or raves that aren&apos;t in the database. They&apos;ll appear in your attended list, timeline, and insights.
-      </p>
-
-      {/* Name */}
-      <div>
-        <label style={labelStyle}>Event Name *</label>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="e.g. Awakenings Spring Event"
-          required
-          style={inputStyle}
-        />
-      </div>
-
-      {/* Date */}
-      <div>
-        <label style={labelStyle}>Date</label>
-        <input
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          style={inputStyle}
-        />
-      </div>
-
-      {/* Venue & City */}
-      <div className="form-grid">
+    <Sheet title="Add event" eyebrow="Not in the database" onClose={onClose}>
+      <form id="add-custom-event" onSubmit={handleSubmit} className="form-stack">
+        <p className="form-hint">
+          Add an event or rave that isn&apos;t in the database. It shows up in your attended list, timeline and insights.
+        </p>
         <div>
-          <label style={labelStyle}>Venue</label>
-          <input
-            type="text"
-            value={venueName}
-            onChange={e => setVenueName(e.target.value)}
-            placeholder="e.g. Gashouder"
-            style={inputStyle}
-          />
+          <label className="form-label" htmlFor="custom-event-name">Event name *</label>
+          <input id="custom-event-name" className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Awakenings Spring Event" required />
         </div>
         <div>
-          <label style={labelStyle}>City</label>
+          <label className="form-label" htmlFor="custom-event-date">Date</label>
+          <input id="custom-event-date" type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+        <div className={formStyles.pair}>
+          <div>
+            <label className="form-label" htmlFor="custom-event-venue">Venue</label>
+            <input id="custom-event-venue" className="form-input" value={venueName} onChange={e => setVenueName(e.target.value)} placeholder="e.g. Gashouder" />
+          </div>
+          <div>
+            <label className="form-label" htmlFor="custom-event-city">City</label>
+            <input id="custom-event-city" className="form-input" value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Amsterdam" />
+          </div>
+        </div>
+        <div>
+          <label className="form-label" htmlFor="custom-event-image">Image URL</label>
           <input
-            type="text"
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            placeholder="e.g. Amsterdam"
-            style={inputStyle}
+            id="custom-event-image"
+            className={`form-input ${isImageInvalid ? formStyles.invalid : ''}`}
+            value={imageUrl}
+            onChange={e => setImageUrl(e.target.value)}
+            placeholder="https://example.com/fest-image.jpg"
+            aria-invalid={isImageInvalid}
+          />
+          {isImageInvalid && <p className="form-error">This image host is not allowed. The image won&apos;t display.</p>}
+        </div>
+        <div>
+          <label className="form-label" htmlFor="custom-event-lineup">Lineup (comma or newline separated)</label>
+          <textarea
+            id="custom-event-lineup"
+            className="form-input"
+            rows={LINEUP_ROWS}
+            value={lineupText}
+            onChange={e => setLineupText(e.target.value)}
+            placeholder={'Amelie Lens, Charlotte de Witte\nAdam Beyer, Ben Klock'}
           />
         </div>
-      </div>
-
-      {/* Image URL */}
-      <div>
-        <label style={labelStyle}>Image URL</label>
-        <input
-          type="text"
-          value={imageUrl}
-          onChange={e => setImageUrl(e.target.value)}
-          placeholder="e.g. https://example.com/fest-image.jpg"
-          style={{
-            ...inputStyle,
-            borderColor: imageUrl && !isAllowedImageHost(imageUrl) ? 'var(--error-text)' : undefined,
-          }}
-        />
-        {imageUrl && !isAllowedImageHost(imageUrl) && (
-          <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: 'var(--error-text)' }}>
-            This image host is not allowed. The image won&apos;t display.
-          </p>
-        )}
-      </div>
-
-      {/* Lineup */}
-      <div>
-        <label style={labelStyle}>Lineup (comma or newline separated)</label>
-        <textarea
-          value={lineupText}
-          onChange={e => setLineupText(e.target.value)}
-          placeholder={"Amelie Lens, Charlotte de Witte\nAdam Beyer, Ben Klock"}
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical', minHeight: 64 }}
-        />
-      </div>
-
-      <button type="submit" className="btn btn-primary" style={{ marginTop: 4 }} onPointerDown={keepKeyboardOpenOnTap}>
-        Add Event
-      </button>
-    </form>
+      </form>
+      <SheetActions>
+        <button type="button" onClick={onClose} className="btn">Cancel</button>
+        <button type="submit" form="add-custom-event" className="btn btn-primary" onPointerDown={keepKeyboardOpenOnTap}>Add event</button>
+      </SheetActions>
+    </Sheet>
   )
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.8rem',
-  fontWeight: 600,
-  color: 'var(--text-secondary)',
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  marginBottom: 6,
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 14px',
-  background: 'var(--bg-secondary)',
-  border: '1px solid var(--border)',
-  borderRadius: 10,
-  color: 'var(--text-primary)',
-  fontFamily: 'inherit',
-  fontSize: '0.95rem',
-  outline: 'none',
-  transition: 'border-color 200ms ease',
-  boxSizing: 'border-box',
 }

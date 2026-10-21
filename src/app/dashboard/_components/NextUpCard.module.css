@@ -1,0 +1,99 @@
+/* Board: docs/redesign/boards/MyFestivals.dc.html (next-up card). */
+
+.nextUp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-go);
+}
+
+.nextThumb {
+  position: relative;
+  display: block;
+  width: 120px;
+  height: 120px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.nextThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.thumbMonogram {
+  position: absolute;
+  right: -4px;
+  bottom: -10px;
+  font-size: 80px;
+  color: var(--gr-line2);
+}
+
+.nextInfo {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nextWhen {
+  color: var(--gr-go);
+}
+
+.nextName {
+  font-size: 48px;
+  overflow-wrap: anywhere;
+}
+
+.nextName:hover {
+  color: var(--gr-tx2);
+}
+
+.nextPlace {
+  color: var(--gr-tx2);
+}
+
+.nextPicks {
+  color: var(--gr-tx2);
+}
+
+.nextActions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .nextUp {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .nextThumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .thumbMonogram {
+    font-size: 48px;
+  }
+
+  .nextName {
+    font-size: 30px;
+  }
+
+  .nextActions {
+    flex-basis: 100%;
+  }
+
+  .nextActions > * {
+    flex: 1;
+  }
+}

@@ -1,0 +1,33 @@
+/* Ratings list inside the vibe sheet. */
+
+.sheetList {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.sheetRowInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sheetRowName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--gr-tx3);
+}

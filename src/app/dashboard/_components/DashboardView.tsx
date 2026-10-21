@@ -1,25 +1,28 @@
 'use client'
 
-import React, { useState, useMemo, useRef, lazy, Suspense } from 'react'
+import { useState, useRef, lazy, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
 import { useAuthPrompt } from '@/context/AuthPromptContext'
 import AddCustomEvent from '@/components/AddCustomFestival'
-import EditFestivalModal from './EditFestivalModal'
-import FestivalRow from './FestivalRow'
-import TimelineView from './TimelineView'
 import TrendingFestivalsSection from '@/components/TrendingFestivalsSection'
+import { CalendarIcon, PlusIcon } from '@/components/icons'
 import type { TrendingFestival } from '@/db/actions/trending-festivals'
 import { buildIcsCalendar, downloadIcsFile, type IcsFestival } from '@/lib/ics'
+import EditFestivalModal from './EditFestivalModal'
+import DashboardStats from './DashboardStats'
+import DashboardEmpty from './DashboardEmpty'
+import FestivalList from './FestivalList'
+import NextUpCard from './NextUpCard'
+import TimelineView from './TimelineView'
+import { useMyFestivals } from './use-my-festivals'
+import styles from './Dashboard.module.css'
 
 const AvgVibeModal = lazy(() => import('./AvgVibeModal'))
 
-const CLEAR_LIST_COLOR = 'var(--accent-red-bright)'
-const UPCOMING_BG_COLOR = 'var(--state-going)'
-// Matches the CSS breakpoint that hides .dashboard-tab-row — below it the
-// stat cards are the only way to navigate, so a tap should also scroll the
-// corresponding list into view instead of leaving it off-screen.
+// Below this width the stats strip sits above the list, so a tap on a stat
+// also scrolls the list into view.
 const MOBILE_BREAKPOINT_PX = 640
 
 type ActiveTab = 'attended' | 'upcoming' | 'timeline'
@@ -36,24 +39,20 @@ type Props = {
   userCity: string | null
 }
 
+/** My festivals. Boards: MyFestivals, MyFestivalsMobile, MyFestivalsEmpty. */
 export default function DashboardView({ trendingFestivals, userCity }: Props) {
-  const {
-    attendedFestivals, upcomingFestivals, festivalRatings,
-    toggleFestival, clearFestivals, getFestivalMeta, loaded, isAdmin,
-  } = useUserData()
+  const { attendedFestivals, upcomingFestivals, toggleFestival, clearFestivals, getFestivalMeta, loaded, isAdmin } = useUserData()
+  const mine = useMyFestivals()
   const { promptAuth } = useAuthPrompt()
   const { data: session } = useSession()
   const router = useRouter()
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showVibeModal, setShowVibeModal] = useState(false)
-
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
-
-  // Persist timeline filter selections when switching tabs
+  // Kept here so the timeline filters survive switching tabs.
   const [timelineYear, setTimelineYear] = useState<number | null>(null)
   const [timelineMonth, setTimelineMonth] = useState<string>('All')
-
   const listSectionRef = useRef<HTMLDivElement>(null)
 
   const switchToTab = (tab: ActiveTab) => {
@@ -65,43 +64,8 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
     }
   }
 
-  const ratedFestivals = useMemo(() =>
-    attendedFestivals
-      .map(id => ({ id, meta: getFestivalMeta(id), rating: festivalRatings?.[id] ?? 0 }))
-      .filter(f => f.rating > 0)
-      .map(f => ({ id: f.id, name: f.meta?.name ?? f.id, date: f.meta?.date ?? null, rating: f.rating }))
-      .sort((a, b) => b.rating - a.rating),
-  [attendedFestivals, getFestivalMeta, festivalRatings])
-
-  const festivalRatingValues = useMemo(
-    () => attendedFestivals.map(id => festivalRatings?.[id]).filter((r): r is number => !!r && r > 0),
-    [attendedFestivals, festivalRatings]
-  )
-  const avgRatingAll = festivalRatingValues.length > 0
-    ? (festivalRatingValues.reduce((a, b) => a + b, 0) / festivalRatingValues.length).toFixed(1)
-    : null
-
-  const sortedAttended = useMemo(() =>
-    [...attendedFestivals].sort((a, b) => {
-      const da = getFestivalMeta(a)?.date ?? ''
-      const dateB = getFestivalMeta(b)?.date ?? ''
-      return dateB.localeCompare(da)
-    }),
-  [attendedFestivals, getFestivalMeta])
-
-  const sortedUpcoming = useMemo(() =>
-    [...upcomingFestivals].sort((a, b) => {
-      const da = getFestivalMeta(a)?.date ?? ''
-      const dateB = getFestivalMeta(b)?.date ?? ''
-      return da.localeCompare(dateB)
-    }),
-  [upcomingFestivals, getFestivalMeta])
-
-  const displayList = activeTab === 'attended' ? sortedAttended : sortedUpcoming
-  const removeHandler = toggleFestival
-
   const handleExportUpcoming = () => {
-    const festivals: IcsFestival[] = sortedUpcoming.map(id => {
+    const festivals: IcsFestival[] = mine.sortedUpcoming.map(id => {
       const meta = getFestivalMeta(id)
       const venue = typeof meta?.venue === 'object' ? meta.venue : null
       return {
@@ -116,202 +80,122 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
     downloadIcsFile('goodraves-upcoming-festivals.ics', buildIcsCalendar(festivals))
   }
 
+  const handleClear = () => {
+    const list = activeTab === 'attended' ? 'past' : 'upcoming'
+    if (confirm(`Are you sure you want to clear your ${list} list? This will also remove any artist ratings associated with these festivals.`)) {
+      clearFestivals(list)
+    }
+  }
+
+  const handleAddEvent = () => {
+    if (!session?.user) { promptAuth(); return }
+    setShowAddCustom(true)
+  }
+
   if (!loaded) {
     return (
-      <div className="page">
-        <div className="container" style={{ paddingTop: 32 }}>
-          <div className="loading-skeleton" style={{ height: 40, width: 200, marginBottom: 24, borderRadius: 8, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{ height: 80, borderRadius: 12, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.15}s` }} />
-            ))}
-          </div>
+      <div className="page" aria-busy="true" aria-label="Loading your festivals">
+        <div className="container">
+          <div className={`skeleton ${styles.skeletonTitle}`} />
+          <div className={`skeleton ${styles.skeletonStats}`} />
+          {[1, 2, 3].map(i => <div key={i} className={`skeleton ${styles.skeletonRow}`} />)}
         </div>
       </div>
     )
   }
 
+  const tabs: { key: ActiveTab; label: string }[] = [
+    { key: 'attended', label: `Past · ${attendedFestivals.length}` },
+    { key: 'upcoming', label: `Upcoming · ${upcomingFestivals.length}` },
+    { key: 'timeline', label: 'Timeline' },
+  ]
+  const displayList = activeTab === 'attended' ? mine.sortedAttended : mine.sortedUpcoming
+
   return (
     <div className="page">
       <div className="container">
-        <div style={{ paddingTop: 8, marginBottom: 32 }}>
-          <h1 className="section-title" style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 6 }}>
-            My Festivals
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Your personal festival history &amp; schedule</p>
-        </div>
+        <p className={`mono ${styles.eyebrow}`}>Your festival history and schedule</p>
+        <h1 className={`display ${styles.title}`}>My festivals</h1>
 
-        <div className="stats-grid">
-          <div
-            className="stat-card stat-card-clickable"
-            role="button"
-            tabIndex={0}
-            onClick={() => switchToTab('attended')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('attended') } }}
-          >
-            <div className="stat-label">Festivals Attended</div>
-            <div className="stat-value">{attendedFestivals.length}</div>
-            <div className="stat-sub">festivals on record</div>
-          </div>
-          <div
-            className="stat-card stat-card-clickable"
-            role="button"
-            tabIndex={0}
-            onClick={() => switchToTab('upcoming')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('upcoming') } }}
-          >
-            <div className="stat-label">Upcoming</div>
-            <div className="stat-value">{upcomingFestivals.length}</div>
-            <div className="stat-sub">future festivals planned</div>
-          </div>
-          <div
-            className="stat-card stat-card-clickable"
-            role="button"
-            tabIndex={0}
-            onClick={() => setShowVibeModal(true)}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowVibeModal(true) } }}
-          >
-            <div className="stat-label">Avg. Vibe</div>
-            <div className="stat-value">{avgRatingAll ?? '\u2014'}</div>
-            <div className="stat-sub">{festivalRatingValues.length} festivals rated</div>
-          </div>
-          <div
-            className="stat-card stat-card-clickable"
-            role="button"
-            tabIndex={0}
-            onClick={() => switchToTab('timeline')}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchToTab('timeline') } }}
-          >
-            <div className="stat-label">All-Time Festivals</div>
-            <div className="stat-value">{attendedFestivals.length}</div>
-            <div className="stat-sub">view your timeline</div>
-          </div>
-        </div>
+        <DashboardStats
+          attendedCount={attendedFestivals.length}
+          upcomingCount={upcomingFestivals.length}
+          firstYear={mine.firstYear}
+          daysUntilNext={mine.daysUntilNext}
+          averageVibe={mine.averageVibe}
+          ratedCount={mine.ratedFestivals.length}
+          artistsSeen={mine.artistsSeen}
+          onShowPast={() => switchToTab('attended')}
+          onShowUpcoming={() => switchToTab('upcoming')}
+          onShowVibes={() => setShowVibeModal(true)}
+          onShowArtists={() => router.push('/top-djs')}
+        />
 
-        <div className="divider" ref={listSectionRef} />
+        <div className={styles.layout}>
+          <section className={styles.main} ref={listSectionRef}>
+            {mine.nextUpcomingId && mine.daysUntilNext !== null && activeTab !== 'timeline' && (
+              <NextUpCard festivalId={mine.nextUpcomingId} daysUntilNext={mine.daysUntilNext} />
+            )}
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div className="dashboard-tab-row">
-            <button
-              className={`btn ${activeTab === 'attended' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => switchToTab('attended')}
-              style={activeTab === 'attended' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              Past ({attendedFestivals.length})
-            </button>
-            <button
-              className={`btn ${activeTab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => switchToTab('upcoming')}
-              style={
-                activeTab === 'upcoming'
-                  ? { background: UPCOMING_BG_COLOR, color: 'var(--color-white)', borderColor: UPCOMING_BG_COLOR }
-                  : { border: '1px solid var(--border)', color: 'var(--text-primary)' }
-              }
-            >
-              Upcoming ({upcomingFestivals.length})
-            </button>
-            <button
-              className={`btn ${activeTab === 'timeline' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => switchToTab('timeline')}
-              style={activeTab === 'timeline' ? {} : { border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-            >
-              Timeline
-            </button>
-          </div>
-          {activeTab !== 'timeline' && isAdmin && (
-            <div style={{ marginLeft: 'auto' }}>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => {
-                  if (!session?.user) { promptAuth(); return }
-                  setShowAddCustom(!showAddCustom)
-                }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              >
-                {showAddCustom ? 'Close' : '+ Add Event'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {showAddCustom && activeTab !== 'timeline' && (
-          <div style={{ marginBottom: 24 }}>
-            <AddCustomEvent onClose={() => setShowAddCustom(false)} />
-          </div>
-        )}
-
-        {activeTab === 'timeline' ? (
-          <TimelineView
-            initialYear={timelineYear}
-            initialMonth={timelineMonth}
-            onYearChange={setTimelineYear}
-            onMonthChange={setTimelineMonth}
-          />
-        ) : displayList.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">&#127915;</div>
-            <h3>No {activeTab === 'attended' ? 'past' : 'upcoming'} festivals yet</h3>
-            <p>Head to the Discover page to find festivals and mark them to your schedule.</p>
-            <button className="btn btn-primary" onClick={() => router.push('/')} id="go-discover-btn">
-              Discover Festivals
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="section-header">
-              <h2 className="section-title">{activeTab === 'attended' ? 'Attended Festivals' : 'Upcoming Festivals'}</h2>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {activeTab === 'upcoming' && (
-                  <button className="btn btn-ghost btn-sm" onClick={handleExportUpcoming}>
-                    Export to Calendar
+            <div className={styles.tabBar}>
+              <div className={styles.tabs} role="tablist" aria-label="My festivals">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.key}
+                    className={activeTab === tab.key ? styles.tabOn : undefined}
+                    onClick={() => switchToTab(tab.key)}
+                  >
+                    {tab.label}
                   </button>
-                )}
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to clear your ${activeTab === 'attended' ? 'past' : 'upcoming'} list? This will also remove any artist ratings associated with these festivals.`)) {
-                      clearFestivals(activeTab === 'attended' ? 'past' : 'upcoming')
-                    }
-                  }}
-                  style={{ color: CLEAR_LIST_COLOR }}
-                >
-                  Clear List
-                </button>
+                ))}
               </div>
+              {activeTab !== 'timeline' && isAdmin && (
+                <button type="button" className="btn btn-sm" onClick={handleAddEvent}>
+                  <PlusIcon size={15} strokeWidth={2} />Add event
+                </button>
+              )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {displayList.map(id => (
-                <FestivalRow
-                  key={id}
-                  eventId={id}
-                  onRemove={removeHandler}
-                  isUpcomingTab={activeTab === 'upcoming'}
-                  onEdit={isAdmin ? setEditingId : undefined}
-                />
-              ))}
-            </div>
-          </>
-        )}
+            {activeTab === 'timeline' ? (
+              <TimelineView
+                initialYear={timelineYear}
+                initialMonth={timelineMonth}
+                onYearChange={setTimelineYear}
+                onMonthChange={setTimelineMonth}
+              />
+            ) : displayList.length === 0 ? (
+              <DashboardEmpty isUpcoming={activeTab === 'upcoming'} />
+            ) : (
+              <FestivalList
+                festivalIds={displayList}
+                isUpcoming={activeTab === 'upcoming'}
+                onRemove={toggleFestival}
+                onEdit={isAdmin ? setEditingId : undefined}
+                onClear={handleClear}
+              />
+            )}
+          </section>
+
+          <aside className={styles.aside}>
+            {trendingFestivals.length > 0 && <TrendingFestivalsSection festivals={trendingFestivals} userCity={userCity} />}
+            {mine.sortedUpcoming.length > 0 && (
+              <button type="button" className={`btn ${styles.exportButton}`} onClick={handleExportUpcoming}>
+                <CalendarIcon size={16} />Export upcoming to calendar
+              </button>
+            )}
+          </aside>
+        </div>
       </div>
 
-
-
-      {editingId && (
-        <EditFestivalModal eventId={editingId} onClose={() => setEditingId(null)} />
-      )}
-
+      {showAddCustom && <AddCustomEvent onClose={() => setShowAddCustom(false)} />}
+      {editingId && <EditFestivalModal eventId={editingId} onClose={() => setEditingId(null)} />}
       {showVibeModal && (
         <Suspense fallback={null}>
-          <AvgVibeModal festivals={ratedFestivals} onClose={() => setShowVibeModal(false)} />
+          <AvgVibeModal festivals={mine.ratedFestivals} onClose={() => setShowVibeModal(false)} />
         </Suspense>
-      )}
-
-      {trendingFestivals.length > 0 && (
-        <div className="container" style={{ paddingBottom: 48 }}>
-          <div className="divider" />
-          <TrendingFestivalsSection festivals={trendingFestivals} userCity={userCity} />
-        </div>
       )}
     </div>
   )

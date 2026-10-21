@@ -1,0 +1,52 @@
+/* Board: docs/redesign/boards/MyFestivals.dc.html (Trending aside). */
+
+.header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.title {
+  font-size: 32px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.row:hover .name {
+  text-decoration: underline;
+}
+
+.rank {
+  color: var(--gr-tx3);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.place {
+  font-size: 13px;
+  color: var(--gr-tx2);
+}
+
+.stats {
+  color: var(--gr-tx3);
+}

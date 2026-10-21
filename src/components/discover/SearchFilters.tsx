@@ -7,6 +7,7 @@ import {
   hasActiveFilters,
   EMPTY_FILTERS,
 } from '@/lib/search-filters'
+import { FriendsIcon } from '@/components/icons'
 import FilterDropdown, { type DropdownKey } from './FilterDropdown'
 import styles from './SearchFilters.module.css'
 
@@ -18,18 +19,21 @@ interface SearchFiltersProps {
   onFilterChange: (filters: SearchFiltersType) => void
   totalCount: number
   filteredCount: number
+  /** Results at least one friend is going to; the friends toggle shows when there are any. */
+  friendsEventCount: number
   openDropdown: DropdownKey | null
   onDropdownToggle: (key: DropdownKey) => void
   onDropdownClose: () => void
 }
 
-/** Filter bar above the results: When / Year / Country, Clear, and the count. */
+/** Filter bar above the results: When / Year / Country, Friends going, Clear, and the count. */
 export default function SearchFilters({
   filterOptions,
   activeFilters,
   onFilterChange,
   totalCount,
   filteredCount,
+  friendsEventCount,
   openDropdown,
   onDropdownToggle,
   onDropdownClose,
@@ -83,6 +87,16 @@ export default function SearchFilters({
           isOpen={openDropdown === 'country'}
           onSelect={selectFilter('country')}
         />
+      )}
+      {(friendsEventCount > 0 || activeFilters.friends) && (
+        <button
+          type="button"
+          className={`btn btn-sm ${activeFilters.friends ? styles.toggleOn : ''}`}
+          aria-pressed={activeFilters.friends}
+          onClick={() => onFilterChange({ ...activeFilters, friends: !activeFilters.friends })}
+        >
+          <FriendsIcon size={15} />Friends going · {friendsEventCount}
+        </button>
       )}
       {isFiltered && (
         <button type="button" className={`btn btn-sm btn-ghost ${styles.clear}`} onClick={() => onFilterChange(EMPTY_FILTERS)}>

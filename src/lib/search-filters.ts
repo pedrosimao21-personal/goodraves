@@ -7,6 +7,8 @@ export interface SearchFilters {
   year: DateYearOption | null
   country: CountryCodeOption | null
   timing: TimingOption | null
+  /** Only festivals at least one friend is going to. */
+  friends: boolean
 }
 
 export interface FilterOption {
@@ -25,8 +27,9 @@ export const EMPTY_FILTERS: SearchFilters = {
   year: null,
   country: null,
   timing: null,
+  friends: false,
 }
 
 export function hasActiveFilters(filters: SearchFilters): boolean {
-  return filters.year !== null || filters.country !== null || filters.timing !== null
+  return filters.year !== null || filters.country !== null || filters.timing !== null || filters.friends
 }

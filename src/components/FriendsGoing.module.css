@@ -1,0 +1,35 @@
+/* Boards: Discover.dc.html and DiscoverMobile.dc.html (.fav initials). */
+
+.friends {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatars {
+  display: flex;
+  flex: none;
+  /* The last avatar's negative margin would otherwise eat into the gap. */
+  padding-right: 6px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: -6px;
+  background: var(--gr-s3);
+  border: 2px solid var(--gr-s1);
+  color: var(--gr-tx);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.label {
+  min-width: 0;
+  color: var(--gr-tx);
+  overflow-wrap: anywhere;
+}

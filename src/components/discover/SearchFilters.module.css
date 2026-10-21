@@ -22,7 +22,8 @@
   color: var(--gr-tx3);
 }
 
-.triggerActive {
+.triggerActive,
+.toggleOn {
   border-color: var(--gr-tx);
 }
 

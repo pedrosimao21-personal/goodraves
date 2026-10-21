@@ -8,6 +8,7 @@ import { getFestivalCardImage } from '@/db/actions/festivals'
 import { formatDateRange } from '@/lib/format-date'
 import { isFestivalPast } from '@/lib/festival-date'
 import AttendToggle from './AttendToggle'
+import FriendsGoing from './FriendsGoing'
 import styles from './FestivalCard.module.css'
 
 const CARD_IMAGE_SIZE = 400
@@ -57,9 +58,11 @@ type FestivalCardProps = {
    * multiplying the request count by the number of imageless results.
    */
   skipImageFetch?: boolean
+  /** Usernames of the viewer's friends going (Discover). */
+  friendsGoing?: string[]
 }
 
-export default memo(function FestivalCard({ event, skipImageFetch = false }: FestivalCardProps) {
+export default memo(function FestivalCard({ event, skipImageFetch = false, friendsGoing }: FestivalCardProps) {
   const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserDataActions()
 
   const attended = isAttended(event.id)
@@ -146,6 +149,7 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
           <Link href={festivalHref}>{event.name}</Link>
         </h3>
         {place && <span className={styles.place}>{place}</span>}
+        {friendsGoing && <FriendsGoing friends={friendsGoing} />}
         {event.genres?.length > 0 && (
           <div className={styles.tags}>
             {event.genres.map((genre: string) => (

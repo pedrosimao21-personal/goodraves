@@ -52,3 +52,11 @@ export function formatNameList(names: string[], maxShown = 2): string {
   const shown = names.slice(0, maxShown).join(', ')
   return `${shown} +${names.length - maxShown}`
 }
+
+const NAMED_FRIENDS_AT_MOST = 2
+
+/** "anna going", "tom + jesse going", "anna + 2 going". */
+export function describeFriendsGoing(friends: string[]): string {
+  if (friends.length <= NAMED_FRIENDS_AT_MOST) return `${friends.join(' + ')} going`
+  return `${friends[0]} + ${friends.length - 1} going`
+}

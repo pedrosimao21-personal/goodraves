@@ -12,9 +12,11 @@ import {
 } from '@/lib/filter-utils'
 import { dismissKeyboard } from '@/lib/touch-tap'
 import SearchForm from './SearchForm'
+import DiscoverHome from './DiscoverHome'
 import SearchFilters, { type DropdownKey } from './SearchFilters'
 import { hasSourceImageLookup } from './search-results'
 import { useFestivalSearch } from './use-festival-search'
+import { useFriendsGoing } from './use-friends-going'
 import { ImportStatus, LoadingGrid, NoResults, SearchError, SourceWarning, StartPrompt } from './SearchStates'
 import styles from './Discover.module.css'
 
@@ -30,8 +32,11 @@ export default function SearchSection() {
   const [openDropdown, setOpenDropdown] = useState<DropdownKey | null>(null)
   const { events, searched, loading, error, failedSources, doSearch, clearResults } = useFestivalSearch()
 
+  const eventIds = useMemo(() => events.map((event) => event.id as string), [events])
+  const friendsGoing = useFriendsGoing(eventIds)
+  const friendsEventCount = useMemo(() => eventIds.filter((id) => friendsGoing[id]?.length > 0).length, [eventIds, friendsGoing])
   const filterOptions = useMemo(() => extractFilterOptions(events), [events])
-  const filteredEvents = useMemo(() => applyFilters(events, filters), [events, filters])
+  const filteredEvents = useMemo(() => applyFilters(events, filters, friendsGoing), [events, filters, friendsGoing])
 
   // Mirrors the query and filters into the address bar for sharing. This uses
   // history.replaceState, not router.replace: a router navigation re-renders
@@ -109,6 +114,7 @@ export default function SearchSection() {
             onFilterChange={handleFilterChange}
             totalCount={events.length}
             filteredCount={filteredEvents.length}
+            friendsEventCount={friendsEventCount}
             openDropdown={openDropdown}
             onDropdownToggle={handleDropdownToggle}
             onDropdownClose={handleDropdownClose}
@@ -129,14 +135,19 @@ export default function SearchSection() {
             onFilterChange={handleFilterChange}
           />
         )}
-        {!searched && !loading && <StartPrompt />}
+        {!searched && !loading && (
+          <>
+            <DiscoverHome />
+            <StartPrompt />
+          </>
+        )}
 
         {filteredEvents.length > 0 && (
           <div className={styles.grid}>
             {filteredEvents.map((event) => (
               // The search resolves images for these results itself, so the
               // card skips its own lookup for them.
-              <FestivalCard key={event.id} event={event} skipImageFetch={hasSourceImageLookup(event.id)} />
+              <FestivalCard key={event.id} event={event} skipImageFetch={hasSourceImageLookup(event.id)} friendsGoing={friendsGoing[event.id]} />
             ))}
           </div>
         )}

@@ -95,11 +95,13 @@ export function extractFilterOptions(events: any[]): FilterOptions {
 
 // ── Filter Application ─────────────────────────────────
 
-export function applyFilters(events: any[], filters: SearchFilters): any[] {
+/** `friendsGoing` maps festival id to the friends going (see getFriendsGoingForFestivals). */
+export function applyFilters(events: any[], filters: SearchFilters, friendsGoing: Record<string, string[]> = {}): any[] {
   return events.filter((e) => {
     if (filters.year !== null && extractYearFromDate(e.date) !== filters.year) return false
     if (filters.country !== null && extractCountryCode(e) !== filters.country) return false
     if (filters.timing !== null && extractTiming(e) !== filters.timing) return false
+    if (filters.friends && !(friendsGoing[e.id]?.length > 0)) return false
     return true
   })
 }
@@ -115,6 +117,7 @@ export function parseFiltersFromParams(searchParams: URLSearchParams): SearchFil
     year: isValidYear ? year : null,
     country: country ? country.toUpperCase() : null,
     timing: isValidTiming(timing) ? timing : null,
+    friends: searchParams.get('friends') === '1',
   }
 }
 
@@ -140,6 +143,12 @@ export function buildFilterParams(
     params.set('timing', filters.timing)
   } else {
     params.delete('timing')
+  }
+
+  if (filters.friends) {
+    params.set('friends', '1')
+  } else {
+    params.delete('friends')
   }
 
   return params

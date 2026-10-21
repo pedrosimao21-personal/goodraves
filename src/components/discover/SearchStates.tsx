@@ -45,7 +45,7 @@ const TIMING_LABELS = { upcoming: 'Upcoming', past: 'Past' } as const
 
 function describeFilters(filters: SearchFilters): string {
   const timing = filters.timing ? TIMING_LABELS[filters.timing] : null
-  return [timing, filters.year, filters.country].filter(Boolean).join(', ')
+  return [timing, filters.year, filters.country, filters.friends ? 'Friends going' : null].filter(Boolean).join(', ')
 }
 
 interface NoResultsProps {

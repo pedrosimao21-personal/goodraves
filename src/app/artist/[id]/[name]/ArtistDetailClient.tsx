@@ -6,7 +6,8 @@ import { useUserData } from '@/context/UserDataContext'
 import PageMessage from '@/components/PageMessage'
 import ArtistHeader from './ArtistHeader'
 import ArtistAside from './ArtistAside'
-import { GoodravesUpcoming, RaUpcoming } from './ArtistUpcoming'
+import ArtistUpcoming from './ArtistUpcoming'
+import { mergeUpcomingShows } from './upcoming-merge'
 import ArtistYourSets from './ArtistYourSets'
 import { Releases, TopTracks } from './ArtistMedia'
 import { useArtistData } from './use-artist-data'
@@ -67,8 +68,16 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
         {!loading && (
           <div className={bodyStyles.body}>
             <div className={bodyStyles.main}>
-              <GoodravesUpcoming festivals={followContext?.upcomingFestivals ?? []} />
-              <RaUpcoming artistName={displayName} raArtistId={artist?.raArtistId ?? null} events={artist?.raUpcomingEvents ?? []} />
+              {/* Waits for our own upcoming list, so RA-only rows don't jump when it arrives. */}
+              {followContext ? (
+                <ArtistUpcoming
+                  shows={mergeUpcomingShows(followContext.upcomingFestivals, artist?.raUpcomingEvents ?? [])}
+                  artistName={displayName}
+                  raArtistId={artist?.raArtistId ?? null}
+                />
+              ) : (
+                <div className={`skeleton ${pageStyles.skeletonBlock}`} aria-busy="true" aria-label="Loading upcoming shows" />
+              )}
               <ArtistYourSets sets={history} />
               {(hasTracks || hasAlbums) && (
                 <div className={bodyStyles.mediaGrid}>

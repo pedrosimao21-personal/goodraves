@@ -65,10 +65,6 @@
   color: var(--gr-tx2);
 }
 
-.inlineLink {
-  text-decoration: underline;
-}
-
 .textButton {
   display: inline-flex;
   align-items: center;
@@ -87,6 +83,12 @@
 }
 
 /* ── Upcoming ── */
+
+.upcomingFooter {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+}
 
 .upcomingRow {
   display: grid;

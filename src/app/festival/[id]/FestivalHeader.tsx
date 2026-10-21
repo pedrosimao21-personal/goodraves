@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import AttendToggle from '@/components/AttendToggle'
+import AttendedStatus from './AttendedStatus'
 import ShareFestivalButton from '@/components/ShareFestivalButton'
 import AddToCalendarButton from '@/components/AddToCalendarButton'
 import { ArrowLeftIcon, DotsIcon, ExternalIcon } from '@/components/icons'
@@ -24,6 +25,8 @@ interface FestivalHeaderProps {
   attended: boolean
   seenCount: number
   onToggleAttendance: () => void
+  /** Takes the festival off the user's list (behind a confirm). */
+  onRemoveAttendance: () => Promise<unknown>
   /** Opens the admin sheet; omitted for non-admins and custom festivals. */
   onOpenAdmin?: () => void
 }
@@ -38,7 +41,7 @@ function formatCrowd(event: FestivalEvent): string | null {
 
 /** Board: Festival (desktop) and FestivalMobile. */
 export default function FestivalHeader({
-  id, event, phase, isActive, attended, seenCount, onToggleAttendance, onOpenAdmin,
+  id, event, phase, isActive, attended, seenCount, onToggleAttendance, onRemoveAttendance, onOpenAdmin,
 }: FestivalHeaderProps) {
   const router = useRouter()
   const source = getSourceLink(id)
@@ -99,7 +102,17 @@ export default function FestivalHeader({
         </dl>
 
         <div className={styles.actions}>
-          <AttendToggle id="detail-attend-btn" size="lg" isFuture={!isPast} isActive={isActive} onToggle={onToggleAttendance} />
+          {attended ? (
+            <AttendedStatus
+              eventId={id}
+              name={event.name}
+              seenCount={seenCount}
+              artistCount={artistCount}
+              onRemove={onRemoveAttendance}
+            />
+          ) : (
+            <AttendToggle id="detail-attend-btn" size="lg" isFuture={!isPast} isActive={isActive} onToggle={onToggleAttendance} />
+          )}
           {!isPast && (
             <AddToCalendarButton
               className={styles.actionButton}
@@ -116,9 +129,6 @@ export default function FestivalHeader({
           )}
         </div>
 
-        {attended && seenCount > 0 && (
-          <p className={`mono ${styles.note}`}>You saw {seenCount} of {artistCount} artists here</p>
-        )}
       </div>
     </section>
   )

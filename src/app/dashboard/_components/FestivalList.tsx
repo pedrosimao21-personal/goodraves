@@ -10,7 +10,7 @@ const UNDATED = 'Undated'
 interface FestivalListProps {
   festivalIds: string[]
   isUpcoming: boolean
-  onRemove: (id: string) => void
+  onRemove: (id: string) => Promise<unknown>
   onEdit?: (id: string) => void
   onClear: () => void
 }

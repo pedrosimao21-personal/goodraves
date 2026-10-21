@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '@/context/UserDataContext'
 import RatingSquares from '@/components/rating/RatingSquares'
+import RemoveFestivalSheet from '@/components/RemoveFestivalSheet'
 import { CloseIcon, EditIcon } from '@/components/icons'
 import { parseLocalDate } from '@/lib/dates'
 import styles from './FestivalRow.module.css'
@@ -30,7 +31,7 @@ function DateBadge({ isoDate }: { isoDate: string }) {
 
 const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   eventId: string
-  onRemove: (id: string) => void
+  onRemove: (id: string) => Promise<unknown>
   isUpcomingTab: boolean
   onEdit?: (id: string) => void
 }) => {
@@ -45,11 +46,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
   const place = [venue?.name, venue?.city].filter(Boolean).join(' · ')
   const href = `/festival/${eventId}`
 
-  const handleRemove = useCallback(() => {
-    if (confirm('Are you sure you want to remove this festival from your list?')) {
-      onRemove(eventId)
-    }
-  }, [eventId, onRemove])
+  const [isConfirming, setIsConfirming] = useState(false)
 
   return (
     <div className={`${styles.row} ${isUpcomingTab ? styles.upcoming : ''}`}>
@@ -85,10 +82,14 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
             <EditIcon size={16} />
           </button>
         )}
-        <button type="button" className={styles.iconButton} onClick={handleRemove} id={`remove-${eventId}`} aria-label={`Remove ${name}`} title="Remove from list">
+        <button type="button" className={styles.iconButton} onClick={() => setIsConfirming(true)} id={`remove-${eventId}`} aria-label={`Remove ${name}`} title="Remove from list">
           <CloseIcon size={16} />
         </button>
       </div>
+
+      {isConfirming && (
+        <RemoveFestivalSheet eventId={eventId} name={name} onConfirm={() => onRemove(eventId)} onClose={() => setIsConfirming(false)} />
+      )}
     </div>
   )
 })

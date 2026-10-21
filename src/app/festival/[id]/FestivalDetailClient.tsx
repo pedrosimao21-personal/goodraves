@@ -64,6 +64,7 @@ export default function FestivalDetail({
           attended={attended}
           seenCount={getSeenCount(id)}
           onToggleAttendance={handleToggleAttendance}
+          onRemoveAttendance={() => toggleFestival(id)}
           onOpenAdmin={isAdmin && !isCustom ? () => setShowAdminMenu(true) : undefined}
         />
 

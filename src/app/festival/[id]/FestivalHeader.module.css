@@ -31,13 +31,12 @@
 .layout {
   display: grid;
   grid-template-columns: minmax(260px, 400px) minmax(0, 1fr);
-  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   grid-template-areas:
     "flyer chips"
     "flyer title"
     "flyer facts"
-    "flyer actions"
-    "flyer note";
+    "flyer actions";
   column-gap: 56px;
   row-gap: 24px;
   align-items: start;
@@ -152,11 +151,6 @@
   color: var(--gr-tx);
 }
 
-.note {
-  grid-area: note;
-  color: var(--gr-tx2);
-}
-
 /* ── Mobile ── */
 
 @media (max-width: 640px) {
@@ -171,8 +165,7 @@
       "chips chips"
       "title title"
       "flyer facts"
-      "actions actions"
-      "note note";
+      "actions actions";
     column-gap: 14px;
     row-gap: 16px;
     margin-top: 8px;

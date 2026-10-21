@@ -47,3 +47,13 @@ export function formatAgo(date: Date, now: Date): string {
   if (elapsed < MS_PER_DAY) return `${Math.round(elapsed / MS_PER_HOUR)} h ago`
   return `${Math.round(elapsed / MS_PER_DAY)} d ago`
 }
+
+/** Runs that errored or never finished, started within the last `days` days. */
+export function countFailedRuns(runs: CronRunRecord[], now: Date, days: number): number {
+  const since = now.getTime() - days * MS_PER_DAY
+  return runs.filter(run => {
+    if (run.startedAt.getTime() < since) return false
+    const status = getRunDisplayStatus(run, now)
+    return status === 'error' || status === 'killed'
+  }).length
+}

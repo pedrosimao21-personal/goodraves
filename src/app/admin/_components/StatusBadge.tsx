@@ -1,26 +1,15 @@
 import type { RunDisplayStatus } from './cron-display'
+import styles from './Admin.module.css'
 
-const STATUS_STYLES: Record<RunDisplayStatus, { label: string; color: string }> = {
-  ok: { label: 'OK', color: 'var(--success-text)' },
-  partial: { label: 'Partial', color: 'var(--warning-text)' },
-  error: { label: 'Error', color: 'var(--error-text)' },
-  killed: { label: 'Never finished', color: 'var(--error-text)' },
-  running: { label: 'Running', color: 'var(--state-going)' },
+const STATUS: Record<RunDisplayStatus, { label: string; className: string }> = {
+  ok: { label: 'OK', className: styles.statusOk },
+  partial: { label: 'Partial', className: styles.statusPartial },
+  error: { label: 'Error', className: styles.statusError },
+  killed: { label: 'Never finished', className: styles.statusError },
+  running: { label: 'Running', className: styles.statusRunning },
 }
 
 export default function StatusBadge({ status }: { status: RunDisplayStatus }) {
-  const { label, color } = STATUS_STYLES[status]
-  return (
-    <span style={{
-      color,
-      border: `1px solid ${color}`,
-      borderRadius: 999,
-      padding: '2px 10px',
-      fontSize: '0.75rem',
-      fontWeight: 600,
-      whiteSpace: 'nowrap',
-    }}>
-      {label}
-    </span>
-  )
+  const { label, className } = STATUS[status]
+  return <span className={`${styles.status} ${className}`}>{label}</span>
 }

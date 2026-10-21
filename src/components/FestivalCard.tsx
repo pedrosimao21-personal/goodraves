@@ -165,7 +165,7 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
           id={`action-${event.id}`}
           size="sm"
           isFuture={Boolean(isFuture)}
-          isActive={isFuture ? upcoming : attended}
+          isActive={attended || upcoming}
           onToggle={handleToggle}
           compactOnMobile
         />

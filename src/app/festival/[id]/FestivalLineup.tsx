@@ -6,6 +6,7 @@ import type { TimetableData } from '@/db/actions/festivals'
 import ArtistCard from '@/components/ArtistCard'
 import B2bSetCard from '@/components/B2bSetCard'
 import { findClashes } from '@/lib/timetable-clash'
+import type { FestivalPhase } from '@/lib/festival-date'
 import ClashBanner from './ClashBanner'
 import DayTabs from './DayTabs'
 import TimetableView from './TimetableView'
@@ -25,14 +26,17 @@ interface FestivalLineupProps {
   event: FestivalEvent
   timetable: TimetableData
   spotifyData: Record<string, any>
-  isFuture: boolean
+  phase: FestivalPhase
 }
 
 /** Lineup heading, Artists / Timetable switch and the selected view. Board: Festival. */
-export default function FestivalLineup({ id, event, timetable, spotifyData, isFuture }: FestivalLineupProps) {
+export default function FestivalLineup({ id, event, timetable, spotifyData, phase }: FestivalLineupProps) {
   const { getB2bSets, wantToSee } = useUserData()
   const { view, switchView } = useLineupView()
   const [selectedDay, setSelectedDay] = useState<string | null>(() => timetable.days[0] ?? null)
+  // While it runs you can still pick sets for later and rate the ones you saw.
+  const canPick = phase !== 'past'
+  const canRate = phase !== 'upcoming'
 
   // Keep the selected day valid when the day list changes (another festival,
   // or a refresh after linking a Partyflock timetable).
@@ -116,7 +120,7 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, isFu
       ) : (
         <div className={styles.grid}>
           {b2bSets.map(b2bSet => (
-            <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} isPast={!isFuture} />
+            <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} canRate={canRate} />
           ))}
           {soloArtists.map((artist: any) => (
             <ArtistCard
@@ -124,7 +128,8 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, isFu
               artist={artist}
               eventId={id}
               spotifyData={spotifyData[artist.name]}
-              isPast={!isFuture}
+              canPick={canPick}
+              canRate={canRate}
               availableArtistsForB2b={allSoloForB2b}
             />
           ))}

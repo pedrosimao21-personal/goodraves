@@ -98,8 +98,8 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
         }
       }
       const festivalMeta = meta ? { ...prev.festivalMeta, [eventId]: meta } : prev.festivalMeta
-      const date = meta?.date ?? prev.festivalMeta[eventId]?.date
-      if (isFestivalPast(date)) {
+      const known = meta ?? prev.festivalMeta[eventId]
+      if (isFestivalPast(known?.date, known?.endDate)) {
         return { ...prev, attendedFestivals: [...prev.attendedFestivals, eventId], festivalMeta }
       }
       return { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId], festivalMeta }
@@ -133,8 +133,8 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
             upcomingFestivals: prev.upcomingFestivals.filter(x => x !== eventId),
           }
         }
-        const date = prev.festivalMeta[eventId]?.date
-        return isFestivalPast(date)
+        const known = prev.festivalMeta[eventId]
+        return isFestivalPast(known?.date, known?.endDate)
           ? { ...prev, attendedFestivals: [...prev.attendedFestivals, eventId] }
           : { ...prev, upcomingFestivals: [...prev.upcomingFestivals, eventId] }
       })

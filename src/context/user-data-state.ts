@@ -184,12 +184,13 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   const festivalPublicComments: Record<string, string> = {}
 
   for (const f of data.festivals) {
-    if (isFestivalPast(f.date)) attended.push(f.festivalId)
+    if (isFestivalPast(f.date, f.endDate)) attended.push(f.festivalId)
     else upcoming.push(f.festivalId)
 
     festivalMeta[f.festivalId] = {
       name: f.name,
       date: f.date,
+      endDate: f.endDate ?? undefined,
       venue: f.venue ? { name: f.venue, city: f.location ?? undefined } : undefined,
       location: f.location ?? undefined,
       latitude: f.latitude ?? undefined,

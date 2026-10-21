@@ -20,10 +20,11 @@ interface B2bSetCardProps {
   b2bSet: B2bSetData
   eventId: string
   spotifyData: Record<string, any>
-  isPast: boolean
+  /** Show the rating controls (festival has started). */
+  canRate: boolean
 }
 
-const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPast }: B2bSetCardProps) {
+const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canRate }: B2bSetCardProps) {
   const { getPerformanceRating, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
   const firstMember = b2bSet.members[0]
   const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
@@ -87,7 +88,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
           ))}
         </h3>
 
-        {isPast && (
+        {canRate && (
           <div className={styles.controls}>
             {hasRating || isRatingVisible ? (
               <RatingInput

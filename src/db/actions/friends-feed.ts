@@ -15,6 +15,7 @@ export type FestivalFeedItem = {
   festivalId: string;
   festivalName: string;
   festivalDate: string;
+  festivalEndDate: string | null;
   festivalImage: string | null;
   rating: number | null;
   publicComment: string | null;
@@ -45,6 +46,7 @@ async function fetchFestivalActivity(friendIds: string[], before: Date | null): 
       festivalId: userFestivals.festivalId,
       festivalName: festivals.name,
       festivalDate: festivals.date,
+      festivalEndDate: festivals.endDate,
       festivalImage: festivals.imageUrl,
       rating: userFestivals.rating,
       publicComment: userFestivals.publicComment,

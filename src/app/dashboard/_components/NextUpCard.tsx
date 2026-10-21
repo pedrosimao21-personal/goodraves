@@ -11,7 +11,7 @@ const THUMB_SIZE = 240
 const MONOGRAM_WORDS = 2
 
 function describeWhen(daysUntilNext: number): string {
-  if (daysUntilNext <= 0) return 'Next up · now'
+  if (daysUntilNext <= 0) return 'On now'
   if (daysUntilNext === 1) return 'Next up · tomorrow'
   return `Next up · in ${daysUntilNext} days`
 }

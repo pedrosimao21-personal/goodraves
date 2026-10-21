@@ -29,13 +29,17 @@ const ArtistCard = memo(function ArtistCard({
   artist,
   eventId,
   spotifyData,
-  isPast = true,
+  canPick = false,
+  canRate = true,
   availableArtistsForB2b = [],
 }: {
   artist: any
   eventId: string
   spotifyData?: any
-  isPast?: boolean
+  /** Show the pick toggle (festival not over yet). */
+  canPick?: boolean
+  /** Show the rating controls (festival has started). */
+  canRate?: boolean
   availableArtistsForB2b?: { id: string; name: string }[]
 }) {
   const { getAverageArtistRating, getPerformanceRating, splitB2bArtist, renameArtist, createB2bSet, isAdmin, didWantToSee, toggleWantToSee } = useUserDataActions()
@@ -116,7 +120,7 @@ const ArtistCard = memo(function ArtistCard({
               </span>
             )}
           </div>
-          {!isPast && (
+          {canPick && (
             <div className={styles.controls}>
               <button
                 type="button"
@@ -131,7 +135,7 @@ const ArtistCard = memo(function ArtistCard({
           )}
         </div>
 
-        {isPast && (
+        {canRate && (
           <div className={styles.controls}>
             {hasRating || isStarRatingVisible ? (
               <>

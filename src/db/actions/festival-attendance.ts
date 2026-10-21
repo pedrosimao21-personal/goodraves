@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { eq, and, sql, lte, gt } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   festivals,
   userFestivals,
@@ -10,6 +10,7 @@ import {
   userArtistWantToSee,
 } from "@/db/schema";
 import { requireAuth, validateRating, MAX_NOTES_LENGTH } from "./festival-helpers";
+import { toIsoDate } from "@/lib/dates";
 
 // ── Add / remove attendance ────────────────────────────
 export async function addAttendance(festivalId: string) {
@@ -208,11 +209,14 @@ export async function clearUserFestivals(
   type: "past" | "upcoming"
 ) {
   const userId = await requireAuth();
-  const today = new Date().toISOString().split("T")[0];
+  // Same split as the client lists: a festival stays upcoming through its
+  // last day (end_date, or date for a one-day event).
+  const today = toIsoDate(new Date());
+  const lastDay = sql`coalesce(${festivals.endDate}, ${festivals.date})`;
   const dateCondition =
     type === "past"
-      ? lte(festivals.date, today)
-      : gt(festivals.date, today);
+      ? sql`${lastDay} < ${today}`
+      : sql`${lastDay} >= ${today}`;
 
   const toDelete = await db
     .select({ festivalId: userFestivals.festivalId })

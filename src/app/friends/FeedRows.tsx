@@ -8,16 +8,18 @@ import type { FeedItem, FestivalFeedItem, FollowFeedItem } from '@/db/actions/fr
 import RatingSquares from '@/components/rating/RatingSquares'
 import { ChevronDownIcon } from '@/components/icons'
 import { formatDate, formatRelativeTime } from '@/lib/format-date'
-import { isFestivalPast } from '@/lib/festival-date'
+import { getFestivalPhase } from '@/lib/festival-date'
 import styles from './FriendsFeed.module.css'
 
 const THUMB_SIZE = 128
 const ARTIST_IMAGE_SIZE = 96
 
-/** "{user} rated / went to / is going to {festival}", from data already on the row. */
+const VERB_BY_PHASE = { upcoming: 'is going to', ongoing: 'is at', past: 'went to' } as const
+
+/** "{user} rated / went to / is at / is going to {festival}", from data already on the row. */
 function getVerb(item: FestivalFeedItem): string {
   if (item.rating) return 'rated'
-  return isFestivalPast(item.festivalDate) ? 'went to' : 'is going to'
+  return VERB_BY_PHASE[getFestivalPhase(item.festivalDate, item.festivalEndDate)]
 }
 
 function Headline({ item, verb, target, href }: { item: FeedItem; verb: string; target: string; href: string }) {

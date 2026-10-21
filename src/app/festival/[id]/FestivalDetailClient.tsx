@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useUserData } from '@/context/UserDataContext'
-import { parseLocalDate } from '@/lib/dates'
+import { getFestivalPhase } from '@/lib/festival-date'
 import type { TimetableData } from '@/db/actions/festivals'
 import type { FestivalPlaylistData } from '@/db/actions/festival-playlist'
 import FestivalHeader from './FestivalHeader'
@@ -39,11 +39,11 @@ export default function FestivalDetail({
   if (error || !event) return null
 
   const isCustom = id.startsWith('custom-')
-  const isFuture = Boolean(event.date) && parseLocalDate(event.date) > new Date()
+  const phase = getFestivalPhase(event.date, event.endDate)
   const attended = isAttended(id)
 
   const handleToggleAttendance = async () => {
-    const payload = { name: event.name, date: event.date, venue: event.venue, image: event.imageUrl, source: event.source }
+    const payload = { name: event.name, date: event.date, endDate: event.endDate, venue: event.venue, image: event.imageUrl, source: event.source }
     const finalId = await toggleFestival(id, payload)
     // upsertFestival reuses an existing row with the same name and date, so
     // the attendance can land on another id than the one in the URL. Follow
@@ -59,8 +59,8 @@ export default function FestivalDetail({
         <FestivalHeader
           id={id}
           event={event}
-          isFuture={isFuture}
-          isActive={isFuture ? isUpcoming(id) : attended}
+          phase={phase}
+          isActive={attended || isUpcoming(id)}
           attended={attended}
           seenCount={getSeenCount(id)}
           onToggleAttendance={handleToggleAttendance}
@@ -69,7 +69,7 @@ export default function FestivalDetail({
 
         {attended && <FestivalYourNight eventId={id} />}
 
-        <FestivalLineup id={id} event={event} timetable={timetable} spotifyData={spotifyData} isFuture={isFuture} />
+        <FestivalLineup id={id} event={event} timetable={timetable} spotifyData={spotifyData} phase={phase} />
 
         {playlist && <FestivalPlaylist playlist={playlist} festivalName={event.name} />}
       </div>

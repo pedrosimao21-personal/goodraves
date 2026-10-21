@@ -41,6 +41,7 @@ export async function fetchUserDataForId(userId: string) {
           publicComment: userFestivals.publicComment,
           name: festivals.name,
           date: festivals.date,
+          endDate: festivals.endDate,
           venue: festivals.venue,
           location: festivals.location,
           latitude: festivals.latitude,

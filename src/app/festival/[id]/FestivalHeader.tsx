@@ -7,6 +7,7 @@ import ShareFestivalButton from '@/components/ShareFestivalButton'
 import AddToCalendarButton from '@/components/AddToCalendarButton'
 import { ArrowLeftIcon, DotsIcon, ExternalIcon } from '@/components/icons'
 import { formatDateRange } from '@/lib/format-date'
+import type { FestivalPhase } from '@/lib/festival-date'
 import { type FestivalEvent, countFestivalDays, getSourceLink, toMonogram } from './festival-event'
 import styles from './FestivalHeader.module.css'
 
@@ -18,7 +19,7 @@ const LONG_TITLE_LENGTH = 22
 interface FestivalHeaderProps {
   id: string
   event: FestivalEvent
-  isFuture: boolean
+  phase: FestivalPhase
   isActive: boolean
   attended: boolean
   seenCount: number
@@ -37,7 +38,7 @@ function formatCrowd(event: FestivalEvent): string | null {
 
 /** Board: Festival (desktop) and FestivalMobile. */
 export default function FestivalHeader({
-  id, event, isFuture, isActive, attended, seenCount, onToggleAttendance, onOpenAdmin,
+  id, event, phase, isActive, attended, seenCount, onToggleAttendance, onOpenAdmin,
 }: FestivalHeaderProps) {
   const router = useRouter()
   const source = getSourceLink(id)
@@ -46,6 +47,7 @@ export default function FestivalHeader({
   const crowd = formatCrowd(event)
   const dayCount = countFestivalDays(event.date, event.endDate)
   const artistCount = event.attractions?.length ?? 0
+  const isPast = phase === 'past'
 
   return (
     <section className={styles.header}>
@@ -84,7 +86,8 @@ export default function FestivalHeader({
         <div className={styles.chips}>
           {event.genres?.map((genre: string) => <span key={genre} className="tag">{genre}</span>)}
           {dayCount > 1 && <span className="tag">{dayCount} days</span>}
-          {!isFuture && <span className="tag">Past</span>}
+          {phase === 'ongoing' && <span className="tag">On now</span>}
+          {isPast && <span className="tag">Past</span>}
         </div>
 
         <h1 className={`display ${styles.title} ${event.name?.length > LONG_TITLE_LENGTH ? styles.titleLong : ''}`}>{event.name}</h1>
@@ -96,8 +99,8 @@ export default function FestivalHeader({
         </dl>
 
         <div className={styles.actions}>
-          <AttendToggle id="detail-attend-btn" size="lg" isFuture={isFuture} isActive={isActive} onToggle={onToggleAttendance} />
-          {isFuture && (
+          <AttendToggle id="detail-attend-btn" size="lg" isFuture={!isPast} isActive={isActive} onToggle={onToggleAttendance} />
+          {!isPast && (
             <AddToCalendarButton
               className={styles.actionButton}
               labelClassName={styles.hideOnMobile}

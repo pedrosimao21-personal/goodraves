@@ -1,0 +1,58 @@
+/* Going / Attended toggle. Off: outline with a plus. On: lilac (going) or
+   lime (attended, the user's own) with a check. */
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+  background: transparent;
+  color: var(--gr-tx);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.toggle:hover {
+  border-color: var(--gr-tx);
+}
+
+.small {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.large {
+  min-height: 52px;
+  padding: 0 24px;
+}
+
+.going {
+  border-color: var(--gr-go);
+  color: var(--gr-go);
+  background: color-mix(in srgb, var(--gr-go) 8%, transparent);
+}
+
+.going:hover {
+  border-color: var(--gr-go);
+}
+
+.attended {
+  border-color: var(--gr-acc-ink);
+  color: var(--gr-acc-ink);
+  background: color-mix(in srgb, var(--gr-acc) 8%, transparent);
+}
+
+.attended:hover {
+  border-color: var(--gr-acc-ink);
+}

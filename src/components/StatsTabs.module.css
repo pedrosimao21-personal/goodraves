@@ -1,0 +1,55 @@
+/* "Stats" section header shared by /top-djs and /insights.
+   Boards: docs/redesign/boards/TopDJs.dc.html, Insights.dc.html. */
+
+.header {
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 56px;
+}
+
+.tabs {
+  display: flex;
+  gap: 28px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tab:hover {
+  color: var(--gr-tx);
+}
+
+.tabActive {
+  color: var(--gr-tx);
+  border-bottom-color: var(--gr-tx);
+}
+
+@media (max-width: 639px) {
+  .title {
+    font-size: 40px;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .tab {
+    justify-content: center;
+  }
+}

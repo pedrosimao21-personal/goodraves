@@ -1,0 +1,179 @@
+/* Top bar + mobile tab bar. Boards: docs/redesign/boards/NavDesktop.dc.html,
+   TabBar.dc.html, AccountMenu.dc.html. */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--navbar-bg);
+  border-bottom: 1px solid var(--gr-line);
+  /* Clears the iPhone notch / status bar in PWA standalone mode */
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gr-tx);
+  flex-shrink: 0;
+}
+
+.logoMark {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background: var(--gr-acc);
+}
+
+:global(:root[data-theme='light']) .logoMark {
+  background: var(--gr-tx);
+}
+
+.logoWord {
+  font-family: var(--font-display);
+  font-stretch: 68%;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.links {
+  display: flex;
+  gap: 32px;
+  flex: 1;
+  align-self: stretch;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  padding-top: 2px;
+  border-bottom: 2px solid transparent;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color var(--transition-fast);
+}
+
+.link:hover {
+  color: var(--gr-tx);
+}
+
+.linkActive {
+  color: var(--gr-tx);
+  border-bottom-color: var(--gr-tx);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+}
+
+.iconButton:hover {
+  color: var(--gr-tx);
+}
+
+/* PWA reload button: only in standalone mode, where there is no browser chrome. */
+@media (display-mode: standalone) {
+  .iconButton {
+    display: flex;
+  }
+}
+
+/* ── Mobile tab bar ── */
+.tabBar {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .inner {
+    height: 56px;
+    padding: 0 12px 0 20px;
+  }
+
+  .logoMark {
+    width: 12px;
+    height: 12px;
+  }
+
+  .logoWord {
+    font-size: 22px;
+  }
+
+  .links {
+    display: none;
+  }
+
+  .actions {
+    gap: 4px;
+  }
+
+  .actions :global(.btn) {
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .tabBar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bottom-nav-bg);
+    border-top: 1px solid var(--gr-line);
+  }
+
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: -1px;
+    border-top: 2px solid transparent;
+    color: var(--gr-tx3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    -webkit-tap-highlight-color: transparent;
+    min-width: 0;
+  }
+
+  .tabActive {
+    color: var(--gr-tx);
+    border-top-color: var(--gr-tx);
+  }
+}

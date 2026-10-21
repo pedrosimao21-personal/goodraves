@@ -16,9 +16,9 @@ export function PageHeader({ availableYears, selectedYear, onYearChange }: {
 }) {
   return (
     <div style={{ paddingTop: 8, marginBottom: 24 }}>
-      <h1 className="section-title" style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: 800, marginBottom: 6 }}>
+      <h2 className="section-title" style={{ marginBottom: 6 }}>
         Most Watched DJs
-      </h1>
+      </h2>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
           Your personalized ranking of artists you&apos;ve watched

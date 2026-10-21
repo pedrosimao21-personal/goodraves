@@ -5,6 +5,7 @@ import { useUserData } from '@/context/UserDataContext'
 import { normalizeLocation } from '@/utils/location-normalizer'
 import dynamic from 'next/dynamic'
 import RaverPassport from '@/components/RaverPassport'
+import StatsTabs from '@/components/StatsTabs'
 
 const RaveMap = dynamic(() => import('@/components/RaveMap'), { ssr: false })
 const YearBarChart = dynamic(() => import('./InsightsCharts').then(m => ({ default: m.YearBarChart })), { ssr: false })
@@ -153,9 +154,8 @@ export default function Insights() {
 
   return (
     <div className="page fade-in">
-      <div className="container" style={{ paddingTop: 32 }}>
-        <h1 className="section-title" style={{ fontSize: '2.5rem', marginBottom: 8 }}>Your Insights</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>Deep dive into your raving habits.</p>
+      <div className="container">
+        <StatsTabs active="insights" />
 
         <div style={{ marginBottom: 48 }}>
           <h2 className="section-title">Global Rave Heatmap</h2>

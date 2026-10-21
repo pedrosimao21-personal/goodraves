@@ -1,104 +1,132 @@
 /* =============================================
    CSS CUSTOM PROPERTIES — DESIGN SYSTEM
+   "Flyer, not dashboard" redesign. Spec: docs/redesign/README.md.
+
+   The --gr-* tokens are the source of truth. The legacy names below
+   (--bg-primary, --accent-purple, --gradient-hero, …) are aliases that point
+   at them, so every var(--…) in CSS and TSX resolves to the same palette.
+   New code uses --gr-* directly.
+
+   Accent rule: --gr-acc (lime) marks what is the user's own (picked, rated,
+   followed, attended) and the one primary action per screen. Nothing else.
    ============================================= */
 :root {
-  --bg-primary: #0d0d14;
-  --bg-secondary: #13131f;
-  --bg-card: #1a1a2e;
-  --bg-card-hover: #1f1f38;
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-hover: rgba(255, 255, 255, 0.07);
+  --gr-bg: #0b0b0c;
+  --gr-s1: #141416;
+  --gr-s2: #1c1c1f;
+  --gr-s3: #2c2c31;
+  --gr-tx: #f2f0ea;
+  --gr-tx2: #bab8b0;
+  --gr-tx3: #94928a;
+  --gr-line: rgba(242, 240, 234, 0.1);
+  --gr-line2: rgba(242, 240, 234, 0.22);
+  --gr-acc: #d4ff3f; /* lime fill */
+  --gr-acc-ink: #d4ff3f; /* lime used as a line or text colour (olive in light) */
+  --gr-on-acc: #0b0b0c; /* text on a lime fill */
+  --gr-on-fill: #0b0b0c; /* text on any filled control (white, lilac, lime) */
+  --gr-go: #b2a6ff; /* going */
+  --gr-warn: #ff9a52; /* clash, warnings */
+  --gr-err: #ff7a7a; /* errors, destructive actions */
+  --gr-off: #77756e; /* outline of an empty, tappable rating square */
+  --gr-bar: #77756e; /* neutral chart bars */
+  --gr-radius: 2px;
 
-  --accent-purple: #8b5cf6;
-  --accent-purple-light: #a78bfa;
-  --accent-purple-lighter: #c4b5fd;
-  --accent-pink: #ec4899;
-  --accent-orange: #f97316;
-  --accent-cyan: #06b6d4;
-  --accent-green: #10b981;
+  /* ── Legacy aliases ── */
+  --bg-primary: var(--gr-bg);
+  --bg-secondary: var(--gr-s1);
+  --bg-card: var(--gr-s1);
+  --bg-card-hover: var(--gr-s2);
+  --bg-glass: var(--gr-s1);
+  --bg-glass-hover: var(--gr-s2);
 
-  --gradient-hero: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f97316 100%);
-  --gradient-card: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.08));
-  --gradient-glow: radial-gradient(ellipse at top, rgba(139, 92, 246, 0.25) 0%, transparent 70%);
+  --accent-purple: var(--gr-tx);
+  --accent-purple-light: var(--gr-tx);
+  --accent-purple-lighter: var(--gr-tx2);
+  --accent-pink: var(--gr-tx);
+  --accent-orange: var(--gr-warn);
+  --accent-cyan: var(--gr-go);
+  --accent-green: var(--gr-acc-ink);
 
-  --text-primary: #f1f0ff;
-  --text-secondary: #a89fcc;
-  --text-muted: #6b6388;
+  /* Flat on purpose: the design has no gradients, and several selectors use
+     these as a background or as background-clip text. */
+  --gradient-hero: linear-gradient(var(--gr-tx), var(--gr-tx));
+  --gradient-card: linear-gradient(var(--gr-s2), var(--gr-s2));
+  --gradient-glow: none;
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(139, 92, 246, 0.4);
-  --border-subtle: rgba(255, 255, 255, 0.12);
-  --border-medium: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.15);
-  --border-focus: rgba(255, 255, 255, 0.25);
+  --text-primary: var(--gr-tx);
+  --text-secondary: var(--gr-tx2);
+  --text-muted: var(--gr-tx3);
 
-  /* Additional semantic tokens — a mechanical sweep of hardcoded colors
-     across components, same values, grouped/named so a future light theme
-     only needs to override this file. Not used by RaverPassport.tsx (a
-     shareable/exportable card meant to look identical regardless of site
-     theme) or brand marks like the Spotify icon. */
-  --color-white: #ffffff;
+  --border: var(--gr-line);
+  --border-hover: var(--gr-tx3);
+  --border-subtle: var(--gr-line);
+  --border-medium: var(--gr-line);
+  --border-strong: var(--gr-line2);
+  --border-focus: var(--gr-tx);
+
+  /* --color-white is only used as text on a filled control (primary button,
+     going toggle, active tab). Those fills are light, so it resolves to
+     dark ink. */
+  --color-white: var(--gr-on-fill);
   --color-black: #000000;
 
-  --state-going: #3b82f6; /* "Going"/upcoming action state */
-  --accent-red: #ef4444; /* destructive actions */
-  --accent-red-bright: #ff4444; /* "Clear list" action */
-  --error-text: #f87171; /* inline form/validation error text */
-  --star-filled: #fbbf24; /* filled rating star */
-  --star-empty: rgba(255, 255, 255, 0.2);
-  --star-glow: rgba(251, 191, 36, 0.3);
+  --state-going: var(--gr-go);
+  --accent-red: var(--gr-err);
+  --accent-red-bright: var(--gr-err);
+  --error-text: var(--gr-err);
+  --star-filled: var(--gr-acc-ink);
+  --star-empty: var(--gr-s3);
+  --star-glow: transparent;
 
-  --accent-amber: #f59e0b; /* chart palette */
-  --accent-indigo: #6366f1; /* chart palette */
-  --accent-rose: #fb7185; /* chart palette */
-  --accent-teal: #2dd4bf; /* chart palette */
+  --accent-amber: var(--gr-warn); /* chart palette, restyled per page in phase 2 */
+  --accent-indigo: var(--gr-go);
+  --accent-rose: var(--gr-err);
+  --accent-teal: var(--gr-acc-ink);
 
-  --surface-hover: rgba(255, 255, 255, 0.05);
-  --overlay-scrim: rgba(0, 0, 0, 0.7);
-  --tag-bg-muted: rgba(107, 114, 128, 0.1);
-  --tag-bg-purple: rgba(139, 92, 246, 0.1);
+  --surface-hover: var(--gr-s2);
+  --overlay-scrim: rgba(0, 0, 0, 0.6);
+  --tag-bg-muted: transparent;
+  --tag-bg-purple: transparent;
 
-  --chart-tooltip-bg: #1e1e1e;
-  --chart-tooltip-border: #333;
-  --chart-axis-stroke: #888;
-  --chart-axis-text: #ccc;
-  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --chart-tooltip-bg: var(--gr-s1);
+  --chart-tooltip-border: var(--gr-line2);
+  --chart-axis-stroke: var(--gr-line2);
+  --chart-axis-text: var(--gr-tx3);
+  --shadow-dropdown: none;
 
-  --accent-purple-glow-12: rgba(139, 92, 246, 0.12);
-  --accent-purple-glow-15: rgba(139, 92, 246, 0.15);
-  --accent-purple-glow-25: rgba(139, 92, 246, 0.25);
-  --accent-green-glow: rgba(16, 185, 129, 0.4);
+  --accent-purple-glow-12: color-mix(in srgb, var(--gr-tx) 6%, transparent);
+  --accent-purple-glow-15: color-mix(in srgb, var(--gr-tx) 8%, transparent);
+  --accent-purple-glow-25: color-mix(in srgb, var(--gr-tx) 14%, transparent);
+  --accent-green-glow: color-mix(in srgb, var(--gr-acc) 30%, transparent);
 
-  --navbar-bg: rgba(13, 13, 20, 0.85);
-  --bottom-nav-bg: rgba(13, 13, 20, 0.95);
-  --success-text: #34d399; /* attended/active indicator text — pairs with a low-alpha green background */
-  --warning-text: #fb923c; /* rate-limit / API-notice text */
+  --navbar-bg: rgba(11, 11, 12, 0.94);
+  --bottom-nav-bg: rgba(11, 11, 12, 0.96);
+  --success-text: var(--gr-acc-ink);
+  --warning-text: var(--gr-warn);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --radius-sm: var(--gr-radius);
+  --radius-md: var(--gr-radius);
+  --radius-lg: var(--gr-radius);
+  --radius-xl: var(--gr-radius);
+  --radius-full: var(--gr-radius);
 
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.2);
-  --shadow-btn: 0 4px 16px rgba(139, 92, 246, 0.35);
+  --shadow-card: none;
+  --shadow-glow: none;
+  --shadow-btn: none;
 
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
   --transition-slow: 400ms ease;
 
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-outfit), system-ui, sans-serif;
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
 
   /* Shorthand aliases for tokens referenced by their older, shorter names in
-     components (var(--accent), var(--text), …). They were never defined, so
-     every declaration using one was invalid and silently fell back to the
-     inherited value — which read fine on the dark theme but produced
-     white-on-white in light mode (e.g. the Top DJs sort toggle). Defined as
-     aliases rather than literals so they inherit the light-theme overrides
-     below automatically; do NOT redefine them in the light block. */
+     components (var(--accent), var(--text), …). Aliases rather than literals
+     so they follow the light-theme overrides below; do NOT redefine them in
+     the light block. */
   --accent: var(--accent-purple);
   --bg: var(--bg-primary);
   --text: var(--text-primary);
@@ -111,75 +139,32 @@
 
 /* =============================================
    LIGHT THEME — toggled via [data-theme] on <html>, set by the inline
-   no-flash script in layout.tsx (localStorage, falling back to
-   prefers-color-scheme). Dark stays the default look (unset :root above);
-   only what actually needs to change for a white background is overridden
-   here. --color-white/--color-black, brand marks (Spotify icon), and
-   RaverPassport.tsx are deliberately unaffected — see their own comments.
+   no-flash script in layout.tsx. Lime fails contrast on paper, so here it is
+   only a fill behind black; where dark mode draws lime as a line or text,
+   light mode uses olive (--gr-acc-ink). The legacy aliases above follow the
+   --gr-* values automatically.
    ============================================= */
 :root[data-theme='light'] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f7f6fb;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f3f1fa;
-  --bg-glass: rgba(124, 58, 237, 0.04);
-  --bg-glass-hover: rgba(124, 58, 237, 0.08);
+  --gr-bg: #f4f2ec;
+  --gr-s1: #ffffff;
+  --gr-s2: #eae7df;
+  --gr-s3: #d6d3ca;
+  --gr-tx: #0b0b0c;
+  --gr-tx2: #4a4842;
+  --gr-tx3: #6b6962;
+  --gr-line: rgba(11, 11, 12, 0.1);
+  --gr-line2: rgba(11, 11, 12, 0.22);
+  --gr-acc-ink: #4f6b00;
+  --gr-on-fill: #f4f2ec; /* fills are dark in light mode (black, indigo) */
+  --gr-go: #5b4bd6;
+  --gr-warn: #b4470c;
+  --gr-err: #b42318;
+  --gr-off: #8a877f;
+  --gr-bar: #8a877f;
 
-  --accent-purple: #7c3aed;
-  --accent-purple-light: #8b5cf6;
-  --accent-purple-lighter: #a78bfa;
-  --accent-pink: #db2777;
-  --accent-orange: #ea580c;
-  --accent-cyan: #0891b2;
-  --accent-green: #059669;
-
-  --gradient-hero: linear-gradient(135deg, #7c3aed 0%, #db2777 50%, #ea580c 100%);
-  --gradient-card: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(219, 39, 119, 0.05));
-  --gradient-glow: radial-gradient(ellipse at top, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
-
-  --text-primary: #1a1523;
-  --text-secondary: #5b5470;
-  --text-muted: #8a84a0;
-
-  --border: rgba(20, 10, 40, 0.08);
-  --border-hover: rgba(124, 58, 237, 0.35);
-  --border-subtle: rgba(20, 10, 40, 0.1);
-  --border-medium: rgba(20, 10, 40, 0.12);
-  --border-strong: rgba(20, 10, 40, 0.16);
-  --border-focus: rgba(124, 58, 237, 0.3);
-
-  --state-going: #2563eb;
-  --accent-red: #dc2626;
-  --accent-red-bright: #e11d48;
-  --error-text: #dc2626;
-  --star-filled: #b45309;
-  --star-empty: rgba(20, 10, 40, 0.15);
-  --star-glow: rgba(245, 158, 11, 0.35);
-
-  --accent-amber: #d97706;
-  --accent-indigo: #4f46e5;
-  --accent-rose: #e11d48;
-  --accent-teal: #0d9488;
-
-  --surface-hover: rgba(20, 10, 40, 0.04);
-  --overlay-scrim: rgba(0, 0, 0, 0.5);
-  --tag-bg-muted: rgba(107, 114, 128, 0.12);
-  --tag-bg-purple: rgba(124, 58, 237, 0.08);
-
-  --chart-tooltip-bg: #ffffff;
-  --chart-tooltip-border: #e5e0f0;
-  --chart-axis-stroke: #c9c3d9;
-  --chart-axis-text: #5b5470;
-  --shadow-dropdown: 0 8px 24px rgba(20, 10, 40, 0.12);
-
-  --shadow-card: 0 2px 12px rgba(20, 10, 40, 0.08);
-  --shadow-glow: 0 0 32px rgba(124, 58, 237, 0.15);
-  --shadow-btn: 0 4px 14px rgba(124, 58, 237, 0.28);
-
-  --navbar-bg: rgba(255, 255, 255, 0.85);
-  --bottom-nav-bg: rgba(255, 255, 255, 0.95);
-  --success-text: #059669;
-  --warning-text: #c2410c;
+  --overlay-scrim: rgba(0, 0, 0, 0.4);
+  --navbar-bg: rgba(244, 242, 236, 0.94);
+  --bottom-nav-bg: rgba(244, 242, 236, 0.96);
 }
 
 /* =============================================
@@ -199,14 +184,38 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Ensure emoji characters render via system emoji fonts on all platforms,
-   including Windows where flag emojis are not covered by Inter/Segoe UI. */
+/* ── Redesign type primitives (docs/redesign/README.md › Type) ── */
+.display {
+  font-family: var(--font-display);
+  font-stretch: 68%;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 0.9;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gr-tx);
+  outline-offset: 2px;
+}
+
+/* Ensure emoji characters (country flags) render via system emoji fonts on
+   all platforms, including Windows where the text fonts don't cover them. */
 .emoji {
   font-family: var(--font-emoji);
   font-style: normal;
@@ -275,79 +284,14 @@ img {
    ============================================= */
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 40px;
 }
 
 .page {
   flex: 1;
-  padding: 32px 0 64px;
-}
-
-/* =============================================
-   NAVBAR
-   ============================================= */
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--navbar-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  /* Clears the iPhone notch / status bar in PWA standalone mode */
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.navbar-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-}
-
-.navbar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 800;
-  background: var(--gradient-hero);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  flex-shrink: 0;
-}
-
-.navbar-logo svg {
-  flex-shrink: 0;
-}
-
-.navbar-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.navbar-nav a {
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: all var(--transition-normal);
-}
-
-.navbar-nav a:hover,
-.navbar-nav a.active {
-  color: var(--text-primary);
-  background: var(--bg-glass-hover);
+  padding: 48px 0 96px;
 }
 
 /* =============================================
@@ -364,8 +308,8 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: color-mix(in srgb, var(--gr-tx) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr-tx) 21%, transparent);
   color: var(--accent-purple-light);
   padding: 6px 16px;
   border-radius: var(--radius-full);
@@ -446,7 +390,7 @@ img {
 .search-input:focus {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gr-tx) 7%, transparent);
 }
 
 /* =============================================
@@ -500,7 +444,7 @@ img {
 
 .filter-dropdown-trigger.is-active {
   border-color: var(--accent-purple);
-  background: rgba(139, 92, 246, 0.12);
+  background: color-mix(in srgb, var(--gr-tx) 8%, transparent);
   color: var(--accent-purple-light);
 }
 
@@ -623,8 +567,8 @@ img {
   align-items: center;
   gap: 5px;
   padding: 5px 10px 5px 12px;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: color-mix(in srgb, var(--gr-tx) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr-tx) 21%, transparent);
   border-radius: var(--radius-full);
   font-size: 0.8rem;
   color: var(--accent-purple-light);
@@ -650,7 +594,7 @@ img {
 }
 
 .filter-chip-remove:hover {
-  background: rgba(139, 92, 246, 0.25);
+  background: color-mix(in srgb, var(--gr-tx) 18%, transparent);
 }
 
 /* ── Filter Summary Bar ── */
@@ -693,84 +637,104 @@ img {
 /* =============================================
    BUTTONS
    ============================================= */
+/* Outline by default; .btn-primary is the one lime action per screen.
+   In light mode the primary is black with lime text (lime on paper has no
+   visible edge). */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 0 18px;
   min-height: 44px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+  background: transparent;
+  color: var(--gr-tx);
+  font-family: var(--font-sans);
+  font-size: 13px;
   font-weight: 600;
-  font-family: inherit;
-  transition: all var(--transition-normal);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
 }
 
+.btn:hover {
+  border-color: var(--gr-tx);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .btn-primary {
-  background: var(--gradient-hero);
-  color: var(--color-white);
-  box-shadow: var(--shadow-btn);
+  background: var(--gr-acc);
+  border-color: var(--gr-acc);
+  color: var(--gr-on-acc);
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.5);
+  border-color: var(--gr-acc);
+  background: color-mix(in srgb, var(--gr-acc) 88%, var(--gr-tx));
 }
 
-.btn-primary:active {
-  transform: translateY(0);
+:root[data-theme='light'] .btn-primary {
+  background: var(--gr-tx);
+  border-color: var(--gr-tx);
+  color: var(--gr-acc);
 }
 
 .btn-secondary {
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-}
-
-.btn-secondary:hover {
-  border-color: var(--border-hover);
-  color: var(--text-primary);
-  background: var(--bg-card-hover);
+  background: transparent;
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--text-secondary);
-  padding: 8px 12px;
+  border-color: transparent;
+  color: var(--gr-tx2);
+  padding: 0 12px;
 }
 
 .btn-ghost:hover {
-  color: var(--text-primary);
-  background: var(--bg-glass);
+  border-color: transparent;
+  color: var(--gr-tx);
 }
 
 .btn-sm {
-  padding: 8px 16px;
-  font-size: 0.85rem;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 
 .btn-icon {
-  padding: 10px;
-  border-radius: var(--radius-md);
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  transition: all var(--transition-normal);
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--gr-radius);
+  background: transparent;
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx);
+  transition: border-color var(--transition-fast);
 }
 
 .btn-icon:hover {
-  border-color: var(--border-hover);
-  color: var(--accent-purple-light);
+  border-color: var(--gr-tx);
 }
 
 .btn-icon.active {
-  background: rgba(139, 92, 246, 0.15);
-  border-color: rgba(139, 92, 246, 0.4);
-  color: var(--accent-purple-light);
+  border-color: var(--gr-acc-ink);
+  color: var(--gr-acc-ink);
 }
 
 /* =============================================
@@ -797,26 +761,33 @@ img {
 }
 
 .chip {
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border);
-  background: var(--bg-glass);
-  color: var(--text-secondary);
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: var(--gr-radius);
+  border: 1px solid var(--gr-line2);
+  background: transparent;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .chip:hover {
-  border-color: var(--border-hover);
-  color: var(--text-primary);
+  border-color: var(--gr-tx);
+  color: var(--gr-tx);
 }
 
 .chip.active {
-  background: rgba(139, 92, 246, 0.2);
-  border-color: rgba(139, 92, 246, 0.5);
-  color: var(--accent-purple-light);
+  background: var(--gr-tx);
+  border-color: var(--gr-tx);
+  color: var(--gr-bg);
 }
 
 /* =============================================
@@ -832,18 +803,21 @@ img {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-stretch: 68%;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--gr-tx);
 }
 
 .section-count {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
-  padding: 4px 12px;
-  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gr-tx3);
 }
 
 .grid {
@@ -859,99 +833,40 @@ img {
 }
 
 /* =============================================
-   FESTIVAL CARD
+   TAGS + CLASH BANNER
    ============================================= */
-.festival-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  transition: all var(--transition-normal);
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.festival-card:hover {
-  border-color: var(--border-hover);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-card);
-}
-
-.festival-card-img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  position: relative;
-}
-
-.festival-card-img-placeholder {
-  width: 100%;
-  height: 180px;
-  background: var(--gradient-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-}
-
-.festival-card-past-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.65);
-  color: var(--color-white);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.festival-card-body {
-  padding: 18px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.festival-card-tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
 .tag {
-  font-size: 0.72rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--gr-radius);
+  background: transparent;
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  background: rgba(139, 92, 246, 0.15);
-  color: var(--accent-purple-light);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  white-space: nowrap;
 }
 
+/* Attended: the user's own, so lime (olive in light). */
 .tag-green {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--success-text);
-  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--gr-acc-ink);
+  border-color: var(--gr-acc-ink);
 }
 
 .tag-orange {
-  background: rgba(249, 115, 22, 0.12);
-  color: var(--warning-text);
-  border-color: rgba(249, 115, 22, 0.2);
+  color: var(--gr-warn);
+  border-color: var(--gr-warn);
 }
 
 .clash-banner {
-  background: rgba(249, 115, 22, 0.1);
-  border: 1px solid rgba(249, 115, 22, 0.25);
+  background: color-mix(in srgb, var(--gr-warn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr-warn) 25%, transparent);
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 16px;
@@ -974,87 +889,6 @@ img {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
-
-.festival-card-title {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
-}
-
-.festival-card-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.festival-card-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.festival-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px;
-  border-top: 1px solid var(--border);
-  margin-top: auto;
-}
-
-.attended-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--accent-green);
-}
-
-/* =============================================
-   ATTEND BUTTON
-   ============================================= */
-.attend-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  min-height: 44px;
-  border-radius: var(--radius-full);
-  font-size: 0.82rem;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  font-family: inherit;
-}
-
-.attend-btn:hover {
-  border-color: var(--accent-green);
-  color: var(--accent-green);
-  background: rgba(16, 185, 129, 0.08);
-}
-
-.attend-btn.attended {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.4);
-  color: var(--success-text);
-}
-
-.attend-btn.attended:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: var(--error-text);
-}
-
-.attend-btn.attended:hover .attend-label { display: none; }
-.attend-btn.attended:hover::after { content: 'Remove'; }
 
 /* =============================================
    ARTIST CARD
@@ -1215,12 +1049,12 @@ img {
 .artist-saw-toggle:hover {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
-  background: rgba(6, 182, 212, 0.08);
+  background: color-mix(in srgb, var(--gr-go) 8%, transparent);
 }
 
 .artist-saw-toggle.saw {
-  background: rgba(6, 182, 212, 0.12);
-  border-color: rgba(6, 182, 212, 0.35);
+  background: color-mix(in srgb, var(--gr-go) 12%, transparent);
+  border-color: color-mix(in srgb, var(--gr-go) 35%, transparent);
   color: var(--accent-cyan);
 }
 
@@ -1416,11 +1250,22 @@ img {
   100% { background-position: 400px 0; }
 }
 
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Flat blocks in the shape of the content. */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.6s infinite;
-  border-radius: var(--radius-md);
+  background: var(--gr-s2);
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  border-radius: var(--gr-radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
 }
 
 .skeleton-card {
@@ -1450,10 +1295,13 @@ img {
 
 .empty-state h3 {
   font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
+  font-stretch: 68%;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--gr-tx);
+  margin-bottom: 12px;
 }
 
 .empty-state p {
@@ -1474,18 +1322,22 @@ img {
 }
 
 .stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--gr-line);
+  border-bottom: 1px solid var(--gr-line);
+  border-radius: 0;
+  padding: 20px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  color: var(--gr-tx);
+  text-align: left;
   transition: border-color var(--transition-normal);
 }
 
 .stat-card:hover {
-  border-color: var(--border-hover);
+  border-color: var(--gr-line2);
 }
 
 .stat-card-clickable {
@@ -1518,27 +1370,29 @@ img {
 }
 
 .stat-label {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
+  color: var(--gr-tx2);
 }
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-stretch: 68%;
+  font-size: 64px;
   font-weight: 800;
-  background: var(--gradient-hero);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1;
+  color: var(--gr-tx);
+  line-height: 0.9;
 }
 
 .stat-sub {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gr-tx3);
 }
 
 /* =============================================
@@ -1715,8 +1569,8 @@ img {
 .api-notice {
   margin: 20px 0;
   padding: 16px 20px;
-  background: rgba(249, 115, 22, 0.08);
-  border: 1px solid rgba(249, 115, 22, 0.25);
+  background: color-mix(in srgb, var(--gr-warn) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr-warn) 25%, transparent);
   border-radius: var(--radius-lg);
   display: flex;
   align-items: flex-start;
@@ -1820,7 +1674,7 @@ img {
 }
 
 .toast-success {
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: color-mix(in srgb, var(--gr-acc) 35%, transparent);
 }
 
 /* =============================================
@@ -1842,8 +1696,8 @@ img {
 
 
 .chip-both.active {
-  background: rgba(249, 115, 22, 0.2);
-  border-color: rgba(249, 115, 22, 0.5);
+  background: color-mix(in srgb, var(--gr-warn) 20%, transparent);
+  border-color: color-mix(in srgb, var(--gr-warn) 50%, transparent);
   color: var(--accent-orange);
 }
 
@@ -1858,33 +1712,33 @@ img {
 }
 
 .source-badge-edm {
-  background: rgba(6, 182, 212, 0.15);
+  background: color-mix(in srgb, var(--gr-go) 15%, transparent);
   color: var(--accent-cyan);
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  border: 1px solid color-mix(in srgb, var(--gr-go) 30%, transparent);
 }
 
 .source-badge-tm {
-  background: rgba(139, 92, 246, 0.15);
+  background: color-mix(in srgb, var(--gr-tx) 11%, transparent);
   color: var(--accent-purple-light);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  border: 1px solid color-mix(in srgb, var(--gr-tx) 14%, transparent);
 }
 
 .tag-edm {
-  background: rgba(6, 182, 212, 0.12);
+  background: color-mix(in srgb, var(--gr-go) 12%, transparent);
   color: var(--accent-cyan);
-  border-color: rgba(6, 182, 212, 0.25);
+  border-color: color-mix(in srgb, var(--gr-go) 25%, transparent);
 }
 
 .tag-tm {
-  background: rgba(139, 92, 246, 0.12);
+  background: color-mix(in srgb, var(--gr-tx) 8%, transparent);
   color: var(--accent-purple-light);
-  border-color: rgba(139, 92, 246, 0.2);
+  border-color: color-mix(in srgb, var(--gr-tx) 14%, transparent);
 }
 
 .tag-purple {
-  background: rgba(168, 85, 247, 0.12);
+  background: color-mix(in srgb, var(--gr-tx) 8%, transparent);
   color: var(--accent-purple-light);
-  border-color: rgba(168, 85, 247, 0.2);
+  border-color: color-mix(in srgb, var(--gr-tx) 14%, transparent);
 }
 
 /* Country Selector */
@@ -1904,8 +1758,8 @@ img {
 }
 
 .country-chip.active {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: rgba(16, 185, 129, 0.5);
+  background: color-mix(in srgb, var(--gr-acc) 20%, transparent);
+  border-color: color-mix(in srgb, var(--gr-acc) 50%, transparent);
   color: var(--success-text);
 }
 
@@ -1953,8 +1807,8 @@ img {
 }
 
 .toggle-label input:checked + .toggle-switch {
-  background: rgba(6, 182, 212, 0.25);
-  border-color: rgba(6, 182, 212, 0.5);
+  background: color-mix(in srgb, var(--gr-go) 25%, transparent);
+  border-color: color-mix(in srgb, var(--gr-go) 50%, transparent);
 }
 
 .toggle-label input:checked + .toggle-switch::after {
@@ -1963,17 +1817,6 @@ img {
 }
 
 /* Artist count in card */
-.festival-card-artists {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* Desktop navbar links class */
-.navbar-nav-desktop {
-  display: flex;
-}
-
 /* =============================================
    SPOTIFY COMPONENTS
    ============================================= */
@@ -2434,13 +2277,6 @@ img {
   animation: fadeIn 0.35s ease forwards;
 }
 
-/* =============================================
-   MOBILE BOTTOM NAV
-   ============================================= */
-.bottom-nav {
-  display: none; /* hidden on desktop */
-}
-
 /* iOS momentum scroll fix – prevents frozen pages when navigating back */
 .page {
   -webkit-overflow-scrolling: touch;
@@ -2455,50 +2291,6 @@ img {
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  /* Prevent the navbar from being double-padded (it already has safe-area) */
-  .navbar {
-    position: sticky;
-    top: 0;
-  }
-
-  /* PWA reload button — shown in the top-right corner */
-  .pwa-reload-btn {
-    display: flex;
-  }
-}
-
-/* PWA reload button — hidden by default (only shown in standalone mode above) */
-.pwa-reload-btn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  transition: color var(--transition-fast);
-}
-.pwa-reload-btn:hover {
-  color: var(--text-primary);
-}
-
-/* Theme toggle — same icon-button look as pwa-reload-btn, but always visible */
-.theme-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  transition: color var(--transition-fast);
-}
-.theme-toggle-btn:hover {
-  color: var(--text-primary);
 }
 
 /* =============================================
@@ -2532,12 +2324,12 @@ img {
 
   /* Container tighter on small screens */
   .container {
-    padding: 0 16px;
+    padding: 0 20px;
   }
 
   /* Page top padding reduced */
   .page {
-    padding: 16px 0 80px;
+    padding: 24px 0 96px;
   }
 
   /* ── Hero ── */
@@ -2608,12 +2400,6 @@ img {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* ── Festival card ── */
-  .festival-card-img,
-  .festival-card-img-placeholder {
-    height: 160px;
-  }
-
   /* ── Stats ── */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -2660,104 +2446,6 @@ img {
     bottom: 80px; /* above bottom nav */
     right: 16px;
     left: 16px;
-  }
-
-  /* ── Navbar ── */
-  /* Hide desktop nav links on mobile */
-  .navbar-nav-desktop {
-    display: none;
-  }
-
-  .navbar-inner {
-    height: 56px;
-  }
-
-  /* ── Bottom tab bar ── */
-  .bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 200;
-    background: var(--bottom-nav-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
-    padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    height: calc(64px + env(safe-area-inset-bottom, 0px));
-    align-items: stretch;
-  }
-
-  .bottom-nav-item {
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    color: var(--text-muted);
-    font-weight: 600;
-    transition: color var(--transition-fast);
-    -webkit-tap-highlight-color: transparent;
-    padding: 6px 2px;
-    min-width: 0;
-    text-align: center;
-  }
-
-  /* Sync item in bottom nav — consistent sizing with nav items */
-  .bottom-nav-sync {
-    position: relative;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  /* Dropdown from bottom-nav opens upward */
-  .bottom-nav-sync [style*="position: absolute"] {
-    bottom: calc(100% + 8px) !important;
-    top: auto !important;
-    right: 0 !important;
-    left: auto !important;
-  }
-
-  .bottom-nav-item.active {
-    color: var(--accent-purple-light);
-  }
-
-  .bottom-nav-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    transition: background var(--transition-fast), transform var(--transition-fast);
-    flex-shrink: 0;
-  }
-
-  .bottom-nav-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .bottom-nav-item.active .bottom-nav-icon {
-    background: rgba(139, 92, 246, 0.18);
-    transform: scale(1.05);
-  }
-
-  .bottom-nav-label {
-    font-size: 0.55rem;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
   }
 
   /* ── Section headers ── */
@@ -2843,7 +2531,7 @@ img {
 
 .import-dropzone:hover, .import-dropzone.active {
   border-color: var(--success-text);
-  background: rgba(16, 185, 129, 0.08);
+  background: color-mix(in srgb, var(--gr-acc) 8%, transparent);
 }
 
 .import-status {
@@ -2854,15 +2542,15 @@ img {
 }
 
 .import-status.success {
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in srgb, var(--gr-acc) 10%, transparent);
   color: var(--success-text);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid color-mix(in srgb, var(--gr-acc) 20%, transparent);
 }
 
 .import-status.error {
-  background: rgba(255, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--gr-err) 10%, transparent);
   color: var(--accent-red-bright);
-  border: 1px solid rgba(255, 68, 68, 0.2);
+  border: 1px solid color-mix(in srgb, var(--gr-err) 20%, transparent);
 }
 
 .import-instructions {
@@ -2958,29 +2646,6 @@ img {
 
 .auth-switch a {
   color: var(--accent-purple);
-}
-
-/* ── Navbar auth controls ── */
-.navbar-username {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.navbar-auth-btn {
-  font-size: 0.8rem;
-  padding: 5px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-glass);
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.navbar-auth-btn-primary {
-  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
-  border: none;
-  color: var(--color-white);
 }
 
 /* ── Auth prompt modal ── */
@@ -3445,7 +3110,7 @@ img {
 /* ── Hero ── */
 .explore-hero {
   padding: 48px 0 32px;
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.06) 0%, transparent 100%);
+  background: transparent;
   border-bottom: 1px solid var(--border);
   margin-bottom: 36px;
 }
@@ -3454,8 +3119,8 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: color-mix(in srgb, var(--gr-tx) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gr-tx) 18%, transparent);
   color: var(--accent-purple-light);
   padding: 4px 14px;
   border-radius: var(--radius-full);
@@ -3526,7 +3191,7 @@ img {
 .explore-search-input:focus {
   border-color: var(--accent-purple);
   background: var(--bg-card-hover);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gr-tx) 7%, transparent);
 }
 
 .explore-search-dropdown {

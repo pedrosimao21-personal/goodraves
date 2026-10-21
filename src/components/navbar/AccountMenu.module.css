@@ -1,0 +1,169 @@
+/* Board: docs/redesign/boards/AccountMenu.dc.html. A dropdown on desktop,
+   a bottom sheet over a scrim on mobile. */
+
+.wrap {
+  position: relative;
+}
+
+.avatarButton {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx);
+  font-family: var(--font-display);
+  font-stretch: 68%;
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.avatarButton[aria-expanded='true'] .avatar {
+  border-color: var(--gr-tx);
+}
+
+.scrim {
+  display: none;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 300;
+  width: 300px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.name {
+  font-weight: 600;
+  color: var(--gr-tx);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--gr-line);
+  color: var(--gr-tx);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  text-align: left;
+}
+
+.item:hover {
+  background: var(--gr-s2);
+}
+
+.itemMuted {
+  color: var(--gr-tx2);
+}
+
+.themeRow {
+  padding: 8px 16px 14px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.themeLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gr-tx2);
+}
+
+.segment {
+  display: flex;
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+}
+
+.segmentButton {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 8px;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.segmentButton[aria-pressed='true'] {
+  background: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+.handle {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 290;
+    background: var(--overlay-scrim);
+  }
+
+  .panel {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    border-width: 1px 0 0;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .handle span {
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--gr-s3);
+  }
+
+  .item {
+    min-height: 52px;
+    padding: 0 20px;
+  }
+
+  .header,
+  .themeRow {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

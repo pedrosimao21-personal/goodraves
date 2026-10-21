@@ -7,6 +7,7 @@ import { useSpotifyEnrichment } from './useSpotifyEnrichment'
 import ArtistActionsModal from './ArtistActionsModal'
 import { PageHeader, SortModeControl, StatsBar, ArtistRankingList } from './TopDjsSections'
 import DjSuggestionsChips from './DjSuggestionsChips'
+import StatsTabs from '@/components/StatsTabs'
 
 const TOP_ENRICHMENT_LIMIT = 15
 
@@ -121,6 +122,7 @@ export default function TopDJs() {
   return (
     <div className="page">
       <div className="container">
+        <StatsTabs active="top-djs" />
         <PageHeader
           availableYears={availableYears}
           selectedYear={selectedYear}

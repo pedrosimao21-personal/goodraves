@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
-import { Inter, Outfit } from 'next/font/google'
+import { Archivo, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import Navbar from '@/components/Navbar'
+import Navbar from '@/components/navbar/Navbar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
@@ -28,16 +28,20 @@ const THEME_INIT_SCRIPT = `
 })();
 `
 
-const inter = Inter({
+// Archivo is variable on weight and width: display type uses width 68%
+// (font-stretch) for the condensed flyer look, body text stays at 100%.
+const archivo = Archivo({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-archivo',
+  axes: ['wdth'],
   display: 'swap',
 })
 
-const outfit = Outfit({
+// Every date, set time, count and label is set in mono.
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-outfit',
-  weight: ['400', '600', '700', '800'],
+  variable: '--font-jetbrains-mono',
+  weight: ['400', '500', '700'],
   display: 'swap',
 })
 
@@ -84,7 +88,7 @@ export default async function RootLayout({
   const session = await auth()
 
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider>

@@ -5,12 +5,21 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { formatDate } from '@/lib/format-date'
+import { formatDateRange } from '@/lib/format-date'
 import { AccountField, CityField, GenresField, PrivacyField, ThemeField } from './ProfileFields'
-import { parseGenres, useProfile, type TailoredFestival } from './use-profile'
+import type { TailoredFestival } from '@/db/actions/tailored-festivals-core'
+import { parseGenres, useProfile } from './use-profile'
 import styles from './Profile.module.css'
 
 const THUMB_SIZE = 96
+const GENRES_IN_LABEL = 2
+
+/** "Techno and house near Rotterdam", from the profile's genres and the city match. */
+function describeTailored(genreList: string[], city: string, isNearCity: boolean): string {
+  const shown = genreList.slice(0, GENRES_IN_LABEL).map((genre, index) => (index === 0 ? genre : genre.toLowerCase()))
+  const genresText = shown.join(' and ')
+  return isNearCity && city ? `${genresText} near ${city}` : genresText
+}
 
 function TailoredRow({ fest }: { fest: TailoredFestival }) {
   return (
@@ -20,7 +29,7 @@ function TailoredRow({ fest }: { fest: TailoredFestival }) {
       </span>
       <span className={styles.tailoredInfo}>
         <span className={styles.tailoredName}>{fest.name}</span>
-        <span className={`mono ${styles.muted}`}>{[fest.date ? formatDate(fest.date) : null, fest.location || fest.venue].filter(Boolean).join(' · ')}</span>
+        <span className={`mono ${styles.muted}`}>{[formatDateRange(fest.date, fest.endDate), fest.location || fest.venue].filter(Boolean).join(' · ')}</span>
       </span>
     </Link>
   )
@@ -52,8 +61,7 @@ export default function ProfilePage() {
 
   const name = session.user?.name ?? ''
   const genreList = parseGenres(genres)
-  // The search matches festivals by the first genre only, not by city.
-  const tailoredFor = genreList[0] ? `Matching ${genreList[0]}` : ''
+  const tailoredFor = genreList.length > 0 ? describeTailored(genreList, city, tailored.isNearCity) : ''
 
   return (
     <div className="page">
@@ -80,9 +88,9 @@ export default function ProfilePage() {
               <h2 className={`display ${styles.asideTitle}`}>Tailored for you</h2>
               {tailoredFor && <p className={`mono ${styles.muted}`}>{tailoredFor}</p>}
             </div>
-            {tailoredLoading && <p className={styles.note}>Finding festivals for {genreList[0]}…</p>}
-            {!tailoredLoading && tailored.map(fest => <TailoredRow key={fest.id} fest={fest} />)}
-            {!tailoredLoading && tailored.length === 0 && (
+            {tailoredLoading && <p className={styles.note}>Finding festivals for you…</p>}
+            {!tailoredLoading && tailored.festivals.map(fest => <TailoredRow key={fest.id} fest={fest} />)}
+            {!tailoredLoading && tailored.festivals.length === 0 && (
               <p className={styles.note}>
                 {genreList.length > 0
                   ? 'No festivals match your favourite genres right now.'

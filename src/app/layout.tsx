@@ -48,9 +48,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Goodraves',
   description: 'Goodraves – discover raves & festivals, track what you attended, rate the DJs you saw.',
+  // The lime brand square on the dark ground; the PNGs are rendered from
+  // icon.svg (iOS ignores SVG touch icons).
   icons: {
-    icon: '/logo.svg',
-    apple: '/logo.svg',
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
   appleWebApp: {

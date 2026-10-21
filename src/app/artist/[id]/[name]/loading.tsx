@@ -1,9 +1,17 @@
+import styles from './ArtistPage.module.css'
+
 export default function Loading() {
   return (
-    <div className="page">
+    <div className="page" aria-busy="true" aria-label="Loading artist">
       <div className="container">
-        <div className="skeleton" style={{ height: 200, borderRadius: 16, marginBottom: 24 }} />
-        <div className="skeleton" style={{ height: 400, borderRadius: 16 }} />
+        <div className={styles.skeletonTop}>
+          <div className={`skeleton ${styles.skeletonPhoto}`} />
+          <div className={`skeleton ${styles.skeletonName}`} />
+        </div>
+        <div className={styles.skeleton}>
+          <div className={`skeleton ${styles.skeletonHeading}`} />
+          <div className={`skeleton ${styles.skeletonBlock}`} />
+        </div>
       </div>
     </div>
   )

@@ -66,6 +66,8 @@ export const EditIcon = createIcon('EditIcon', <path d="M4 20h4L19 9l-4-4L4 16z"
 export const LinkIcon = createIcon('LinkIcon', <><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>)
 export const RefreshIcon = createIcon('RefreshIcon', <path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" />)
 export const MergeIcon = createIcon('MergeIcon', <path d="M6 4v6a6 6 0 0 0 6 6h6M14 12l4 4-4 4M6 20v-2" />)
+export const PlayIcon = createIcon('PlayIcon', <path d="M7 4v16l13-8z" />)
+export const PauseIcon = createIcon('PauseIcon', <path d="M8 5v14M16 5v14" />)
 
 /** Three horizontal dots (overflow menu). Drawn filled, so no stroke. */
 export function DotsIcon({ size = DEFAULT_ICON_SIZE, ...props }: IconProps) {

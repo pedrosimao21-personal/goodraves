@@ -1,0 +1,108 @@
+/* Top tracks and releases. Board: docs/redesign/boards/Artist.dc.html. */
+
+.tracks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.track {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.trackNumber {
+  color: var(--gr-tx3);
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+  color: var(--gr-tx);
+  cursor: pointer;
+}
+
+.previewOn {
+  background: var(--gr-tx);
+  border-color: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+.trackName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackName:hover {
+  text-decoration: underline;
+}
+
+.trackPlays {
+  color: var(--gr-tx3);
+}
+
+.releases {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.release {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.releaseCover {
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.releaseCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.releaseName {
+  margin-top: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.releaseMeta {
+  color: var(--gr-tx3);
+}
+
+.showAll {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  cursor: pointer;
+}
+
+.showAll:hover {
+  color: var(--gr-tx);
+}

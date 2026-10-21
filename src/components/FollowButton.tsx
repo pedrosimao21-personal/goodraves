@@ -19,11 +19,14 @@ export default function FollowButton({
   artistId,
   artistName,
   variant = 'pill',
+  size = 'sm',
   isCompactOnMobile = false,
 }: {
   artistId: string
   artistName: string
   variant?: FollowButtonVariant
+  /** Pill height: `sm` for rows and cards, `md` beside other full-size buttons. */
+  size?: 'sm' | 'md'
   // Pill shows only the heart at phone width, for tight rows (Top DJs).
   isCompactOnMobile?: boolean
 }) {
@@ -68,7 +71,7 @@ export default function FollowButton({
   return (
     <button
       type="button"
-      className={`btn btn-sm ${following ? styles.following : ''} ${isCompactOnMobile ? styles.compactOnMobile : ''}`}
+      className={`btn ${size === 'sm' ? 'btn-sm' : ''} ${following ? styles.following : ''} ${isCompactOnMobile ? styles.compactOnMobile : ''}`}
       onClick={handleClick}
       disabled={isPending}
       aria-pressed={following}

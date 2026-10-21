@@ -1,0 +1,237 @@
+/* Board: docs/redesign/boards/Artist.dc.html (main column + aside). */
+
+.body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  padding-bottom: 96px;
+}
+
+.main {
+  flex: 999 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+}
+
+.aside {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* ── Shared ── */
+
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.headingLarge {
+  font-size: 36px;
+}
+
+.headingSmall {
+  font-size: 28px;
+}
+
+.headingMeta {
+  color: var(--gr-tx3);
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gr-tx2);
+}
+
+.muted {
+  margin-top: 12px;
+  color: var(--gr-tx2);
+}
+
+.inlineLink {
+  text-decoration: underline;
+}
+
+.textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  cursor: pointer;
+}
+
+.textButton:hover {
+  color: var(--gr-tx);
+}
+
+/* ── Upcoming ── */
+
+.upcomingRow {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.upcomingRow:hover .upcomingName {
+  text-decoration: underline;
+}
+
+.dateBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx3);
+}
+
+.dateDay {
+  font-size: 32px;
+  color: var(--gr-tx);
+}
+
+.upcomingInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.upcomingName {
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.upcomingPlace {
+  font-size: 14px;
+  color: var(--gr-tx2);
+}
+
+.upcomingSet {
+  margin-top: 2px;
+  color: var(--gr-tx);
+}
+
+.upcomingSource {
+  margin-top: 2px;
+  color: var(--gr-tx3);
+}
+
+/* ── Aside ── */
+
+.bio {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--gr-tx2);
+}
+
+.similarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.similar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx);
+  text-align: left;
+  cursor: pointer;
+}
+
+.similarPhoto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  font-size: 32px;
+  color: var(--gr-tx3);
+}
+
+.similarPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.similarName {
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.similar:hover .similarName {
+  text-decoration: underline;
+}
+
+.report {
+  padding-top: 16px;
+  border-top: 1px solid var(--gr-line);
+}
+
+@media (max-width: 640px) {
+  .body {
+    gap: 40px;
+    padding-bottom: 48px;
+  }
+
+  .main {
+    gap: 40px;
+  }
+
+  .headingLarge {
+    font-size: 32px;
+  }
+
+  .upcomingRow {
+    grid-template-columns: 56px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+  }
+
+  .dateDay {
+    font-size: 26px;
+  }
+
+  .upcomingName {
+    font-size: 16px;
+  }
+}

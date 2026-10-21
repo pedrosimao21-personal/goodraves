@@ -1,0 +1,68 @@
+/* Artist page states: loading skeleton, not found and error. */
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 64px;
+}
+
+.skeletonHeading {
+  height: 36px;
+  width: 30%;
+}
+
+.skeletonBlock {
+  height: 240px;
+}
+
+.skeletonPhoto {
+  width: 340px;
+  height: 340px;
+}
+
+.skeletonName {
+  height: 120px;
+  width: 60%;
+}
+
+.skeletonTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 48px;
+  padding: 76px 0 56px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 640px;
+  padding: 64px 0;
+}
+
+.messageTitle {
+  font-size: 56px;
+}
+
+.messageText {
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .skeletonPhoto {
+    width: 100%;
+    height: 300px;
+  }
+
+  .skeletonTop {
+    gap: 24px;
+    padding: 52px 0 32px;
+  }
+
+  .messageTitle {
+    font-size: 40px;
+  }
+}

@@ -1,0 +1,205 @@
+/* Boards: docs/redesign/boards/Artist.dc.html (square photo beside the
+   name, stats strip below) and ArtistMobile.dc.html (full-width photo). */
+
+.header {
+  padding-bottom: 56px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  cursor: pointer;
+}
+
+.back:hover {
+  color: var(--gr-tx);
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 48px;
+  margin-top: 16px;
+}
+
+.photo {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+}
+
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.monogram {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 200px;
+  color: var(--gr-line2);
+}
+
+.info {
+  flex: 1 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.eyebrow {
+  color: var(--gr-tx2);
+}
+
+.name {
+  font-size: clamp(80px, 10vw, 152px);
+  overflow-wrap: anywhere;
+}
+
+.nameLong {
+  font-size: clamp(56px, 6.5vw, 104px);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Stats strip ── */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  margin: 48px 0 0;
+  border-top: 1px solid var(--gr-line);
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.stat {
+  padding: 20px;
+  border-left: 1px solid var(--gr-line);
+}
+
+.stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.statValue {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  font-size: 56px;
+}
+
+.statLabel {
+  margin-top: 6px;
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding-bottom: 32px;
+  }
+
+  .top {
+    gap: 24px;
+    margin-top: 8px;
+  }
+
+  /* Full-bleed photo under the back button. */
+  .photo {
+    width: calc(100% + 40px);
+    height: 300px;
+    margin: 0 -20px;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .monogram {
+    font-size: 180px;
+  }
+
+  .info {
+    flex-basis: 100%;
+    gap: 14px;
+  }
+
+  .name {
+    font-size: 72px;
+  }
+
+  .nameLong {
+    font-size: 48px;
+  }
+
+  .actions > :not(.secondaryLink) {
+    flex: 1 1 40%;
+  }
+
+  .actions .secondaryLink {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gr-tx2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+  }
+
+  .actions .secondaryLink + .secondaryLink {
+    margin-left: 12px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 24px;
+  }
+
+  .stat {
+    padding: 16px;
+    border-bottom: 1px solid var(--gr-line);
+  }
+
+  .stat:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .stat:nth-last-child(-n + 2):nth-child(odd),
+  .stat:last-child {
+    border-bottom: 0;
+  }
+
+  .statValue {
+    gap: 8px;
+    font-size: 44px;
+  }
+}

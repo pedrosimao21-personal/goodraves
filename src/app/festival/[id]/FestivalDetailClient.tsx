@@ -7,6 +7,7 @@ import { getFestivalPhase } from '@/lib/festival-date'
 import type { TimetableData } from '@/db/actions/festivals'
 import type { FestivalPlaylistData } from '@/db/actions/festival-playlist'
 import FestivalHeader from './FestivalHeader'
+import LiveMode from './LiveMode'
 import FestivalAdminMenu from './FestivalAdminMenu'
 import FestivalYourNight from './FestivalYourNight'
 import FestivalLineup from './FestivalLineup'
@@ -41,6 +42,8 @@ export default function FestivalDetail({
   const isCustom = id.startsWith('custom-')
   const phase = getFestivalPhase(event.date, event.endDate)
   const attended = isAttended(id)
+  const isGoing = attended || isUpcoming(id)
+  const showLive = phase === 'ongoing' && isGoing && timetable.days.length > 0
 
   const handleToggleAttendance = async () => {
     const payload = { name: event.name, date: event.date, endDate: event.endDate, venue: event.venue, image: event.imageUrl, source: event.source }
@@ -56,11 +59,12 @@ export default function FestivalDetail({
   return (
     <div className="page">
       <div className="container">
+        {showLive && <LiveMode festivalId={id} timetable={timetable} />}
         <FestivalHeader
           id={id}
           event={event}
           phase={phase}
-          isActive={attended || isUpcoming(id)}
+          isActive={isGoing}
           attended={attended}
           seenCount={getSeenCount(id)}
           onToggleAttendance={handleToggleAttendance}

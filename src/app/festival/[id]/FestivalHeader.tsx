@@ -53,7 +53,7 @@ export default function FestivalHeader({
   const isPast = phase === 'past'
 
   return (
-    <section className={styles.header}>
+    <section id="festival-info" className={styles.header}>
       <div className={styles.topRow}>
         <button type="button" className={`mono ${styles.back}`} onClick={() => router.back()} id="back-btn">
           <ArrowLeftIcon size={16} strokeWidth={2} />Back

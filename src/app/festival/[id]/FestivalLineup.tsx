@@ -87,7 +87,7 @@ export default function FestivalLineup({ id, event, timetable, spotifyData, phas
   const highlights = { pickedArtistIds, clashArtistIds, onTogglePick }
 
   return (
-    <section className={styles.section}>
+    <section id="timetable" className={styles.section}>
       <div className={styles.header}>
         <div className={styles.heading}>
           <h2 className={`display ${styles.title}`}>Lineup</h2>

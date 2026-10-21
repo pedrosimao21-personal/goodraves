@@ -1,0 +1,246 @@
+/* Board: docs/redesign/boards/FestivalLiveMobile.dc.html. Phones only. */
+
+.live {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .live {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--gr-line2);
+  }
+}
+
+.liveTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.dayLabel {
+  color: var(--gr-tx2);
+}
+
+.liveChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--gr-tx);
+  white-space: nowrap;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gr-tx);
+}
+
+.label {
+  margin-bottom: 10px;
+  color: var(--gr-tx2);
+}
+
+.quiet {
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
+.warn {
+  color: var(--gr-warn);
+}
+
+/* ── Now ── */
+
+/* Your pick, so lime. */
+.nowCard {
+  padding: 18px;
+  background: color-mix(in srgb, var(--gr-acc) 12%, transparent);
+  border: 1px solid var(--gr-acc-ink);
+}
+
+.nowName {
+  font-size: 52px;
+  overflow-wrap: anywhere;
+}
+
+.nowTimes {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 12px;
+}
+
+.progress {
+  height: 4px;
+  margin-top: 8px;
+  background: var(--gr-s3);
+}
+
+.progressFill {
+  height: 4px;
+  background: var(--gr-acc-ink);
+}
+
+.clashNote {
+  margin-top: 8px;
+  color: var(--gr-warn);
+}
+
+/* ── Next ── */
+
+.nextCard {
+  padding: 16px;
+  border: 1px solid var(--gr-line2);
+}
+
+.nextClash {
+  border-color: var(--gr-warn);
+  background: color-mix(in srgb, var(--gr-warn) 6%, transparent);
+}
+
+.nextTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.nextName {
+  font-size: 32px;
+  overflow-wrap: anywhere;
+}
+
+.nextWhere {
+  margin-top: 6px;
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
+.choices {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.choices > * {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Rows (on now, just finished) ── */
+
+.rows {
+  border-top: 1px solid var(--gr-line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  color: var(--gr-tx3);
+}
+
+/* ── Your day ── */
+
+.dayHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.dayTitle {
+  font-size: 32px;
+}
+
+.dayRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.dayTime {
+  width: 52px;
+  flex: none;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dayTag {
+  color: var(--gr-tx3);
+}
+
+.dayRowPast {
+  opacity: 0.5;
+}
+
+.dayRowNow {
+  background: var(--gr-s1);
+}
+
+.dayRowNow .dayTag {
+  color: var(--gr-tx);
+}
+
+.dayRowClash .dayTime,
+.dayRowClash .dayTag {
+  color: var(--gr-warn);
+}
+
+.nowLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -1px;
+  color: var(--gr-acc-ink);
+}
+
+.nowLineBar {
+  flex: 1;
+  height: 2px;
+  background: var(--gr-acc-ink);
+}
+
+.links {
+  display: flex;
+  gap: 8px;
+}
+
+.links > * {
+  flex: 1;
+}

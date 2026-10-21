@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 4px 0 10px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx)}
+.chip button{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:var(--tx2);cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.lbl{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);margin-bottom:8px}
+.inp{height:48px;width:100%;background:var(--s1);border:1px solid var(--line2);border-radius:2px;color:var(--tx);font:400 15px 'Archivo',sans-serif;padding:0 14px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{min-height:44px;padding:0 18px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seg .on{background:var(--tx);color:#0B0B0C}
+.fld{display:grid;grid-template-columns:220px minmax(0,1fr);gap:32px;padding:28px 0;border-top:1px solid var(--line)}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="none" hint-size="100%,65px"></dc-import>
+  <main class="wrap" style="padding-top: 64px; padding-bottom: 96px">
+    <div style="display: flex; gap: 24px; align-items: center">
+      <span class="d" style="width: 88px; height: 88px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 44px">M</span>
+      <div>
+        <h1 class="d" style="font-size: 56px">maarten</h1>
+        <p class="m" style="color: var(--tx2); margin-top: 6px">maarten@example.com · member since 2019</p>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 56px; margin-top: 48px; align-items: flex-start">
+      <section style="flex: 999 1 640px; min-width: 0">
+        <div class="fld">
+          <div><h2 style="font-size: 17px; font-weight: 600">Home city</h2><p style="font-size: 14px; color: var(--tx2); margin-top: 4px">Drives "Near you", trending festivals and distances.</p></div>
+          <div style="display: flex; gap: 8px"><label for="city" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Home city</label><input id="city" class="inp" value="Amsterdam"><button class="btn">Save</button></div>
+        </div>
+        <div class="fld">
+          <div><h2 style="font-size: 17px; font-weight: 600">Favourite genres</h2><p style="font-size: 14px; color: var(--tx2); margin-top: 4px">Used for "Tailored for you".</p></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <sc-for list="{{genres}}" as="g" hint-placeholder-count="3"><span class="chip">{{g}}<button aria-label="Remove {{g}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+            <button class="btn" style="min-height: 32px; padding: 0 10px; font-size: 11px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add genre</button>
+          </div>
+        </div>
+        <div class="fld">
+          <div><h2 style="font-size: 17px; font-weight: 600">Theme</h2><p style="font-size: 14px; color: var(--tx2); margin-top: 4px">System follows your device.</p></div>
+          <div><div class="seg" role="group" aria-label="Theme"><button class="on" aria-pressed="true">Dark</button><button aria-pressed="false">Light</button><button aria-pressed="false">System</button></div></div>
+        </div>
+        <div class="fld">
+          <div><h2 style="font-size: 17px; font-weight: 600">What friends see</h2></div>
+          <div style="display: flex; flex-direction: column; gap: 8px; color: var(--tx2)">
+            <p><span class="m" style="color: var(--tx); margin-right: 10px">Shared</span>Festivals, set ratings, comments for friends, follows</p>
+            <p><span class="m" style="color: var(--tx); margin-right: 10px">Private</span>Personal notes</p>
+          </div>
+        </div>
+        <div class="fld" style="border-bottom: 1px solid var(--line)">
+          <div><h2 style="font-size: 17px; font-weight: 600">Account</h2></div>
+          <div style="display: flex; gap: 8px"><button class="btn">Change password</button><button class="btn" style="border-color: transparent; color: var(--tx2)">Sign out</button></div>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0">
+        <div style="padding-bottom: 10px; border-bottom: 1px solid var(--line2)"><h2 class="d" style="font-size: 28px">Tailored for you</h2><p class="m" style="color: var(--tx3); margin-top: 6px">Techno and house near Amsterdam</p></div>
+        <sc-for list="{{tailored}}" as="f" hint-placeholder-count="4">
+          <a href="Festival.dc.html" style="display: flex; gap: 12px; align-items: center; min-height: 72px; border-bottom: 1px solid var(--line); text-decoration: none">
+            <span class="img" style="display: block; width: 48px; height: 48px; flex: none"></span>
+            <span><span style="display: block; font-weight: 600">{{f.n}}</span><span class="m" style="color: var(--tx3)">{{f.s}}</span></span>
+          </a>
+        </sc-for>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const genres = ['Techno', 'House', 'Melodic techno'];
+    const tailored = [
+      { n: 'Machinehal Nights', s: 'Sat 14 Nov · Eindhoven' },
+      { n: 'Ondergrond', s: 'Sat 21 Nov · Rotterdam' },
+      { n: 'Havengeluid', s: 'Sat 19 Dec · Rotterdam' },
+      { n: 'Stroom Open Air', s: 'Sat 05 Jun · Amsterdam' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', genres, tailored };
+  }
+}
+</script>
+</body>
+</html>

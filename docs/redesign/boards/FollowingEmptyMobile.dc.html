@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Following, first run (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 12px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.av{display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--line);font-stretch:68%;font-weight:800;text-transform:uppercase;color:var(--tx2);flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 1100px; position: relative; padding-bottom: 88px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <button aria-label="Account menu" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0"><span class="d" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 16px; line-height: 1; color: var(--tx)">M</span></button>
+  </header>
+
+  <section style="padding: 32px 20px 0; display: flex; flex-direction: column; gap: 16px">
+    <h1 class="d" style="font-size: 40px">Following</h1>
+    <p style="color: var(--tx2)">Follow an artist and their next gigs on Goodraves land here, with set times and clashes. Only your friends can see who you follow.</p>
+    <form role="search" style="display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 14px; background: var(--s1); border: 1px solid var(--line2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94928A" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="fse" class="sr">Search for an artist to follow</label>
+      <input id="fse" placeholder="Find an artist to follow" style="flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--tx); font: 400 16px 'Archivo', sans-serif">
+    </form>
+  </section>
+
+  <section style="padding: 32px 20px 0">
+    <h2 class="m" style="color: var(--tx2); padding-bottom: 10px; border-bottom: 1px solid var(--line2)">Most followed on Goodraves</h2>
+    <sc-for list="{{top}}" as="a" hint-placeholder-count="6">
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 68px; border-bottom: 1px solid var(--line)">
+        <span class="av" style="width: 44px; height: 44px; font-size: 18px">{{a.i}}</span>
+        <div style="flex: 1; min-width: 0"><span style="display: block; font-weight: 600">{{a.n}}</span><span class="m" style="color: var(--tx3)">{{a.sub}}</span></div>
+        <button class="btn" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg>Follow</button>
+      </div>
+    </sc-for>
+    <p style="font-size: 14px; color: var(--tx3); margin-top: 16px">Once you rate a few sets, this list switches to artists you rated highly.</p>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="following" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const top = [
+      { i: 'NV', n: 'Nora Vey', sub: '412 ravers · 3 upcoming' },
+      { i: 'KA', n: 'KASSEL', sub: '388 ravers · 2 upcoming' },
+      { i: 'JR', n: 'Juno Reiss', sub: '301 ravers · 1 upcoming' },
+      { i: 'TM', n: 'Teo Marin', sub: '254 ravers · 2 upcoming' },
+      { i: 'IM', n: 'Ilse Morrow', sub: '231 ravers · 1 upcoming' },
+      { i: 'HU', n: 'Halcyon Unit', sub: '190 ravers · 1 upcoming' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', top };
+  }
+}
+</script>
+</body>
+</html>

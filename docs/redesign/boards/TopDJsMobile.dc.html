@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stats: top DJs (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.r{display:inline-flex;gap:3px;vertical-align:middle}.r i{display:block;width:10px;height:10px;background:var(--s3)}.r i.on{background:var(--acc)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{flex:1;min-height:44px;padding:0 12px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seg .on{background:var(--tx);color:#0B0B0C}
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.tabs a{display:flex;align-items:center;justify-content:center;min-height:48px;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
+.tabs .on{color:var(--tx);border-bottom-color:var(--tx)}
+.av{display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--line);font-stretch:68%;font-weight:800;text-transform:uppercase;color:var(--tx2);flex:none}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 1960px; position: relative; padding-bottom: 96px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <button aria-label="Account menu" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0"><span class="d" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 16px; line-height: 1; color: var(--tx)">M</span></button>
+  </header>
+
+  <section style="padding: 32px 20px 0">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <h1 class="d" style="font-size: 40px">Stats</h1>
+      <button class="btn" style="padding: 0 12px; font-size: 12px">All time<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+    </div>
+    <nav class="tabs" aria-label="Stats sections" style="margin-top: 20px"><a href="TopDJsMobile.dc.html" class="on" aria-current="page">Top DJs</a><a href="InsightsMobile.dc.html">Insights</a></nav>
+    <p class="m" style="color: var(--tx2); margin-top: 20px"><span style="color: var(--tx); font-size: 13px">186</span> artists · <span style="color: var(--tx); font-size: 13px">412</span> sets seen</p>
+    <div class="seg" role="group" aria-label="Sort by" style="margin-top: 14px"><button class="on" aria-pressed="true">Times seen</button><button aria-pressed="false">Your rating</button></div>
+  </section>
+
+  <section style="padding: 20px 20px 0">
+    <a href="ArtistMobile.dc.html" style="display: block; background: var(--s1); border: 1px solid var(--acc); text-decoration: none">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 16px">
+        <span class="d" style="font-size: 88px; color: var(--acc)">01</span>
+        <span class="av" style="width: 88px; height: 88px; font-size: 36px">NV</span>
+      </div>
+      <div style="padding: 0 16px 16px">
+        <span class="d" style="font-size: 40px">Nora Vey</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line)">
+          <span class="m" style="font-size: 12px">Seen 9×</span>
+          <span style="display: flex; align-items: center; gap: 8px"><span class="r" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i style="background: linear-gradient(90deg, var(--acc) 60%, var(--s3) 60%)"></i></span><span class="m">4.6</span></span>
+        </div>
+      </div>
+    </a>
+  </section>
+
+  <section style="padding: 12px 20px 0">
+    <sc-for list="{{rest}}" as="a" hint-placeholder-count="9">
+      <a href="ArtistMobile.dc.html" style="display: grid; grid-template-columns: 34px 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 72px; border-bottom: 1px solid var(--line); text-decoration: none">
+        <span class="d" style="font-size: 24px; color: var(--tx3)">{{a.rank}}</span>
+        <span class="av" style="width: 44px; height: 44px; font-size: 18px">{{a.i}}</span>
+        <span style="min-width: 0">
+          <span style="display: block; font-weight: 600">{{a.n}}</span>
+          <span style="display: flex; align-items: center; gap: 6px; margin-top: 2px"><span class="r" role="img" aria-label="{{a.label}}"><sc-for list="{{a.sq}}" as="q" hint-placeholder-count="5"><i style="background: {{q}}"></i></sc-for></span><span class="m" style="font-size: 11px; color: var(--tx3)">{{a.avg}}</span></span>
+        </span>
+        <span><span class="d" style="font-size: 32px">{{a.seen}}</span><span class="m" style="color: var(--tx3)">×</span></span>
+      </a>
+    </sc-for>
+    <button class="btn" style="width: 100%; margin-top: 20px">Show 20 more</button>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="stats" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":1960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sq = (r) => [1, 2, 3, 4, 5].map((k) => {
+      const full = Math.floor(r);
+      const part = Math.round((r - full) * 100);
+      if (k <= full) return 'var(--acc)';
+      if (k === full + 1 && part > 0) return 'linear-gradient(90deg, var(--acc) ' + part + '%, var(--s3) ' + part + '%)';
+      return 'var(--s3)';
+    });
+    const rest = [
+      ['KASSEL', 'KA', 8, 4.3],
+      ['Teo Marin', 'TM', 7, 4.9],
+      ['Ilse Morrow', 'IM', 6, 4.1],
+      ['Juno Reiss', 'JR', 6, 4.5],
+      ['Halcyon Unit', 'HU', 5, 3.8],
+      ['Bleek & Corso', 'BC', 5, 4.2],
+      ['Marek Sol', 'MS', 4, 3.5],
+      ['Venn', 'VE', 4, 4.0],
+      ['Mira Okafor', 'MO', 4, 4.4],
+    ].map(([n, i, seen, avg], k) => ({ n, i, seen, avg: avg.toFixed(1), sq: sq(avg), label: avg.toFixed(1) + ' out of 5', rank: String(k + 2).padStart(2, '0') }));
+    return { accent: this.props.accent ?? '#D4FF3F', rest };
+  }
+}
+</script>
+</body>
+</html>

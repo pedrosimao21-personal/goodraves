@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nora Vey</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--tx)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.r{display:inline-flex;gap:3px;vertical-align:middle}.r i{display:block;width:10px;height:10px;background:var(--s3)}.r i.on{background:var(--acc)}
+.av{display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--line);font-stretch:68%;font-weight:800;text-transform:uppercase;color:var(--tx2);flex:none}
+.lbl{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);margin-bottom:8px}
+.ta{width:100%;background:var(--s1);border:1px solid var(--line2);border-radius:2px;color:var(--tx);font:400 15px/1.5 'Archivo',sans-serif;padding:12px 14px;resize:vertical}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.h{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--line2);margin-bottom:4px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="none" hint-size="100%,65px"></dc-import>
+  <main>
+    <section class="wrap" style="padding-top: 32px; padding-bottom: 56px">
+      <a href="Festival.dc.html" class="m" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: none; color: var(--tx2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>Kade Weekender</a>
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; margin-top: 16px; align-items: flex-end">
+        <div class="av" style="width: 340px; height: 340px; font-size: 200px; color: rgba(242,240,234,.12)" role="img" aria-label="Nora Vey photo">NV</div>
+        <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+          <p class="m" style="color: var(--tx2)">Artist · Rotterdam, Netherlands</p>
+          <h1 class="d" style="font-size: clamp(80px, 10vw, 152px)">Nora Vey</h1>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="chip">Techno</span><span class="chip">Hypnotic</span><span class="chip">Dub techno</span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <button class="btn" aria-pressed="true" style="border-color: var(--acc); color: var(--acc)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg>Following</button>
+            <a href="#" class="btn">Spotify<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+            <a href="#" class="btn">Last.fm<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+            <a href="#" class="btn">Resident Advisor<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+          </div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)">
+        <div style="padding: 20px 20px 20px 0"><span class="d" style="font-size: 56px">9×</span><p class="m" style="color: var(--tx2); margin-top: 6px">Seen by you</p></div>
+        <div style="padding: 20px; border-left: 1px solid var(--line)"><div style="display: flex; align-items: baseline; gap: 12px"><span class="d" style="font-size: 56px">4.6</span><span class="r" role="img" aria-label="4.6 out of 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i style="background: linear-gradient(90deg, var(--acc) 60%, var(--s3) 60%)"></i></span></div><p class="m" style="color: var(--tx2); margin-top: 6px">Your average</p></div>
+        <div style="padding: 20px; border-left: 1px solid var(--line)"><span class="d" style="font-size: 56px">184K</span><p class="m" style="color: var(--tx2); margin-top: 6px">Spotify followers</p></div>
+        <div style="padding: 20px; border-left: 1px solid var(--line)"><span class="d" style="font-size: 56px">23</span><p class="m" style="color: var(--tx2); margin-top: 6px">Ravers follow · incl. anna, bob</p></div>
+      </div>
+    </section>
+
+    <section class="wrap" style="padding-bottom: 96px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 48px">
+        <div>
+          <div class="h"><h2 class="d" style="font-size: 36px">Upcoming</h2><span class="m" style="color: var(--tx3)">5</span></div>
+          <p style="font-size: 14px; color: var(--tx2); margin: 10px 0 4px">Your saved events plus Resident Advisor shows, merged. A show that matches a saved event by date and venue appears once.</p>
+          <sc-for list="{{upcoming}}" as="u" hint-placeholder-count="5">
+            <a href="{{u.href}}" style="display: grid; grid-template-columns: 72px 1fr auto; gap: 20px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); text-decoration: none">
+              <span style="display: flex; flex-direction: column; align-items: center; padding: 8px 0; border: 1px solid var(--line2)"><span class="m" style="font-size: 11px; color: var(--tx3)">{{u.mon}}</span><span class="d" style="font-size: 32px">{{u.day}}</span></span>
+              <span><span style="display: block; font-size: 18px; font-weight: 600">{{u.name}}</span><span style="font-size: 14px; color: var(--tx2)">{{u.place}}</span><span class="m" style="display: block; color: var(--tx3); margin-top: 2px">{{u.src}}</span></span>
+              <span class="m" style="font-size: 12px; color: {{u.tc}}">{{u.set}}</span>
+            </a>
+          </sc-for>
+        </div>
+        <div>
+          <div class="h"><h2 class="d" style="font-size: 36px">Your sets</h2><span class="m" style="color: var(--tx3)">9</span></div>
+          <sc-for list="{{history}}" as="h" hint-placeholder-count="4">
+            <div style="display: grid; grid-template-columns: 110px 1fr auto; gap: 20px; align-items: center; min-height: 56px; border-bottom: 1px solid var(--line)">
+              <span class="m" style="color: var(--tx3)">{{h.date}}</span>
+              <a href="Festival.dc.html" style="font-weight: 600; text-decoration: none">{{h.name}}</a>
+              <span class="r" role="img" aria-label="{{h.label}}"><sc-for list="{{h.sq}}" as="q" hint-placeholder-count="5"><i class="{{q}}"></i></sc-for></span>
+            </div>
+          </sc-for>
+          <a href="#" class="m" style="display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; color: var(--tx2)">Show all 9 sets</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 40px">
+          <div>
+            <div class="h"><h2 class="d" style="font-size: 28px">Top tracks</h2><span class="m" style="color: var(--tx3)">Last.fm</span></div>
+            <sc-for list="{{tracks}}" as="t" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; min-height: 48px; border-bottom: 1px solid var(--line)">
+                <span class="m" style="color: var(--tx3)">{{t.i}}</span><span>{{t.n}}</span><span class="m" style="font-size: 11px; color: var(--tx3)">{{t.p}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div>
+            <div class="h"><h2 class="d" style="font-size: 28px">Releases</h2><span class="m" style="color: var(--tx3)">Spotify</span></div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px">
+              <sc-for list="{{albums}}" as="a" hint-placeholder-count="4">
+                <div><div class="img" style="aspect-ratio: 1 / 1"></div><p style="font-size: 14px; font-weight: 600; margin-top: 8px">{{a.n}}</p><p class="m" style="font-size: 11px; color: var(--tx3)">{{a.t}}</p></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 40px">
+        <div>
+          <div class="h"><h2 class="d" style="font-size: 28px">About</h2><span class="m" style="color: var(--tx3)">Last.fm</span></div>
+          <p style="color: var(--tx2); margin-top: 12px">[Artist bio from Last.fm. Two to four sentences, trimmed, with a "Read more" link when it runs long.]</p>
+        </div>
+        <div>
+          <label class="lbl" for="an">Your notes</label>
+          <textarea id="an" class="ta" rows="3">Always plays the long closing slot. Worth staying for.</textarea>
+        </div>
+        <div>
+          <div class="h"><h2 class="d" style="font-size: 28px">Similar artists</h2></div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px">
+            <sc-for list="{{similar}}" as="s" hint-placeholder-count="6">
+              <a href="Artist.dc.html" style="text-decoration: none"><span class="av" style="aspect-ratio: 1 / 1; font-size: 32px">{{s.i}}</span><span style="display: block; font-size: 13px; margin-top: 6px">{{s.n}}</span></a>
+            </sc-for>
+          </div>
+        </div>
+        <a href="#" class="m" style="color: var(--tx3)">Report wrong info</a>
+      </aside>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":2120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4FF3F';
+    const sq = (r) => [1, 2, 3, 4, 5].map((k) => (k <= r ? 'on' : ''));
+    const upcoming = [
+      { mon: 'Nov', day: '07', name: 'Kade Weekender', place: 'NDSM Wharf · Amsterdam', set: 'Sat 22:00–23:30', tc: '#F2F0EA', src: 'Saved · you are going', href: 'Festival.dc.html' },
+      { mon: 'Nov', day: '21', name: 'Nora Vey all night long', place: 'De School · Amsterdam', set: '23:00–07:00', tc: '#F2F0EA', src: 'From RA · saved on import', href: 'Festival.dc.html' },
+      { mon: 'Dec', day: '31', name: 'Polderpuls NYE', place: 'Ahoy · Rotterdam', set: 'Set time TBA', tc: '#94928A', src: 'Saved · also on RA', href: 'Festival.dc.html' },
+      { mon: 'Jan', day: '16', name: 'Brakwater album tour', place: 'Berghain · Berlin', set: 'Set time TBA', tc: '#94928A', src: 'From RA · saved on import', href: 'Festival.dc.html' },
+      { mon: 'Jun', day: '05', name: 'Stroom Open Air', place: 'Amsterdamse Bos · Amsterdam', set: 'Set time TBA', tc: '#94928A', src: 'Saved', href: 'Festival.dc.html' },
+    ];
+    const history = [
+      ['29 Nov 2025', 'Lichtval Festival', 5],
+      ['04 Oct 2025', 'Ondergrond', 4],
+      ['08 Nov 2024', 'Kade Weekender', 5],
+      ['13 Apr 2024', 'Machinehal Nights', 4],
+    ].map(([date, name, r]) => ({ date, name, sq: sq(r), label: r + ' out of 5' }));
+    const tracks = [
+      { i: '01', n: 'Low Tide Engine', p: '412K plays' },
+      { i: '02', n: 'Kademuur', p: '298K plays' },
+      { i: '03', n: 'Signal Fade', p: '201K plays' },
+      { i: '04', n: 'Night Ferry', p: '154K plays' },
+      { i: '05', n: 'Haze Protocol', p: '97K plays' },
+    ];
+    const albums = [
+      { n: 'Brakwater', t: 'Album · 2025' },
+      { n: 'Kademuur EP', t: 'EP · 2024' },
+      { n: 'Signal Fade', t: 'Single · 2023' },
+      { n: 'Night Ferry EP', t: 'EP · 2022' },
+    ];
+    const similar = [
+      { i: 'JR', n: 'Juno Reiss' }, { i: 'KA', n: 'KASSEL' }, { i: 'IM', n: 'Ilse Morrow' },
+      { i: 'VE', n: 'Venn' }, { i: 'MS', n: 'Marek Sol' }, { i: 'SL', n: 'Sander Lux' },
+    ];
+    return { accent, upcoming, history, tracks, albums, similar };
+  }
+}
+</script>
+</body>
+</html>

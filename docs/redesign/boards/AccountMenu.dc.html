@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Account menu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.mi{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 16px;color:var(--tx);text-decoration:none;font-size:15px;background:none;border:0;width:100%;text-align:left;cursor:pointer}
+.mi:hover{background:var(--s2)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{flex:1;min-height:40px;padding:0 8px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.seg .on{background:var(--tx);color:#0B0B0C}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 960px; height: 640px; display: flex; gap: 60px; padding: 40px">
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 12px">
+    <span class="m" style="color: var(--tx2)">Desktop · opens from the avatar</span>
+    <div style="height: 64px; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; border: 1px solid var(--line)">
+      <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--tx)" class="d">M</span>
+    </div>
+    <div role="menu" aria-label="Account" style="align-self: flex-end; width: 300px; margin-top: -4px; background: var(--s1); border: 1px solid var(--line2)">
+      <div style="padding: 16px; border-bottom: 1px solid var(--line)">
+        <p style="font-weight: 600">maarten</p>
+        <p class="m" style="color: var(--tx3)">Amsterdam · 23 festivals</p>
+      </div>
+      <a href="Profile.dc.html" role="menuitem" class="mi">Profile and settings</a>
+      <div style="padding: 8px 16px 14px">
+        <p class="m" style="color: var(--tx2); margin-bottom: 8px">Theme</p>
+        <div class="seg" role="group" aria-label="Theme"><button class="on" aria-pressed="true">Dark</button><button aria-pressed="false">Light</button><button aria-pressed="false">System</button></div>
+      </div>
+      <a href="Admin.dc.html" role="menuitem" class="mi" style="border-top: 1px solid var(--line)">Admin<span class="m" style="margin-left: auto; color: var(--tx3)">7 to review</span></a>
+      <button role="menuitem" class="mi" style="border-top: 1px solid var(--line); color: var(--tx2)">Sign out</button>
+    </div>
+  </div>
+
+  <div style="width: 390px; flex: none; display: flex; flex-direction: column; gap: 12px">
+    <span class="m" style="color: var(--tx2)">Mobile · bottom sheet</span>
+    <div style="position: relative; flex: 1; border: 1px solid var(--line); overflow: hidden; background: rgba(0,0,0,.55)">
+      <div role="dialog" aria-label="Account" style="position: absolute; left: 0; right: 0; bottom: 0; background: var(--s1); border-top: 1px solid var(--line2)">
+        <div style="display: flex; justify-content: center; padding: 10px"><span style="display: block; width: 36px; height: 4px; background: var(--s3)"></span></div>
+        <div style="display: flex; gap: 12px; align-items: center; padding: 4px 20px 16px; border-bottom: 1px solid var(--line)">
+          <span class="d" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 20px">M</span>
+          <div><p style="font-weight: 600">maarten</p><p class="m" style="color: var(--tx3)">Amsterdam · 23 festivals</p></div>
+        </div>
+        <a href="ProfileMobile.dc.html" class="mi" style="padding: 0 20px; min-height: 52px">Profile and settings</a>
+        <div style="padding: 8px 20px 14px">
+          <p class="m" style="color: var(--tx2); margin-bottom: 8px">Theme</p>
+          <div class="seg" role="group" aria-label="Theme"><button class="on" aria-pressed="true">Dark</button><button aria-pressed="false">Light</button><button aria-pressed="false">System</button></div>
+        </div>
+        <a href="AdminSheetMobile.dc.html" class="mi" style="padding: 0 20px; min-height: 52px; border-top: 1px solid var(--line)">Admin<span class="m" style="margin-left: auto; color: var(--tx3)">7 to review</span></a>
+        <button class="mi" style="padding: 0 20px; min-height: 52px; border-top: 1px solid var(--line); color: var(--tx2)">Sign out</button>
+        <div style="height: 16px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":960,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#D4FF3F' };
+  }
+}
+</script>
+</body>
+</html>

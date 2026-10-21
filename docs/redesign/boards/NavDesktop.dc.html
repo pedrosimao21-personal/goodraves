@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desktop navigation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.nl{display:flex;align-items:center;padding-top:2px;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-bottom:2px solid transparent}
+.ni{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;cursor:pointer}
+</style>
+</helmet>
+<header style="background: {{t.bg}}; border-bottom: 1px solid {{t.bd}}; font-family: 'Archivo', system-ui, sans-serif; color: {{t.tx}}">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 0 40px; height: 64px; display: flex; align-items: center; gap: 48px">
+    <a href="Discover.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.tx}}">
+      <span style="display: block; width: 14px; height: 14px; background: {{t.logo}}"></span>
+      <span style="font-stretch: 68%; font-weight: 800; font-size: 26px; line-height: 1; text-transform: uppercase">Goodraves</span>
+    </a>
+    <nav aria-label="Main" style="display: flex; gap: 32px; flex: 1; align-self: stretch">
+      <sc-for list="{{links}}" as="l" hint-placeholder-count="5">
+        <a href="{{l.href}}" class="nl" aria-current="{{l.cur}}" style="color: {{l.c}}; border-bottom-color: {{l.b}}">{{l.label}}</a>
+      </sc-for>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 4px">
+      <button class="ni" aria-label="Search" style="color: {{t.tx2}}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      </button>
+      <a href="AccountMenu.dc.html" class="ni" aria-label="Account menu" aria-haspopup="menu" style="text-decoration: none">
+        <span style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: {{t.av}}; border: 1px solid {{t.bd2}}; color: {{t.tx}}; font-stretch: 68%; font-weight: 800; font-size: 16px">M</span>
+      </a>
+    </div>
+  </div>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["discover","mine","following","stats","friends","none"],"default":"discover"},"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1440,"height":65}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'discover';
+    const light = this.props.theme === 'light';
+    const t = light
+      ? { bg: '#F4F2EC', bd: 'rgba(11,11,12,.12)', bd2: 'rgba(11,11,12,.22)', tx: '#0B0B0C', tx2: '#4A4842', logo: '#0B0B0C', av: '#EAE7DF' }
+      : { bg: '#0B0B0C', bd: 'rgba(242,240,234,.1)', bd2: 'rgba(242,240,234,.22)', tx: '#F2F0EA', tx2: '#BAB8B0', logo: 'var(--acc, #D4FF3F)', av: '#1C1C1F' };
+    const links = [
+      ['discover', 'Discover', 'Discover.dc.html'],
+      ['mine', 'My festivals', 'MyFestivals.dc.html'],
+      ['following', 'Following', 'Following.dc.html'],
+      ['stats', 'Stats', 'TopDJs.dc.html'],
+      ['friends', 'Friends', 'Friends.dc.html'],
+    ].map(([k, label, href]) => ({
+      label, href,
+      c: k === active ? t.tx : t.tx2,
+      b: k === active ? t.tx : 'transparent',
+      cur: k === active ? 'page' : 'false',
+    }));
+    return { t, links };
+  }
+}
+</script>
+</body>
+</html>

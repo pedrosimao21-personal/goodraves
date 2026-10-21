@@ -162,3 +162,10 @@ when adding features rather than growing existing files.
 
 Image domains must be allowlisted in **both** `next.config.ts` `remotePatterns` **and** the
 CSP `img-src` header (same file) when adding a new external image source.
+
+## Redesign reference
+
+`docs/redesign/` holds the "Flyer, not dashboard" redesign: tokens, component rules, a
+board-per-route map and the behaviour changes it implies (`README.md`), plus the canvas
+source per screen (`boards/*.dc.html`, mock data in each file's `renderVals()`). Use it as
+the spec when restyling pages; the live canvas link is in the README.

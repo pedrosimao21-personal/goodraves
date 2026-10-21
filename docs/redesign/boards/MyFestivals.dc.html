@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My festivals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--tx)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:12px}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.r{display:inline-flex;gap:3px;vertical-align:middle}.r i{display:block;width:10px;height:10px;background:var(--s3)}.r i.on{background:var(--acc)}
+.tabs{display:flex;gap:28px;border-bottom:1px solid var(--line)}
+.tabs button{min-height:48px;padding:0;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tabs .on{color:var(--tx);border-bottom-color:var(--tx)}
+.ib{width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:var(--tx3);cursor:pointer}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="mine" hint-size="100%,65px"></dc-import>
+  <main class="wrap" style="padding-top: 64px; padding-bottom: 96px">
+    <p class="m" style="color: var(--tx2)">Your festival history and schedule</p>
+    <h1 class="d" style="font-size: 56px; margin-top: 16px">My festivals</h1>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 40px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)">
+      <button style="text-align: left; padding: 24px 24px 24px 0; background: none; border: 0; color: var(--tx); cursor: pointer"><span class="d" style="font-size: 72px">23</span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Attended · since 2019<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+      <button style="text-align: left; padding: 24px; background: none; border: 0; border-left: 1px solid var(--line); color: var(--tx); cursor: pointer"><span class="d" style="font-size: 72px; color: var(--go)">4</span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Upcoming · next in 16 days<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+      <button style="text-align: left; padding: 24px; background: none; border: 0; border-left: 1px solid var(--line); color: var(--tx); cursor: pointer"><span style="display: flex; align-items: baseline; gap: 12px"><span class="d" style="font-size: 72px">4.1</span><span class="r" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i style="background: linear-gradient(90deg, var(--acc) 10%, var(--s3) 10%)"></i></span></span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Average vibe · 19 rated<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+      <button style="text-align: left; padding: 24px; background: none; border: 0; border-left: 1px solid var(--line); color: var(--tx); cursor: pointer"><span class="d" style="font-size: 72px">186</span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Artists seen<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 56px; margin-top: 48px; align-items: flex-start">
+      <section style="flex: 999 1 640px; min-width: 0">
+        <article style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; padding: 20px; margin-bottom: 32px; background: var(--s1); border: 1px solid var(--go)">
+          <div class="img" style="width: 120px; height: 120px; flex: none"><span class="d" style="position: absolute; right: -4px; bottom: -10px; font-size: 80px; color: rgba(242,240,234,.1)">KW</span></div>
+          <div style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <span class="m" style="color: var(--go)">Next up · in 16 days</span>
+            <a href="Festival.dc.html" class="d" style="font-size: 48px; text-decoration: none">Kade Weekender</a>
+            <span style="color: var(--tx2)">Fri 06 – Sun 08 Nov · NDSM Wharf, Amsterdam</span>
+            <span class="m" style="color: var(--tx2)">6 picks · <span style="color: var(--warn)">1 clash</span> · anna and 2 friends going</span>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <a href="Festival.dc.html" class="btn">Your schedule</a>
+            <button class="btn" aria-pressed="true" style="border-color: var(--go); color: var(--go)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Going</button>
+          </div>
+        </article>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+          <div class="tabs" role="tablist" style="flex: 1">
+            <button class="on" role="tab" aria-selected="true">Past · 23</button>
+            <button role="tab" aria-selected="false">Upcoming · 4</button>
+            <button role="tab" aria-selected="false">Timeline</button>
+          </div>
+          <div style="display: flex; gap: 8px; padding-bottom: 8px">
+            <button class="btn sm"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add event</button>
+          </div>
+        </div>
+
+        <sc-for list="{{years}}" as="y" hint-placeholder-count="2">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 28px 0 8px">
+            <h2 class="d" style="font-size: 40px; color: var(--tx2)">{{y.year}}</h2>
+            <span class="m" style="color: var(--tx3)">{{y.count}}</span>
+          </div>
+          <sc-for list="{{y.rows}}" as="f" hint-placeholder-count="4">
+            <div style="display: grid; grid-template-columns: 76px 56px minmax(0, 1fr) 90px 100px 72px; gap: 16px; align-items: center; min-height: 76px; border-top: 1px solid var(--line)">
+              <span class="m" style="color: var(--tx2)">{{f.date}}</span>
+              <div class="img" style="width: 56px; height: 56px"><span class="d" style="position: absolute; right: -2px; bottom: -4px; font-size: 36px; color: rgba(242,240,234,.1)">{{f.ab}}</span></div>
+              <div style="min-width: 0">
+                <a href="FestivalAttendedMobile.dc.html" style="display: block; font-size: 17px; font-weight: 600; text-decoration: none">{{f.name}}</a>
+                <span style="font-size: 13px; color: var(--tx2)">{{f.place}}</span>
+              </div>
+              <span class="m" style="color: var(--tx2)"><span style="color: var(--tx); font-size: 14px">{{f.seen}}</span> seen</span>
+              <span class="r" role="img" aria-label="{{f.label}}"><sc-for list="{{f.sq}}" as="q" hint-placeholder-count="5"><i class="{{q}}"></i></sc-for></span>
+              <div style="display: flex; justify-content: flex-end">
+                <button class="ib" aria-label="Remove {{f.name}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+              </div>
+            </div>
+          </sc-for>
+        </sc-for>
+        <button class="btn" style="margin-top: 24px">Show 2024 and earlier</button>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--line2)">
+          <h2 class="d" style="font-size: 32px">Trending near Amsterdam</h2>
+        </div>
+        <sc-for list="{{trending}}" as="t" hint-placeholder-count="5">
+          <a href="Festival.dc.html" style="display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); text-decoration: none">
+            <span class="m" style="color: var(--tx3)">{{t.i}}</span>
+            <span>
+              <span style="display: block; font-weight: 600">{{t.name}}</span>
+              <span style="display: block; font-size: 13px; color: var(--tx2)">{{t.place}}</span>
+              <span class="m" style="font-size: 11px; color: var(--tx3)">{{t.stats}}</span>
+            </span>
+          </a>
+        </sc-for>
+        <button class="btn" style="width: 100%; margin-top: 24px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="1"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Export upcoming to calendar</button>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":1750}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sq = (r) => [1, 2, 3, 4, 5].map((k) => (k <= r ? 'on' : ''));
+    const row = ([date, ab, name, place, seen, r]) => ({ date, ab, name, place, seen, sq: sq(r), label: r + ' out of 5' });
+    const years = [
+      { year: '2026', count: '4 festivals', rows: [
+        ['13 Jun', 'SO', 'Stroom Open Air', 'Amsterdamse Bos · Amsterdam', 9, 5],
+        ['18 Apr', 'HG', 'Havengeluid', 'Maassilo · Rotterdam', 4, 3],
+        ['14 Mar', 'MN', 'Machinehal Nights', 'Strijp-S · Eindhoven', 6, 4],
+        ['01 Jan', 'PP', 'Polderpuls NYE', 'Ahoy · Rotterdam', 7, 4],
+      ].map(row) },
+      { year: '2025', count: '5 festivals', rows: [
+        ['29 Nov', 'LV', 'Lichtval Festival', 'Gashouder · Amsterdam', 5, 4],
+        ['07 Nov', 'KW', 'Kade Weekender', 'NDSM Wharf · Amsterdam', 11, 5],
+        ['04 Oct', 'OG', 'Ondergrond', 'Maassilo · Rotterdam', 5, 4],
+        ['19 Jul', 'EC', 'Echoput Summer', 'Jaarbeurs · Utrecht', 3, 3],
+      ].map(row) },
+    ];
+    const trending = [
+      { i: '01', name: 'Kade Weekender', place: 'NDSM Wharf · 4 km', stats: '2.1K interested · 512 going' },
+      { i: '02', name: 'Lichtval Festival', place: 'Gashouder · 3 km', stats: '1.6K interested · 430 going' },
+      { i: '03', name: 'Stroom Open Air', place: 'Amsterdamse Bos · 9 km', stats: '1.2K interested · 210 going' },
+      { i: '04', name: 'Echoput Winter', place: 'Jaarbeurs Utrecht · 36 km', stats: '880 interested · 190 going' },
+      { i: '05', name: 'Havengeluid', place: 'Maassilo Rotterdam · 58 km', stats: '640 interested · 120 going' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', years, trending };
+  }
+}
+</script>
+</body>
+</html>

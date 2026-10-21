@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 2px 0 10px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx)}
+.chip button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:var(--tx2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.ic{width:44px;padding:0}
+.lbl{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);margin-bottom:8px}
+.inp{height:48px;width:100%;background:var(--s1);border:1px solid var(--line2);border-radius:2px;color:var(--tx);font:400 16px 'Archivo',sans-serif;padding:0 14px}
+.seg{display:flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{flex:1;min-height:44px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.seg .on{background:var(--tx);color:#0B0B0C}
+.sec{padding:24px 20px;border-top:1px solid var(--line)}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 1650px; position: relative; padding-bottom: 88px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" class="btn ic" style="border: 0" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></a>
+    <span class="m" style="color: var(--tx2)">Profile</span>
+    <span style="width: 44px"></span>
+  </header>
+
+  <section style="padding: 28px 20px; display: flex; gap: 16px; align-items: center">
+    <span class="d" style="width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 32px">M</span>
+    <div><h1 class="d" style="font-size: 40px">maarten</h1><p class="m" style="color: var(--tx2); margin-top: 4px">Member since 2019</p></div>
+  </section>
+
+  <section class="sec">
+    <label class="lbl" for="cm">Home city · drives "Near you"</label>
+    <div style="display: flex; gap: 8px"><input id="cm" class="inp" value="Amsterdam"><button class="btn">Save</button></div>
+  </section>
+
+  <section class="sec">
+    <span class="lbl">Favourite genres</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      <sc-for list="{{genres}}" as="g" hint-placeholder-count="3"><span class="chip">{{g}}<button aria-label="Remove {{g}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+      <button class="btn" style="min-height: 36px; padding: 0 10px; font-size: 11px">+ Add</button>
+    </div>
+  </section>
+
+  <section class="sec">
+    <span class="lbl">Theme</span>
+    <div class="seg" role="group" aria-label="Theme"><button class="on" aria-pressed="true">Dark</button><button aria-pressed="false">Light</button><button aria-pressed="false">System</button></div>
+  </section>
+
+  <section class="sec">
+    <span class="lbl">What friends see</span>
+    <p style="color: var(--tx2)"><span class="m" style="color: var(--tx); margin-right: 8px">Shared</span>Festivals, ratings, comments, follows</p>
+    <p style="color: var(--tx2); margin-top: 6px"><span class="m" style="color: var(--tx); margin-right: 8px">Private</span>Personal notes</p>
+  </section>
+
+  <section class="sec">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px"><h2 class="d" style="font-size: 28px">Tailored for you</h2></div>
+    <sc-for list="{{tailored}}" as="f" hint-placeholder-count="3">
+      <a href="FestivalMobile.dc.html" style="display: flex; gap: 12px; align-items: center; min-height: 64px; border-top: 1px solid var(--line); text-decoration: none">
+        <span class="img" style="display: block; width: 44px; height: 44px; flex: none"></span>
+        <span><span style="display: block; font-weight: 600">{{f.n}}</span><span class="m" style="color: var(--tx3)">{{f.s}}</span></span>
+      </a>
+    </sc-for>
+  </section>
+
+  <section class="sec" style="display: flex; flex-direction: column; gap: 8px">
+    <button class="btn">Change password</button>
+    <button class="btn" style="color: var(--tx2)">Sign out</button>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="none" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":1650}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const genres = ['Techno', 'House', 'Melodic techno'];
+    const tailored = [
+      { n: 'Machinehal Nights', s: 'Sat 14 Nov · Eindhoven' },
+      { n: 'Ondergrond', s: 'Sat 21 Nov · Rotterdam' },
+      { n: 'Havengeluid', s: 'Sat 19 Dec · Rotterdam' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', genres, tailored };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stats: insights (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+.tabs a{display:flex;align-items:center;justify-content:center;min-height:48px;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}
+.tabs .on{color:var(--tx);border-bottom-color:var(--tx)}
+.sec{padding:36px 20px 0}
+.h{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid var(--line2);margin-bottom:14px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 2400px; position: relative; padding-bottom: 104px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <button aria-label="Account menu" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0"><span class="d" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 16px; line-height: 1; color: var(--tx)">M</span></button>
+  </header>
+
+  <section style="padding: 32px 20px 0">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <h1 class="d" style="font-size: 40px">Stats</h1>
+      <button class="btn" style="padding: 0 12px; font-size: 12px">2025<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+    </div>
+    <nav class="tabs" aria-label="Stats sections" style="margin-top: 20px"><a href="TopDJsMobile.dc.html">Top DJs</a><a href="InsightsMobile.dc.html" class="on" aria-current="page">Insights</a></nav>
+  </section>
+
+  <section style="padding: 24px 20px 0">
+    <article style="background: #F2F0EA; color: #0B0B0C">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #0B0B0C; color: #F2F0EA; border: 1px solid var(--line)">
+        <span style="display: flex; align-items: center; gap: 8px"><span style="display: block; width: 10px; height: 10px; background: var(--acc)"></span><span class="d" style="font-size: 20px">Goodraves</span></span>
+        <span class="m" style="font-size: 11px">2025 edition</span>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px">
+        <div><span class="d" style="font-size: 104px">5</span><p class="m" style="font-size: 11px; margin-top: 4px">Festivals · 38 unique artists</p></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 14px; border-top: 1px solid rgba(11,11,12,.2)">
+          <div><p class="m" style="font-size: 11px; color: #55534D">Top genre</p><p class="d" style="font-size: 24px; margin-top: 4px">Techno</p></div>
+          <div><p class="m" style="font-size: 11px; color: #55534D">Home base</p><p class="d" style="font-size: 24px; margin-top: 4px">Amsterdam</p></div>
+        </div>
+        <div style="padding-top: 14px; border-top: 1px solid rgba(11,11,12,.2)">
+          <p class="m" style="font-size: 11px; color: #55534D">Top DJs</p>
+          <p style="font-weight: 600; margin-top: 6px; line-height: 1.6">01 Nora Vey · 02 KASSEL · 03 Teo Marin · 04 Juno Reiss · 05 Ilse Morrow</p>
+        </div>
+      </div>
+      <div style="padding: 14px 20px 16px; border-top: 2px dashed rgba(11,11,12,.3); display: flex; justify-content: space-between; align-items: flex-end">
+        <div aria-hidden="true" style="width: 160px; height: 36px; background: repeating-linear-gradient(90deg, #0B0B0C 0 2px, transparent 2px 4px, #0B0B0C 4px 5px, transparent 5px 8px, #0B0B0C 8px 11px, transparent 11px 13px)"></div>
+        <span class="m" style="font-size: 11px">@maarten</span>
+      </div>
+    </article>
+    <button class="btn p" style="width: 100%; margin-top: 12px; min-height: 52px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Save passport to phone</button>
+  </section>
+
+  <section class="sec">
+    <div class="h"><h2 class="d" style="font-size: 32px">Where you raved</h2><span class="m" style="color: var(--tx3)">5 cities</span></div>
+    <div role="img" aria-label="Map of events: Amsterdam 11, Rotterdam 6, Utrecht 3, Eindhoven 2, Berlin 1" style="position: relative; height: 260px; background-color: #101012; background-image: radial-gradient(rgba(242,240,234,.12) 1px, transparent 1.2px); background-size: 14px 14px; border: 1px solid var(--line); overflow: hidden">
+      <sc-for list="{{pins}}" as="p" hint-placeholder-count="5">
+        <div style="position: absolute; left: {{p.x}}%; top: {{p.y}}%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px">
+          <span style="display: block; width: {{p.s}}px; height: {{p.s}}px; border-radius: 50%; background: color-mix(in srgb, var(--acc) 22%, transparent); border: 1.5px solid var(--acc)"></span>
+          <span class="m" style="font-size: 11px; background: #0B0B0C; padding: 1px 4px">{{p.n}} {{p.c}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top: 8px">
+      <sc-for list="{{pins}}" as="c" hint-placeholder-count="5">
+        <div style="display: flex; justify-content: space-between; min-height: 40px; align-items: center; border-bottom: 1px solid var(--line)"><span>{{c.n}}</span><span class="m" style="font-size: 12px">{{c.c}}</span></div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="h"><h2 class="d" style="font-size: 32px">Per year</h2><span class="m" style="color: var(--tx3)">23 total</span></div>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; align-items: end; height: 160px; border-bottom: 1px solid var(--line2)">
+      <sc-for list="{{years}}" as="y" hint-placeholder-count="8">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%"><span class="m" style="font-size: 11px">{{y.c}}</span><div style="width: 100%; height: {{y.h}}%; background: {{y.bg}}"></div></div>
+      </sc-for>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-top: 6px">
+      <sc-for list="{{years}}" as="y" hint-placeholder-count="8"><span class="m" style="font-size: 11px; color: var(--tx3); text-align: center">{{y.s}}</span></sc-for>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="h"><h2 class="d" style="font-size: 32px">Genres</h2></div>
+    <sc-for list="{{genres}}" as="g" hint-placeholder-count="6">
+      <div style="padding: 8px 0">
+        <div style="display: flex; justify-content: space-between"><span style="font-size: 14px">{{g.n}}</span><span class="m">{{g.p}}%</span></div>
+        <div style="height: 8px; background: var(--s3); margin-top: 6px"><div style="height: 8px; width: {{g.w}}%; background: {{g.bg}}"></div></div>
+      </div>
+    </sc-for>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="stats" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":2400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4FF3F';
+    const pins = [
+      { n: 'Amsterdam', c: 11, x: 38, y: 30, s: 52 },
+      { n: 'Rotterdam', c: 6, x: 26, y: 62, s: 36 },
+      { n: 'Utrecht', c: 3, x: 50, y: 50, s: 24 },
+      { n: 'Eindhoven', c: 2, x: 54, y: 84, s: 18 },
+      { n: 'Berlin', c: 1, x: 88, y: 34, s: 14 },
+    ];
+    const counts = [['2019', 1], ['2020', 0], ['2021', 1], ['2022', 3], ['2023', 5], ['2024', 4], ['2025', 5], ['2026', 4]];
+    const years = counts.map(([y, c]) => ({ s: "'" + y.slice(2), c, h: Math.max((c / 5) * 78, 1), bg: y === '2025' ? accent : '#77756E' }));
+    const genres = [['Techno', 46], ['House', 18], ['Melodic techno', 14], ['Hard techno', 9], ['Trance', 7], ['Other', 6]]
+      .map(([n, p], k) => ({ n, p, w: (p / 46) * 100, bg: k === 0 ? accent : '#77756E' }));
+    return { accent, pins, years, genres };
+  }
+}
+</script>
+</body>
+</html>

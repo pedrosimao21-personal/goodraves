@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Friends (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.r{display:inline-flex;gap:3px;vertical-align:middle}.r i{display:block;width:8px;height:8px;background:var(--s3)}.r i.on{background:var(--acc)}
+.av{display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--line);font-stretch:68%;font-weight:800;text-transform:uppercase;color:var(--tx2);flex:none}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--line)}
+.tabs button{min-height:48px;padding:0;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tabs .on{color:var(--tx);border-bottom-color:var(--tx)}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 2000px; position: relative; padding-bottom: 96px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <button aria-label="Add a friend" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0; color: var(--tx)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M19 8v6M16 11h6"></path></svg></button>
+  </header>
+
+  <section style="padding: 32px 20px 0">
+    <h1 class="d" style="font-size: 40px">Friends</h1>
+    <div style="margin-top: 20px; padding: 14px; background: var(--s1); border: 1px solid var(--go); display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <span class="av" style="width: 40px; height: 40px; font-size: 18px">R</span>
+        <p style="flex: 1"><strong>ruben</strong> <span style="color: var(--tx2)">wants to be friends</span></p>
+      </div>
+      <div style="display: flex; gap: 8px"><button class="btn p" style="flex: 1">Accept</button><button class="btn" style="flex: 1">Decline</button></div>
+    </div>
+    <div class="tabs" role="tablist" style="margin-top: 24px"><button class="on" role="tab" aria-selected="true">Activity</button><button role="tab" aria-selected="false">Friends 6</button><button role="tab" aria-selected="false">Sent 1</button></div>
+  </section>
+
+  <section style="padding: 0 20px">
+    <sc-for list="{{feed}}" as="e" hint-placeholder-count="5">
+      <article style="display: flex; flex-direction: column; gap: 10px; padding: 20px 0; border-bottom: 1px solid var(--line)">
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <span class="av" style="width: 36px; height: 36px; font-size: 16px">{{e.i}}</span>
+          <p style="flex: 1; font-size: 15px"><strong>{{e.who}}</strong> <span style="color: var(--tx2)">{{e.verb}}</span> <a href="{{e.href}}" style="font-weight: 600; text-decoration: none">{{e.target}}</a></p>
+          <span class="m" style="font-size: 11px; color: var(--tx3)">{{e.ago}}</span>
+        </div>
+        <sc-if value="{{e.isFest}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 12px; padding: 10px; margin-left: 48px; background: var(--s1); border: 1px solid var(--line)">
+            <div class="img" style="width: 52px; height: 52px; flex: none"><span class="d" style="position: absolute; right: -2px; bottom: -4px; font-size: 34px; color: rgba(242,240,234,.1)">{{e.ab}}</span></div>
+            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span class="m" style="font-size: 11px">{{e.date}}</span>
+              <sc-if value="{{e.quote}}" hint-placeholder-val="{{ false }}"><p style="font-size: 14px; color: var(--tx2); font-style: italic">“{{e.quote}}”</p></sc-if>
+              <sc-if value="{{e.hasRating}}" hint-placeholder-val="{{ false }}"><span class="r" role="img" aria-label="{{e.label}}"><sc-for list="{{e.sq}}" as="q" hint-placeholder-count="5"><i class="{{q}}"></i></sc-for></span></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{e.hasSets}}" hint-placeholder-val="{{ false }}">
+          <button style="margin-left: 48px; min-height: 40px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; background: none; border: 1px solid var(--line2); border-radius: 2px; color: var(--tx); cursor: pointer">
+            <span class="m" style="font-size: 11px">DJs seen · {{e.setCount}}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+        </sc-if>
+      </article>
+    </sc-for>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="friends" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":2000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sq = (r) => [1, 2, 3, 4, 5].map((k) => (k <= r ? 'on' : ''));
+    const ev = (e) => ({
+      quote: '', sets: [], date: '', ab: '', rating: 0, href: 'FestivalMobile.dc.html', ...e,
+      isFest: e.kind === 'fest',
+      hasSets: !!(e.sets && e.sets.length),
+      setCount: e.sets ? e.sets.length : 0,
+      hasRating: !!e.rating,
+      sq: sq(e.rating || 0),
+      label: (e.rating || 0) + ' out of 5',
+    });
+    const feed = [
+      ev({ kind: 'fest', i: 'A', who: 'anna', verb: 'went to', target: 'Havengeluid', ago: '2d', ab: 'HG', date: 'Sat 17 Oct · Maassilo', quote: 'Disco room until close. Bring earplugs.', rating: 4, sets: [1, 2, 3] }),
+      ev({ kind: 'fest', i: 'B', who: 'bob', verb: 'is going to', target: 'Kade Weekender', ago: '3d', ab: 'KW', date: 'Fri 06 – Sun 08 Nov · NDSM Wharf' }),
+      ev({ kind: 'follow', i: 'J', who: 'jesse', verb: 'started following', target: 'Juno Reiss', ago: '4d', href: 'ArtistMobile.dc.html' }),
+      ev({ kind: 'fest', i: 'S', who: 'sanne', verb: 'rated', target: 'Ondergrond', ago: '1w', ab: 'OG', date: 'Sat 10 Oct · Maassilo', rating: 5 }),
+      ev({ kind: 'follow', i: 'A', who: 'anna', verb: 'started following', target: 'Nora Vey', ago: '2w', href: 'ArtistMobile.dc.html' }),
+      ev({ kind: 'fest', i: 'T', who: 'tom', verb: 'is going to', target: 'Polderpuls NYE', ago: '2w', ab: 'PP', date: 'Thu 31 Dec · Ahoy' }),
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', feed };
+  }
+}
+</script>
+</body>
+</html>

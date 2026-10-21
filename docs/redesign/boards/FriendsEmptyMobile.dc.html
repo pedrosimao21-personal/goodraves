@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Friends, first run (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.lbl{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);margin-bottom:8px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 900px; position: relative; padding-bottom: 88px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <span style="width: 44px"></span>
+  </header>
+
+  <section style="padding: 32px 20px 0; display: flex; flex-direction: column; gap: 20px">
+    <h1 class="d" style="font-size: 40px">Friends</h1>
+    <p class="d" style="font-size: 28px; color: var(--tx2)">See where your crew is going.</p>
+    <form style="display: flex; flex-direction: column; gap: 10px">
+      <div>
+        <label class="lbl" for="fu">Add a friend by username</label>
+        <input id="fu" placeholder="e.g. anna" style="width: 100%; height: 52px; padding: 0 14px; background: var(--s1); border: 1px solid var(--line2); border-radius: 2px; color: var(--tx); font: 400 16px 'Archivo', sans-serif">
+      </div>
+      <button class="btn p" type="submit">Send request</button>
+    </form>
+    <p class="m" style="color: var(--tx2)">Your username: <span style="color: var(--tx)">maarten</span></p>
+  </section>
+
+  <section style="padding: 32px 20px 0">
+    <h2 class="m" style="color: var(--tx2); padding-bottom: 10px; border-bottom: 1px solid var(--line2)">What friends see</h2>
+    <div style="display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line)"><span class="m" style="width: 52px; flex: none; color: var(--acc)">Shared</span><span style="color: var(--tx2)">Festivals you go to, set ratings, comments for friends, artists you follow</span></div>
+    <div style="display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line)"><span class="m" style="width: 52px; flex: none; color: var(--tx3)">Private</span><span style="color: var(--tx2)">Personal notes on festivals and artists</span></div>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="friends" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#D4FF3F' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kade Weekender</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--tx)}
+.btn.go{border-color:var(--go);color:var(--go);background:rgba(178,166,255,.08)}
+.btn.ic{width:44px;padding:0}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.flyw{container-type:inline-size}
+.fly{position:absolute;left:0;top:0;width:100%;aspect-ratio:4/5;background:#2438E8;color:#FFE14D;padding:7cqw;display:flex;flex-direction:column;gap:3cqw;text-transform:uppercase}
+.fly .ft{font-stretch:62%;font-weight:900;font-size:22cqw;line-height:.82}
+.fly .fl{font-weight:700;font-size:4.2cqw;line-height:1.3;color:#FFFFFF}
+.fly .fd{margin-top:auto;font-family:'JetBrains Mono',monospace;font-size:5cqw}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{min-height:40px;padding:0 12px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seg .on{background:var(--tx);color:#0B0B0C}
+.days{display:flex;gap:40px;border-bottom:1px solid var(--line)}
+.days button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:72px;padding:10px 0;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;color:var(--tx2);cursor:pointer;text-align:left}
+.days .on{color:var(--tx);border-bottom-color:var(--tx)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:12px 0;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:100px minmax(0,1fr) 120px 44px;gap:16px;align-items:center;min-height:60px;border-bottom:1px solid var(--line)}
+.pk{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;cursor:pointer}
+.b2b{display:inline-flex;align-items:center;height:16px;padding:0 4px;margin-right:6px;border:1px solid currentColor;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;vertical-align:1px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="discover" hint-size="100%,65px"></dc-import>
+  <main>
+    <section class="wrap" style="padding-top: 32px; padding-bottom: 64px">
+      <a href="Discover.dc.html" class="m" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: none; color: var(--tx2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>Back to search</a>
+      <div style="display: flex; flex-wrap: wrap; gap: 56px; margin-top: 16px; align-items: flex-start">
+        <figure style="flex: 0 1 400px; min-width: 260px; margin: 0">
+          <div class="flyw" style="position: relative; aspect-ratio: 4 / 5; overflow: hidden; border: 1px solid var(--line)">
+            <div class="fly" aria-hidden="true"><span class="ft">Kade<br>Week<br>ender</span><span class="fl">Nora Vey · KASSEL · Juno Reiss · Ilse Morrow · Halcyon Unit live · Rafi Delmar · Bleek b2b Corso · Marek Sol · Femke Rook · Teo Marin · Venn · Mira Okafor · Aiko Brandt · and 50 more</span><span class="fd">06–08.11.2026 · NDSM Wharf</span></div>
+          </div>
+          <figcaption class="m" style="color: var(--tx3); margin-top: 8px">Full flyer · source Resident Advisor</figcaption>
+        </figure>
+        <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <div style="display: flex; gap: 6px"><span class="chip">Techno</span><span class="chip">House</span><span class="chip">3 days</span></div>
+          <h1 class="d" style="font-size: clamp(72px, 9vw, 136px)">Kade Weekender</h1>
+          <div>
+            <div class="kv"><span class="m" style="color: var(--tx3)">Dates</span><span>Fri 06 – Sun 08 November 2026</span></div>
+            <div class="kv"><span class="m" style="color: var(--tx3)">Venue</span><span>NDSM Wharf, Amsterdam, Netherlands</span></div>
+            <div class="kv" style="border-bottom: 1px solid var(--line)"><span class="m" style="color: var(--tx3)">Crowd</span><span class="m" style="font-size: 12px">2,140 interested · 512 going <span style="color: var(--tx3)">(Partyflock)</span></span></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <button class="btn go" aria-pressed="true" style="min-height: 52px; padding: 0 24px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Going</button>
+            <button class="btn" style="min-height: 52px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="1"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Add to calendar</button>
+            <button class="btn ic" style="min-height: 52px; width: 52px" aria-label="Share festival"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v13M7 8l5-5 5 5M5 14v6h14v-6"></path></svg></button>
+            <a href="#" class="m" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-left: 8px; color: var(--tx2); text-decoration: none">Resident Advisor<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+          </div>
+          <p class="m" style="color: var(--tx2)">anna, bob and jesse are going</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" style="padding-bottom: 72px">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding-bottom: 8px">
+        <div style="display: flex; align-items: baseline; gap: 14px"><h2 class="d" style="font-size: 56px">Lineup</h2><span class="m" style="color: var(--tx2)">64 artists · 4 stages</span></div>
+        <div class="seg" role="tablist" aria-label="View"><button class="on" role="tab" aria-selected="true">Timetable</button><button role="tab" aria-selected="false">A–Z</button></div>
+      </div>
+      <div class="days" role="tablist" aria-label="Day">
+        <button role="tab" aria-selected="false"><span class="d" style="font-size: 28px">Fri 06</span><span class="m" style="color: var(--tx3)">22 sets · 18:00–04:00</span></button>
+        <button role="tab" aria-selected="true" class="on"><span class="d" style="font-size: 28px">Sat 07</span><span class="m" style="color: var(--tx2)">19 sets · 5 picks · 1 clash</span></button>
+        <button role="tab" aria-selected="false"><span class="d" style="font-size: 28px">Sun 08</span><span class="m" style="color: var(--tx3)">24 sets · 12:00–23:00 · 1 pick</span></button>
+      </div>
+
+      <div style="margin-top: 20px; overflow-x: auto">
+        <div style="min-width: 1000px">
+          <div style="display: flex; border-bottom: 1px solid var(--line)">
+            <div style="width: 140px; flex: none"></div>
+            <div style="flex: 1; display: grid; grid-template-columns: repeat({{span}}, minmax(0, 1fr))">
+              <sc-for list="{{hours}}" as="h" hint-placeholder-count="10"><span class="m" style="color: var(--tx3); padding: 8px 0 8px 6px; border-left: 1px solid var(--line)">{{h}}</span></sc-for>
+            </div>
+          </div>
+          <sc-for list="{{stages}}" as="st" hint-placeholder-count="4">
+            <div style="display: flex; border-bottom: 1px solid var(--line)">
+              <div style="width: 140px; flex: none; padding: 14px 12px 14px 0; display: flex; flex-direction: column; justify-content: center">
+                <span class="m" style="font-size: 12px">{{st.name}}</span>
+                <span class="m" style="color: var(--tx3)">{{st.count}} sets</span>
+              </div>
+              <div style="flex: 1; position: relative; height: 76px">
+                <sc-for list="{{st.slots}}" as="s" hint-placeholder-count="5">
+                  <button aria-pressed="{{s.pressed}}" style="position: absolute; top: 8px; bottom: 8px; left: {{s.l}}%; width: calc({{s.w}}% - 4px); text-align: left; padding: 8px 10px; overflow: hidden; background: {{s.bg}}; border: 1px solid {{s.bc}}; border-radius: 2px; color: var(--tx); cursor: pointer">
+                    <span style="display: block; font: 600 13px/1.2 'Archivo', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><sc-if value="{{s.b2b}}" hint-placeholder-val="{{ false }}"><span class="b2b">B2B</span></sc-if>{{s.n}}</span>
+                    <span class="m" style="display: block; margin-top: 4px; color: {{s.tc}}">{{s.t}}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <p class="m" style="margin-top: 12px; color: var(--tx3)">Tap a set to pick it · hours fit each day (first set to last) · timetable from Partyflock</p>
+    </section>
+
+    <section class="wrap" style="padding-bottom: 72px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--line2)">
+        <h2 class="d" style="font-size: 40px">Your schedule</h2>
+        <span class="m" style="color: var(--tx2)">6 picks over 3 days</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 48px; margin-top: 24px; align-items: flex-start">
+        <div style="flex: 999 1 560px; min-width: 0">
+          <h3 class="m" style="color: var(--tx); padding-bottom: 8px">Sat 07 · 5 picks</h3>
+          <div class="row" style="border-top: 1px solid var(--line)"><span class="m" style="font-size: 12px">17:00–19:00</span><a href="Artist.dc.html" style="font-weight: 600; text-decoration: none">RAFI DELMAR</a><span class="m" style="color: var(--tx3)">Dock</span><button class="pk" aria-pressed="true" aria-label="Picked: Rafi Delmar" style="color: var(--acc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+          <div class="m" style="padding: 10px 0 10px 116px; border-bottom: 1px dashed var(--line2); color: var(--tx3)">19:00–20:00 · 1 h free</div>
+          <div class="row"><span class="m" style="font-size: 12px">20:00–22:00</span><a href="Artist.dc.html" style="font-weight: 600; text-decoration: none">ILSE MORROW</a><span class="m" style="color: var(--tx3)">The Hall</span><button class="pk" aria-pressed="true" aria-label="Picked: Ilse Morrow" style="color: var(--acc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+          <div role="group" aria-label="Clash" style="margin: 12px 0; border: 1px solid var(--warn); background: rgba(255,154,82,.06)">
+            <div style="display: flex; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(255,154,82,.35)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9A52" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18v.5"></path></svg>
+              <span class="m" style="color: var(--warn)">Clash · 23:00–23:30 overlap · keep one or split your time</span>
+            </div>
+            <div class="row" style="padding-left: 12px"><span class="m" style="font-size: 12px; color: var(--warn)">22:00–23:30</span><a href="Artist.dc.html" style="font-weight: 600; text-decoration: none">NORA VEY</a><span class="m" style="color: var(--tx3)">The Hall</span><button class="pk" aria-pressed="true" aria-label="Picked: Nora Vey" style="color: var(--warn)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+            <div class="row" style="padding-left: 12px; border-bottom: 0"><span class="m" style="font-size: 12px; color: var(--warn)">23:00–00:30</span><a href="Artist.dc.html" style="font-weight: 600; text-decoration: none">JUNO REISS</a><span class="m" style="color: var(--tx3)">Crane</span><button class="pk" aria-pressed="true" aria-label="Picked: Juno Reiss" style="color: var(--warn)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+          </div>
+          <div class="row"><span class="m" style="font-size: 12px">00:30–02:00</span><a href="Artist.dc.html" style="font-weight: 600; text-decoration: none">KASSEL</a><span class="m" style="color: var(--tx3)">The Hall</span><button class="pk" aria-pressed="true" aria-label="Picked: KASSEL" style="color: var(--acc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+        </div>
+        <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+          <div>
+            <h3 class="m" style="color: var(--tx); padding-bottom: 8px">Sun 08 · 1 pick</h3>
+            <div class="row" style="grid-template-columns: 100px minmax(0, 1fr) 44px; border-top: 1px solid var(--line)"><span class="m" style="font-size: 12px">14:00–17:00</span><span><a href="Artist.dc.html" style="display: block; font-weight: 600; text-decoration: none">AIKO BRANDT</a><span class="m" style="color: var(--tx3)">Greenhouse</span></span><button class="pk" aria-pressed="true" aria-label="Picked: Aiko Brandt" style="color: var(--acc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg></button></div>
+          </div>
+          <div>
+            <h3 class="m" style="color: var(--tx3); padding-bottom: 8px">Fri 06 · no picks</h3>
+            <p style="font-size: 14px; color: var(--tx2); padding-top: 8px; border-top: 1px solid var(--line)">Pick sets in the timetable for Friday.</p>
+          </div>
+          <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="1"></rect><path d="M4 10h16M9 3v4M15 3v4"></path></svg>Export picks to calendar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" style="padding-bottom: 96px">
+      <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; padding: 24px; border: 1px solid var(--line); background: var(--s1)">
+        <div style="display: flex; gap: 20px; align-items: center">
+          <div class="img" style="width: 72px; height: 72px; flex: none"></div>
+          <div>
+            <p class="m" style="color: var(--tx3)">Festival playlist</p>
+            <h2 class="d" style="font-size: 32px; margin-top: 4px">Kade Weekender 2026</h2>
+            <p style="font-size: 14px; color: var(--tx2)">Top tracks from 64 lineup artists</p>
+          </div>
+        </div>
+        <a href="#" class="btn">Open in Spotify<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"></path></svg></a>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":2700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4FF3F';
+    const fmt = (h) => {
+      const hh = Math.floor(h) % 24;
+      const mm = Math.round((h % 1) * 60);
+      return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+    };
+    const raw = [
+      ['The Hall', [['Lotte Kaai', 16, 18], ['Marek Sol', 18, 20], ['Ilse Morrow', 20, 22, 'pick'], ['Nora Vey', 22, 23.5, 'clash'], ['Oskar Wilt', 23.5, 24.5], ['KASSEL', 24.5, 26, 'pick']]],
+      ['Crane', [['Femke Rook', 16, 18.5], ['Teo Marin', 18.5, 20.5], ['Halcyon Unit (live)', 20.5, 23], ['Juno Reiss', 23, 24.5, 'clash'], ['Bleek & Corso', 24.5, 26, '', true]]],
+      ['Dock', [['Rafi Delmar', 17, 19, 'pick'], ['Otis Vane', 19, 21], ['Mira Okafor', 21, 23], ['Venn', 23, 26]]],
+      ['Greenhouse', [['Aiko Brandt', 16, 19], ['Oona Hart', 19, 22], ['Sander Lux', 22, 26]]],
+    ];
+    const all = raw.flatMap(([, s]) => s);
+    const START = Math.floor(Math.min(...all.map((s) => s[1])));
+    const END = Math.ceil(Math.max(...all.map((s) => s[2])));
+    const SPAN = END - START;
+    const look = {
+      pick: { bg: 'color-mix(in srgb, var(--acc) 14%, transparent)', bc: 'var(--acc)', tc: '#F2F0EA', pressed: 'true' },
+      clash: { bg: 'rgba(255,154,82,.12)', bc: '#FF9A52', tc: '#FF9A52', pressed: 'true' },
+      none: { bg: '#1C1C1F', bc: 'rgba(242,240,234,.1)', tc: '#94928A', pressed: 'false' },
+    };
+    const stages = raw.map(([name, slots]) => ({
+      name,
+      count: slots.length,
+      slots: slots.map(([n, s, e, k, b2b]) => ({
+        n, b2b: !!b2b,
+        l: ((s - START) / SPAN) * 100,
+        w: ((e - s) / SPAN) * 100,
+        t: fmt(s) + '–' + fmt(e),
+        ...look[k || 'none'],
+      })),
+    }));
+    const hours = Array.from({ length: SPAN }, (_, i) => fmt(START + i));
+    return { accent, stages, hours, span: SPAN };
+  }
+}
+</script>
+</body>
+</html>

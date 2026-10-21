@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;--err:#FF7A7A;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:0 12px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 12px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.st{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 7px;border:1px solid currentColor;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);padding:10px 12px 10px 0;border-bottom:1px solid var(--line2)}
+td{padding:12px 12px 12px 0;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+td.n{font-family:'JetBrains Mono',monospace;font-size:12px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="none" hint-size="100%,65px"></dc-import>
+  <main class="wrap" style="padding-top: 56px; padding-bottom: 96px">
+    <p class="m" style="color: var(--tx2)">Admins only</p>
+    <h1 class="d" style="font-size: 56px; margin-top: 10px">Admin</h1>
+
+    <section style="margin-top: 40px">
+      <h2 class="m" style="color: var(--tx2); padding-bottom: 10px">Needs attention</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line)">
+        <a href="AdminDuplicates.dc.html" style="padding: 24px 24px 24px 0; text-decoration: none; display: block"><span class="d" style="font-size: 64px; color: var(--warn)">7</span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Possible duplicates · review<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></a>
+        <a href="#" style="padding: 24px; border-left: 1px solid var(--line); text-decoration: none; display: block"><span class="d" style="font-size: 64px">3</span><span class="m" style="display: flex; align-items: center; gap: 8px; color: var(--tx2); margin-top: 8px">Timetable links to check<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></a>
+        <div style="padding: 24px; border-left: 1px solid var(--line)"><span class="d" style="font-size: 64px">0</span><span class="m" style="display: block; color: var(--tx2); margin-top: 8px">Failed cron runs · last 7 days</span></div>
+      </div>
+    </section>
+
+    <section style="margin-top: 56px">
+      <h2 class="d" style="font-size: 36px">Cron jobs</h2>
+      <sc-for list="{{jobs}}" as="j" hint-placeholder-count="2">
+        <div style="margin-top: 28px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 6px">
+            <h3 style="font-size: 18px; font-weight: 600">{{j.label}} <span class="m" style="color: var(--tx3); margin-left: 8px">{{j.id}}</span></h3>
+            <span class="m" style="color: var(--tx2)">{{j.when}}</span>
+          </div>
+          <table>
+            <thead><tr><th style="width: 180px">Started</th><th style="width: 160px">Status</th><th style="width: 90px">Took</th><th>{{j.m1}}</th><th>{{j.m2}}</th><th style="width: 120px">Errors</th></tr></thead>
+            <tbody>
+              <sc-for list="{{j.runs}}" as="r" hint-placeholder-count="3">
+                <tr><td class="n">{{r.at}}</td><td><span class="st" style="color: {{r.c}}">{{r.s}}</span></td><td class="n">{{r.took}}</td><td class="n">{{r.a}}</td><td class="n">{{r.b}}</td><td><sc-if value="{{r.hasErr}}" hint-placeholder-val="{{ false }}"><button class="btn" aria-expanded="false">{{r.err}} · show</button></sc-if><sc-if value="{{r.noErr}}" hint-placeholder-val="{{ true }}"><span class="m" style="color: var(--tx3)">None</span></sc-if></td></tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-for>
+    </section>
+
+    <section style="margin-top: 56px; max-width: 720px">
+      <h2 class="d" style="font-size: 36px">Festivals</h2>
+      <table style="margin-top: 16px">
+        <thead><tr><th>Source</th><th>Total</th><th>Added · 7 days</th></tr></thead>
+        <tbody>
+          <sc-for list="{{sources}}" as="s" hint-placeholder-count="5"><tr><td>{{s.n}}</td><td class="n">{{s.t}}</td><td class="n">{{s.a}}</td></tr></sc-for>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      ok: ['OK', '#F2F0EA'],
+      partial: ['Partial', '#FF9A52'],
+      error: ['Error', '#FF7A7A'],
+      running: ['Running', '#B2A6FF'],
+      never: ['Never finished', '#94928A'],
+    };
+    const run = (at, k, took, a, b, err) => ({ at, s: S[k][0], c: S[k][1], took, a, b, err: err || '', hasErr: !!err, noErr: !err });
+    const jobs = [
+      { label: 'Partyflock agenda import', id: 'import-pf-agenda', when: 'Daily 04:00', m1: 'Imported', m2: 'Updated', runs: [
+        run('Wed 21 Oct · 04:31', 'ok', '2m 14s', '38', '112'),
+        run('Tue 20 Oct · 04:52', 'partial', '3m 02s', '31', '98', '2 errors'),
+        run('Mon 19 Oct · 04:12', 'ok', '1m 58s', '22', '87'),
+      ] },
+      { label: 'Daily maintenance', id: 'daily-maintenance', when: 'Daily 06:00', m1: 'Merged / queued', m2: 'Timetables synced', runs: [
+        run('Wed 21 Oct · 06:40', 'running', '…', '…', '…'),
+        run('Tue 20 Oct · 06:21', 'ok', '4m 40s', '3 / 2', '14'),
+        run('Mon 19 Oct · 06:58', 'never', '—', '—', '—', 'Timed out'),
+      ] },
+    ];
+    const sources = [
+      { n: 'Partyflock', t: '2,914', a: '91' },
+      { n: 'Resident Advisor', t: '1,377', a: '24' },
+      { n: 'FestivalFans', t: '642', a: '6' },
+      { n: 'Custom', t: '41', a: '0' },
+      { n: 'External', t: '18', a: '1' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', jobs, sources };
+  }
+}
+</script>
+</body>
+</html>

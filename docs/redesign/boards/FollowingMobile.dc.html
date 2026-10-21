@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Following (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;--warn:#FF9A52;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.chip{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1px solid var(--line2);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tx2);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.btn.go{border-color:var(--go);color:var(--go);background:rgba(178,166,255,.08)}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.seg{display:flex;border:1px solid var(--line2);border-radius:2px}
+.seg button{flex:1;min-height:44px;padding:0 12px;background:none;border:0;color:var(--tx2);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seg .on{background:var(--tx);color:#0B0B0C}
+.av{display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--line);font-stretch:68%;font-weight:800;text-transform:uppercase;color:var(--tx2);flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; width: 390px; min-height: 2500px; position: relative; padding-bottom: 96px">
+  <header style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; border-bottom: 1px solid var(--line)">
+    <a href="DiscoverMobile.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none"><span style="display: block; width: 12px; height: 12px; background: var(--acc)"></span><span class="d" style="font-size: 22px; line-height: 1">Goodraves</span></a>
+    <button aria-label="Account menu" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0"><span class="d" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--s2); border: 1px solid var(--line2); font-size: 16px; line-height: 1; color: var(--tx)">M</span></button>
+  </header>
+
+  <section style="padding: 32px 20px 0">
+    <p class="m" style="color: var(--tx2)">14 artists you follow</p>
+    <h1 class="d" style="font-size: 40px; margin-top: 10px">Following</h1>
+    <form role="search" style="display: flex; align-items: center; gap: 10px; height: 52px; margin-top: 20px; padding: 0 14px; background: var(--s1); border: 1px solid var(--line2)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94928A" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+      <label for="fsm" class="sr">Search for an artist to follow</label>
+      <input id="fsm" placeholder="Find an artist to follow" style="flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--tx); font: 400 16px 'Archivo', sans-serif">
+    </form>
+  </section>
+
+  <section style="padding: 32px 20px 0">
+    <h2 class="d" style="font-size: 36px">Upcoming gigs <span style="color: var(--tx3)">9</span></h2>
+    <div class="seg" role="group" aria-label="Filter gigs" style="margin-top: 14px"><button class="on" aria-pressed="true">All 9</button><button aria-pressed="false">Near Amsterdam 5</button></div>
+    <sc-for list="{{months}}" as="mo" hint-placeholder-count="2">
+      <h3 class="m" style="margin-top: 24px; padding-bottom: 8px; border-bottom: 1px solid var(--line2); color: var(--tx2)">{{mo.name}}</h3>
+      <sc-for list="{{mo.gigs}}" as="g" hint-placeholder-count="2">
+        <article style="padding: 16px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; gap: 14px">
+            <span style="width: 52px; flex: none; display: flex; flex-direction: column; align-items: center; padding: 6px 0; border: 1px solid var(--line2); align-self: flex-start"><span class="m" style="font-size: 11px; color: var(--tx3)">{{g.dow}}</span><span class="d" style="font-size: 26px">{{g.day}}</span></span>
+            <div style="flex: 1; min-width: 0">
+              <a href="FestivalMobile.dc.html" class="d" style="display: block; font-size: 26px; text-decoration: none">{{g.name}}</a>
+              <span style="font-size: 13px; color: var(--tx2)">{{g.place}}</span>
+              <sc-if value="{{g.near}}" hint-placeholder-val="{{ false }}"><div style="margin-top: 6px"><span class="chip" style="gap: 4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>Near you</span></div></sc-if>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px; padding-left: 66px">
+            <sc-for list="{{g.acts}}" as="a" hint-placeholder-count="2"><a href="ArtistMobile.dc.html" style="display: flex; justify-content: space-between; min-height: 32px; align-items: center; text-decoration: none"><strong style="font-size: 14px">{{a.n}}</strong><span class="m" style="font-size: 11px; color: var(--tx3)">{{a.t}}</span></a></sc-for>
+            <sc-if value="{{g.clash}}" hint-placeholder-val="{{ false }}"><span class="m" style="font-size: 11px; color: var(--warn); margin-top: 4px">{{g.clash}}</span></sc-if>
+            <sc-if value="{{g.friends}}" hint-placeholder-val="{{ false }}"><span class="m" style="font-size: 11px; color: var(--tx2); margin-top: 4px">{{g.friends}}</span></sc-if>
+          </div>
+          <div style="padding-left: 66px">
+            <sc-if value="{{g.going}}" hint-placeholder-val="{{ false }}"><button class="btn go" aria-pressed="true" style="width: 100%"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>Going</button></sc-if>
+            <sc-if value="{{g.notGoing}}" hint-placeholder-val="{{ true }}"><button class="btn" aria-pressed="false" style="width: 100%"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Going</button></sc-if>
+          </div>
+        </article>
+      </sc-for>
+    </sc-for>
+  </section>
+
+  <section style="padding: 40px 0 0">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 20px">
+      <h2 class="d" style="font-size: 32px">Suggested</h2>
+      <button class="btn" style="padding: 0 12px; font-size: 11px">Follow all 5</button>
+    </div>
+    <div style="display: flex; gap: 12px; overflow-x: auto; padding: 16px 20px 4px">
+      <sc-for list="{{suggest}}" as="s" hint-placeholder-count="5">
+        <article style="width: 150px; flex: none; display: flex; flex-direction: column; gap: 8px">
+          <a href="ArtistMobile.dc.html" class="av" style="width: 150px; height: 150px; font-size: 60px; text-decoration: none" aria-label="{{s.n}}">{{s.i}}</a>
+          <span style="font-weight: 600">{{s.n}}</span>
+          <span class="m" style="font-size: 11px; color: var(--tx3)">{{s.why}}</span>
+          <button class="btn" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg>Follow</button>
+        </article>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="padding: 40px 20px 0">
+    <div style="padding-bottom: 10px; border-bottom: 1px solid var(--line2)"><h2 class="d" style="font-size: 32px">You follow <span style="color: var(--tx3)">14</span></h2></div>
+    <sc-for list="{{follows}}" as="f" hint-placeholder-count="4">
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 64px; border-bottom: 1px solid var(--line)">
+        <a href="ArtistMobile.dc.html" class="av" style="width: 44px; height: 44px; font-size: 18px; text-decoration: none" aria-label="{{f.n}}">{{f.i}}</a>
+        <div style="flex: 1; min-width: 0"><a href="ArtistMobile.dc.html" style="display: block; font-weight: 600; text-decoration: none">{{f.n}}</a><span class="m" style="font-size: 11px; color: var(--tx3)">{{f.next}}</span></div>
+        <button aria-label="Following {{f.n}}" aria-pressed="true" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0; color: var(--acc)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg></button>
+      </div>
+    </sc-for>
+    <button class="btn" style="width: 100%; margin-top: 16px">Show all 14</button>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0">
+    <dc-import name="TabBar" active="following" hint-size="390px,64px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":390,"height":2500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const gig = (g) => ({ ...g, going: !!g.going, notGoing: !g.going, near: !!g.near, clash: g.clash || '', friends: g.friends || '' });
+    const months = [
+      { name: 'November 2026', gigs: [
+        gig({ dow: 'Sat', day: '07', name: 'Kade Weekender', place: 'NDSM Wharf · Amsterdam', near: true, going: true,
+          acts: [{ n: 'Nora Vey', t: '22:00–23:30' }, { n: 'Juno Reiss', t: '23:00–00:30' }, { n: 'KASSEL', t: '00:30–02:00' }],
+          clash: 'Nora Vey and Juno Reiss overlap', friends: 'anna, bob and 1 more are going' }),
+        gig({ dow: 'Sat', day: '28', name: 'Lichtval Festival', place: 'Gashouder · Amsterdam', near: true, going: true, acts: [{ n: 'Ilse Morrow', t: 'TBA' }], friends: 'anna is going' }),
+      ] },
+      { name: 'December 2026', gigs: [
+        gig({ dow: 'Sat', day: '12', name: 'Echoput Winter', place: 'Jaarbeurs · Utrecht', acts: [{ n: 'Halcyon Unit', t: 'Live · TBA' }] }),
+        gig({ dow: 'Thu', day: '31', name: 'Polderpuls NYE', place: 'Ahoy · Rotterdam', acts: [{ n: 'Nora Vey', t: 'TBA' }, { n: 'Venn', t: 'TBA' }], friends: 'jesse is going' }),
+      ] },
+    ];
+    const suggest = [
+      { i: 'TM', n: 'Teo Marin', why: 'Seen 3× · rated 5' },
+      { i: 'BC', n: 'Bleek & Corso', why: 'Seen 2× · rated 4' },
+      { i: 'MO', n: 'Mira Okafor', why: 'Seen 2× · rated 4' },
+      { i: 'SL', n: 'Sander Lux', why: 'Seen 2× · rated 4' },
+      { i: 'FR', n: 'Femke Rook', why: 'Seen 1× · rated 5' },
+    ];
+    const follows = [
+      { i: 'NV', n: 'Nora Vey', next: 'Kade Weekender · +2 more' },
+      { i: 'JR', n: 'Juno Reiss', next: 'Kade Weekender' },
+      { i: 'KA', n: 'KASSEL', next: 'Kade Weekender' },
+      { i: 'IM', n: 'Ilse Morrow', next: 'Lichtval Festival' },
+    ];
+    return { accent: this.props.accent ?? '#D4FF3F', months, suggest, follows };
+  }
+}
+</script>
+</body>
+</html>

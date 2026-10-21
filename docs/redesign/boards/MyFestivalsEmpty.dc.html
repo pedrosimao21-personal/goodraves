@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My festivals, first run</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0B0C}
+.gr{--bg:#0B0B0C;--s1:#141416;--s2:#1C1C1F;--s3:#2C2C31;--line:rgba(242,240,234,.1);--line2:rgba(242,240,234,.22);--tx:#F2F0EA;--tx2:#BAB8B0;--tx3:#94928A;--go:#B2A6FF;background:var(--bg);color:var(--tx);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.gr *{box-sizing:border-box}
+.gr h1,.gr h2,.gr h3,.gr p{margin:0}
+.d{font-stretch:68%;font-weight:800;text-transform:uppercase;line-height:.9}
+.m{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;line-height:1.4}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border:1px solid var(--line2);border-radius:2px;background:transparent;color:var(--tx);font:600 13px/1 'Archivo',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--tx)}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#0B0B0C}
+.btn.sm{min-height:36px;padding:0 12px;font-size:12px}
+.img{background-color:#18181B;background-image:repeating-linear-gradient(135deg,rgba(242,240,234,.045) 0 1px,transparent 1px 9px);position:relative;overflow:hidden}
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gr a{color:inherit}.gr a:hover{color:var(--acc)}
+</style>
+</helmet>
+<div class="gr" style="--acc: {{accent}}; min-height: 100vh">
+  <dc-import name="NavDesktop" active="mine" hint-size="100%,65px"></dc-import>
+  <main class="wrap" style="padding-top: 64px; padding-bottom: 96px">
+    <h1 class="d" style="font-size: 56px">My festivals</h1>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 56px; margin-top: 40px; align-items: flex-start">
+      <section style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+        <h2 class="d" style="font-size: 40px; color: var(--tx2)">Your history starts with one festival.</h2>
+        <form role="search" style="display: flex; max-width: 720px">
+          <div style="flex: 1; display: flex; align-items: center; gap: 14px; height: 60px; padding: 0 18px; background: var(--s1); border: 1px solid var(--line2); border-right: 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94928A" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            <label for="fq" class="sr">Search for a festival you went to</label>
+            <input id="fq" placeholder="Which festival did you go to last?" style="flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--tx); font: 400 17px 'Archivo', sans-serif">
+          </div>
+          <button class="btn p" style="min-height: 60px; padding: 0 28px">Search</button>
+        </form>
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--line2)">
+            <h3 class="m" style="color: var(--tx2)">Popular in the Netherlands · tap to add</h3>
+          </div>
+          <sc-for list="{{popular}}" as="f" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; align-items: center; min-height: 76px; border-bottom: 1px solid var(--line)">
+              <div class="img" style="width: 56px; height: 56px"><span class="d" style="position: absolute; right: -2px; bottom: -4px; font-size: 36px; color: rgba(242,240,234,.1)">{{f.ab}}</span></div>
+              <div style="min-width: 0"><span style="display: block; font-size: 17px; font-weight: 600">{{f.name}}</span><span class="m" style="color: var(--tx3)">{{f.date}} · {{f.place}}</span></div>
+              <button class="btn sm" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>{{f.action}}</button>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line2)">
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+          <div style="display: grid; grid-template-columns: 56px 1fr; gap: 12px; padding: 24px 0; border-bottom: 1px solid var(--line)">
+            <span class="d" style="font-size: 48px; color: {{s.c}}">{{s.n}}</span>
+            <div><h3 style="font-size: 18px; font-weight: 600">{{s.t}}</h3><p style="color: var(--tx2); margin-top: 4px">{{s.b}}</p></div>
+          </div>
+        </sc-for>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3F","options":["#D4FF3F","#FF5C39","#B2A6FF","#F2F0EA"]},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#D4FF3F';
+    const popular = [
+      { ab: 'KW', name: 'Kade Weekender', date: 'Nov 2025', place: 'Amsterdam', action: 'Attended' },
+      { ab: 'LV', name: 'Lichtval Festival', date: 'Nov 2025', place: 'Amsterdam', action: 'Attended' },
+      { ab: 'OG', name: 'Ondergrond', date: 'Oct 2025', place: 'Rotterdam', action: 'Attended' },
+      { ab: 'KW', name: 'Kade Weekender', date: 'Nov 2026', place: 'Amsterdam', action: 'Going' },
+      { ab: 'PP', name: 'Polderpuls NYE', date: 'Dec 2026', place: 'Rotterdam', action: 'Going' },
+    ];
+    const steps = [
+      { n: '01', t: 'Add festivals you went to', b: 'Past ones become your history. Upcoming ones become your schedule.', c: '#F2F0EA' },
+      { n: '02', t: 'Rate the sets you saw', b: 'Your ratings build your Top DJs and the yearly passport.', c: '#94928A' },
+      { n: '03', t: 'Follow artists', b: 'Their next gigs show up in Following, with clashes flagged.', c: '#94928A' },
+    ];
+    return { accent, popular, steps };
+  }
+}
+</script>
+</body>
+</html>

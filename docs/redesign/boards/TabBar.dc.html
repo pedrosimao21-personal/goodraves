@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile tab bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<nav aria-label="Main" style="width: 100%; height: 64px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: {{bg}}; border-top: 1px solid {{bd}}; font-family: 'JetBrains Mono', monospace">
+  <a href="DiscoverMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: {{c.discover}}; border-top: 2px solid {{b.discover}}; margin-top: -1px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+  <a href="MyFestivalsMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: {{c.mine}}; border-top: 2px solid {{b.mine}}; margin-top: -1px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4z"></path><path d="M15 7v10" stroke-dasharray="2 2.5"></path></svg>Festivals</a>
+  <a href="FollowingMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: {{c.following}}; border-top: 2px solid {{b.following}}; margin-top: -1px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg>Following</a>
+  <a href="TopDJsMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: {{c.stats}}; border-top: 2px solid {{b.stats}}; margin-top: -1px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"></path></svg>Stats</a>
+  <a href="FriendsMobile.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: {{c.friends}}; border-top: 2px solid {{b.friends}}; margin-top: -1px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M21.5 20a6.5 6.5 0 0 0-4-6"></path></svg>Friends</a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["discover","mine","following","stats","friends"],"default":"discover"},"theme":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":390,"height":64}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'discover';
+    const keys = ['discover', 'mine', 'following', 'stats', 'friends'];
+    const light = this.props.theme === 'light';
+    const c = {};
+    const b = {};
+    keys.forEach((k) => {
+      c[k] = k === active ? (light ? '#0B0B0C' : '#F2F0EA') : (light ? '#5F5D57' : '#94928A');
+      b[k] = k === active ? (light ? '#0B0B0C' : '#F2F0EA') : 'transparent';
+    });
+    return {
+      c, b,
+      bg: light ? 'rgba(244,242,236,.96)' : 'rgba(11,11,12,.96)',
+      bd: light ? 'rgba(11,11,12,.12)' : 'rgba(242,240,234,.1)',
+    };
+  }
+}
+</script>
+</body>
+</html>

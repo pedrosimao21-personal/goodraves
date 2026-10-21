@@ -1,0 +1,44 @@
+/* One follow control everywhere: outline heart "Follow" / filled lime heart
+   "Following"; icon-only in dense lists. */
+
+.following {
+  border-color: var(--gr-acc-ink);
+  color: var(--gr-acc-ink);
+}
+
+.following:hover {
+  border-color: var(--gr-acc-ink);
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  transition: color var(--transition-fast);
+}
+
+.icon:hover {
+  color: var(--gr-tx);
+}
+
+.iconActive,
+.iconActive:hover {
+  color: var(--gr-acc-ink);
+}
+
+@media (max-width: 639px) {
+  .compactOnMobile {
+    width: 44px;
+    padding: 0;
+  }
+
+  .compactOnMobile .label {
+    display: none;
+  }
+}

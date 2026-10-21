@@ -1,50 +1,37 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { memo } from 'react'
 import { useUserDataActions } from '../context/UserDataContext'
+import RatingInput from './rating/RatingInput'
+import RatingSquares from './rating/RatingSquares'
 
-export default memo(function StarRating({ artistId, eventId, readonly = false, size = 'md' }: {
+/**
+ * A user's rating of an artist: per set when `eventId` is given (a festival
+ * performance), otherwise their global rating. Renders the rating squares.
+ */
+export default memo(function StarRating({ artistId, eventId, readonly = false, size = 'md', artistName }: {
   artistId: string
   eventId?: string
   readonly?: boolean
   size?: 'sm' | 'md'
+  artistName?: string
 }) {
   const { getRating, setRating, getPerformanceRating, setPerformanceRating } = useUserDataActions()
-  const [hover, setHover] = useState(0)
-  
-  // Use performance rating if eventId is provided, else use global rating
   const current = eventId ? getPerformanceRating(eventId, artistId) : getRating(artistId)
 
-  const stars = [1, 2, 3, 4, 5]
-  const fontSize = size === 'sm' ? '0.9rem' : '1.3rem'
+  if (readonly) return <RatingSquares value={current} size={size} />
 
-  const handleClick = (star: number) => {
-    if (readonly) return
-    const newRating = star === current ? 0 : star
-    if (eventId) {
-      setPerformanceRating(eventId, artistId, newRating)
-    } else {
-      setRating(artistId, newRating)
-    }
+  const handleChange = (rating: number) => {
+    if (eventId) setPerformanceRating(eventId, artistId, rating)
+    else setRating(artistId, rating)
   }
 
   return (
-    <div className="star-rating" role="group" aria-label="Artist rating">
-      {stars.map((star) => (
-        <span
-          key={star}
-          className={`star ${readonly ? 'star-static' : ''} ${(hover || current) >= star ? 'filled' : ''}`}
-          style={{ fontSize }}
-          onClick={() => handleClick(star)}
-          onMouseEnter={() => !readonly && setHover(star)}
-          onMouseLeave={() => !readonly && setHover(0)}
-          role={readonly ? undefined : 'button'}
-          aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-          id={readonly ? undefined : `star-${artistId}-${star}`}
-        >
-          ★
-        </span>
-      ))}
-    </div>
+    <RatingInput
+      value={current}
+      onChange={handleChange}
+      label={artistName ? `Rate ${artistName}` : 'Artist rating'}
+      idPrefix={`star-${artistId}`}
+    />
   )
 })

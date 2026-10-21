@@ -1,0 +1,87 @@
+/* Back-to-back set card. Board: docs/redesign/boards/B2B.dc.html. Shares the
+   lineup card layout (ArtistCard.module.css) and adds a split avatar. */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.avatars {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  gap: 2px;
+}
+
+.member {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+}
+
+.memberImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.monogram {
+  font-size: 56px;
+  color: var(--gr-tx3);
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.joiner {
+  color: var(--gr-tx3);
+  font-weight: 400;
+  text-transform: none;
+}
+
+.memberLink:hover {
+  text-decoration: underline;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+}
+
+.adminButton {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: color-mix(in srgb, var(--gr-bg) 70%, transparent);
+  border: 0;
+  color: var(--gr-tx2);
+}
+
+.confirmText {
+  color: var(--gr-tx2);
+}

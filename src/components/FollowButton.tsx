@@ -2,13 +2,18 @@
 
 import { useState } from 'react'
 import { useFollows } from '@/context/FollowsContext'
+import { HeartIcon } from '@/components/icons'
+import styles from './FollowButton.module.css'
 
 type FollowButtonVariant = 'pill' | 'icon'
 
+const PILL_ICON_SIZE = 16
+const ICON_SIZE = 20
+
 /**
  * Follow / unfollow an artist. `pill` is the labelled button (artist page,
- * Top DJs modal, /following); `icon` is the small corner toggle on lineup
- * artist cards, where a full button would crowd the "want to see" control.
+ * Top DJs modal, /following); `icon` is the heart toggle for dense rows and
+ * lineup cards.
  */
 export default function FollowButton({
   artistId,
@@ -47,29 +52,31 @@ export default function FollowButton({
   if (variant === 'icon') {
     return (
       <button
-        className={`follow-icon-btn${following ? ' is-active' : ''}`}
+        type="button"
+        className={`${styles.icon} ${following ? styles.iconActive : ''}`}
         onClick={handleClick}
         disabled={isPending}
         aria-pressed={following}
         aria-label={label}
         title={hasError ? 'Could not update, try again' : label}
       >
-        {following ? '♥' : '♡'}
+        <HeartIcon size={ICON_SIZE} filled={following} />
       </button>
     )
   }
 
   return (
     <button
-      className={`btn btn-sm ${following ? 'btn-secondary' : 'btn-primary'} follow-btn${isCompactOnMobile ? ' follow-btn-compact-mobile' : ''}`}
+      type="button"
+      className={`btn btn-sm ${following ? styles.following : ''} ${isCompactOnMobile ? styles.compactOnMobile : ''}`}
       onClick={handleClick}
       disabled={isPending}
       aria-pressed={following}
       aria-label={label}
       title={hasError ? 'Could not update, try again' : undefined}
     >
-      {following ? '♥' : '♡'}
-      <span className="follow-btn-label">{following ? ' Following' : ' Follow'}</span>
+      <HeartIcon size={PILL_ICON_SIZE} filled={following} />
+      <span className={styles.label}>{following ? 'Following' : 'Follow'}</span>
     </button>
   )
 }

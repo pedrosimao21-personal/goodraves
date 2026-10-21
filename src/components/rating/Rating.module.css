@@ -1,0 +1,77 @@
+/* Five-square rating (docs/redesign/README.md › Component rules › Rating).
+   Display: filled grey empties, partial square for decimals.
+   Input: outlined empties, each square a 44px-tall button. */
+
+.squares {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.square {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: var(--gr-s3);
+}
+
+.small .square {
+  width: 8px;
+  height: 8px;
+}
+
+.large .square {
+  width: 14px;
+  height: 14px;
+}
+
+.input {
+  display: inline-flex;
+}
+
+.inputButton {
+  width: 28px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.inputSquare {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--gr-off);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.large .inputButton {
+  width: auto;
+  flex: 1;
+  height: 48px;
+  padding: 0 2px;
+}
+
+.large .inputSquare {
+  width: 100%;
+  height: 44px;
+}
+
+.large.input {
+  display: flex;
+  width: 100%;
+  gap: 2px;
+}
+
+.on {
+  background: var(--gr-acc);
+  border-color: var(--gr-acc);
+}
+
+.preview {
+  background: color-mix(in srgb, var(--gr-acc) 45%, transparent);
+  border-color: var(--gr-acc-ink);
+}

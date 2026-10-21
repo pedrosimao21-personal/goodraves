@@ -214,6 +214,61 @@ body {
   outline-offset: 2px;
 }
 
+/* ── Form primitives ── */
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+  border-radius: var(--gr-radius);
+  color: var(--gr-tx);
+  font-family: var(--font-sans);
+  font-size: 16px; /* 16px keeps iOS Safari from zooming on focus */
+  outline: none;
+}
+
+textarea.form-input {
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.form-input::placeholder {
+  color: var(--gr-tx3);
+}
+
+.form-input:focus {
+  border-color: var(--gr-tx);
+}
+
+.form-hint {
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
+.form-error {
+  color: var(--gr-err);
+  font-size: 14px;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* Ensure emoji characters (country flags) render via system emoji fonts on
    all platforms, including Windows where the text fonts don't cover them. */
 .emoji {
@@ -890,253 +945,17 @@ img {
   color: var(--text-secondary);
 }
 
-/* =============================================
-   ARTIST CARD
-   ============================================= */
-.artist-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-  transition: all var(--transition-normal);
-  cursor: pointer;
-  position: relative;
-}
-
-.artist-card:hover {
-  border-color: var(--border-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card);
-}
-
+/* Overflow (⋯) button for admin actions on the festival page header. */
 .artist-card-options-btn {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 2;
-  /* Fixed black scrim, not themed — this sits over a photo of arbitrary
-     content, not the page background, so it needs consistent contrast
-     regardless of site theme. */
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 4px 7px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 150ms ease;
-}
-
-.artist-card:hover .artist-card-options-btn {
-  opacity: 0.6;
-  pointer-events: auto;
+  background: none;
+  border: 0;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--gr-tx2);
 }
 
 .artist-card-options-btn:hover {
-  opacity: 1 !important;
-}
-
-/* Touch devices have no real hover: the emulated one means the first tap only
-   satisfies `.artist-card:hover` (which is what re-enables pointer-events),
-   so a second tap was needed to actually press the button. Show and enable it
-   unconditionally there; the hover-reveal above still applies on desktop. */
-@media (hover: none) {
-  .artist-card-options-btn {
-    opacity: 0.6;
-    pointer-events: auto;
-  }
-}
-
-/* Follow toggle on lineup artist cards (FollowButton variant="icon"). Top-left
-   so it never collides with the admin options button top-right. Always
-   visible and tappable (unlike the options button) since it's a user action. */
-.follow-icon-btn {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  z-index: 2;
-  /* Fixed scrim, like .artist-card-options-btn: sits over arbitrary photos. */
-  background: rgba(0, 0, 0, 0.5);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  padding: 2px 7px;
-  font-size: 0.9rem;
-  line-height: 1.3;
-  color: var(--text-muted);
-  opacity: 0.75;
-  transition: opacity 150ms ease, color 150ms ease;
-}
-
-.follow-icon-btn:hover {
-  opacity: 1;
-}
-
-.follow-icon-btn.is-active {
-  color: var(--accent-pink);
-  opacity: 1;
-}
-
-.follow-btn {
-  white-space: nowrap;
-}
-
-.artist-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--border);
-}
-
-.artist-avatar-placeholder {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: var(--gradient-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  border: 2px solid var(--border);
-  flex-shrink: 0;
-}
-
-.artist-name {
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
-}
-
-.artist-avg-rating {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-left: 6px;
-}
-
-.artist-avg-rating-star {
-  color: var(--star-filled);
-}
-
-.artist-saw-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 7px 12px;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-family: inherit;
-}
-
-.artist-saw-toggle:hover {
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
-  background: color-mix(in srgb, var(--gr-go) 8%, transparent);
-}
-
-.artist-saw-toggle.saw {
-  background: color-mix(in srgb, var(--gr-go) 12%, transparent);
-  border-color: color-mix(in srgb, var(--gr-go) 35%, transparent);
-  color: var(--accent-cyan);
-}
-
-/* =============================================
-   STAR RATING
-   ============================================= */
-.star-rating {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.star {
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: transform var(--transition-fast), color var(--transition-fast);
-  color: var(--text-muted);
-  user-select: none;
-}
-
-.star:hover,
-.star.filled {
-  color: var(--star-filled);
-}
-
-.star:hover {
-  transform: scale(1.2);
-}
-
-.star-static {
-  cursor: default;
-  font-size: 0.9rem;
-}
-
-.star-static:hover {
-  transform: none;
-}
-
-.mark-seen-btn {
-  background: transparent;
-  border: 1px solid var(--text-muted);
-  color: var(--text-muted);
-  margin-top: 4px;
-  padding: 4px 14px;
-  border-radius: 14px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
-  white-space: nowrap;
-}
-
-.mark-seen-btn:hover {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-.want-to-see-btn.is-active {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-}
-
-/* Undo for a mis-tap on "Mark as seen" — deliberately quieter than the
-   stars above it, since it's a secondary escape hatch, not the main action. */
-.mark-seen-cancel-btn {
-  display: block;
-  margin: 4px auto 0;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-family: inherit;
-  font-size: 0.72rem;
-  padding: 4px 8px;
-  cursor: pointer;
-  text-decoration: underline;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-.mark-seen-cancel-btn:hover {
-  color: var(--text-primary);
+  color: var(--gr-tx);
 }
 
 /* =============================================
@@ -2382,12 +2201,6 @@ img {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 14px 20px;
-    min-height: 48px;
   }
 
   /* ── Grid ── */
@@ -3817,7 +3630,7 @@ img {
 
 /* Cards stretch to the tallest one in the row; pin the button to the bottom
    so it lines up whether or not the stats line wraps. */
-.follow-suggestion-card > .follow-btn {
+.follow-suggestion-card > button {
   margin-top: auto;
 }
 
@@ -3836,19 +3649,4 @@ img {
     grid-template-columns: 1fr;
   }
 
-  /* The global mobile .btn rule makes every button full width; the Follow
-     button stays compact so it can sit next to an artist's name. */
-  .follow-btn {
-    width: auto;
-    min-height: 36px;
-    padding: 8px 16px;
-  }
-
-  .follow-btn-compact-mobile {
-    padding: 8px 12px;
-  }
-
-  .follow-btn-compact-mobile .follow-btn-label {
-    display: none;
-  }
 }

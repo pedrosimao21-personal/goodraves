@@ -1,0 +1,46 @@
+/* Action list inside a Sheet (admin menus). Board: AdminSheetMobile.dc.html. */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: -20px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 20px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gr-line);
+  color: var(--gr-tx);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  text-align: left;
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.item:hover {
+  background: var(--gr-s2);
+}
+
+.item svg {
+  flex-shrink: 0;
+  color: var(--gr-tx2);
+}
+
+.danger,
+.danger svg {
+  color: var(--gr-err);
+}
+
+.sub {
+  display: block;
+  color: var(--gr-tx3);
+}

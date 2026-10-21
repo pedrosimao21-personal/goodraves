@@ -5,14 +5,25 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import StarRating from './StarRating'
+import RatingSquares from './rating/RatingSquares'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
 import FollowButton from './FollowButton'
+import { BookmarkIcon, DotsIcon } from './icons'
+import styles from './ArtistCard.module.css'
 
 const ArtistRenameModal = lazy(() => import('./ArtistRenameModal'))
 const B2bSplitModal = lazy(() => import('./B2bSplitModal'))
 const B2bCreateModal = lazy(() => import('./B2bCreateModal'))
 
 type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b'
+
+const AVATAR_SIZE = 240
+const MONOGRAM_LETTERS = 2
+const PICK_ICON_SIZE = 16
+
+function monogram(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, MONOGRAM_LETTERS).map((word) => word[0]).join('')
+}
 
 const ArtistCard = memo(function ArtistCard({
   artist,
@@ -63,48 +74,75 @@ const ArtistCard = memo(function ArtistCard({
 
   return (
     <>
-      <div className="artist-card fade-in" id={`artist-${artist.id}`} style={{ position: 'relative' }}>
-        {/* Stretched link covers the entire card; interactive elements sit above it via position:relative */}
-        <Link href={artistHref} aria-label={displayName} style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+      <article className={`${styles.card} fade-in`} id={`artist-${artist.id}`}>
+        <Link href={artistHref} aria-label={displayName} className={styles.cardLink} />
 
-        <div style={{ position: 'relative', zIndex: 1, display: 'contents' }}>
+        <div className={styles.avatar}>
           {displayImage ? (
             <Image
-              className="artist-avatar"
+              className={styles.avatarImage}
               src={displayImage}
-              alt={displayName}
-              // Must match the rendered .artist-avatar size (80px) so Next serves a
-              // retina-sharp variant instead of upscaling a 48px thumbnail.
-              width={80}
-              height={80}
+              alt=""
+              width={AVATAR_SIZE}
+              height={AVATAR_SIZE}
               quality={85}
-              sizes="80px"
-              style={{ objectFit: 'cover' }}
+              sizes="(max-width: 640px) 50vw, 240px"
             />
           ) : (
-            <div className="artist-avatar-placeholder">🎤</div>
+            <span className={`display ${styles.monogram}`} aria-hidden="true">{monogram(displayName)}</span>
           )}
-          <div className="artist-name">
-            {displayName}
+          <span className={styles.overlay}>
+            <FollowButton artistId={dbId} artistName={displayName} variant="icon" />
+          </span>
+          {isAdmin && (
+            <button
+              type="button"
+              className={styles.adminButton}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuState('options') }}
+              aria-label={`Admin options for ${displayName}`}
+            >
+              <DotsIcon />
+            </button>
+          )}
+        </div>
+
+        <div className={styles.info}>
+          <div>
+            <h3 className={styles.name}>{displayName}</h3>
             {averageRating > 0 && (
-              <span className="artist-avg-rating" title={`Your average rating: ${averageRating.toFixed(1)}`}>
-                <span className="artist-avg-rating-star">★</span> {averageRating.toFixed(1)}
+              <span className={`mono ${styles.average}`} title={`Your average rating: ${averageRating.toFixed(1)}`}>
+                <RatingSquares value={averageRating} size="sm" />
+                {averageRating.toFixed(1)}
               </span>
             )}
           </div>
+          {!isPast && (
+            <div className={styles.controls}>
+              <button
+                type="button"
+                className={`${styles.pick} ${wantsToSee ? styles.pickActive : ''}`}
+                onClick={() => toggleWantToSee(eventId, artist.id, { name: artist.name, image: artist.image })}
+                aria-pressed={wantsToSee}
+                aria-label={wantsToSee ? `Remove ${displayName} from your picks` : `Add ${displayName} to your picks`}
+              >
+                <BookmarkIcon size={PICK_ICON_SIZE} filled={wantsToSee} />
+              </button>
+            </div>
+          )}
         </div>
 
         {isPast && (
-          <div style={{ position: 'relative', zIndex: 1 }}>
+          <div className={styles.controls}>
             {hasRating || isStarRatingVisible ? (
               <>
-                <StarRating artistId={artist.id} eventId={eventId} readonly={false} size="md" />
-                {/* Escape hatch for a mis-tap: only while the stars were opened
+                <StarRating artistId={artist.id} eventId={eventId} artistName={displayName} />
+                {/* Escape hatch for a mis-tap: only while the squares were opened
                     manually and nothing has been rated yet, so there is no
-                    saved rating to undo — just hide the stars again. */}
+                    saved rating to undo — just hide them again. */}
                 {isStarRatingVisible && !hasRating && (
                   <button
-                    className="mark-seen-cancel-btn"
+                    type="button"
+                    className={styles.linkButton}
                     onClick={() => setIsStarRatingVisible(false)}
                     aria-label={`Cancel marking ${displayName} as seen`}
                   >
@@ -114,42 +152,17 @@ const ArtistCard = memo(function ArtistCard({
               </>
             ) : (
               <button
-                className="mark-seen-btn"
+                type="button"
+                className="btn btn-sm"
                 onClick={() => setIsStarRatingVisible(true)}
                 aria-label={`Mark ${displayName} as seen`}
               >
-                Mark as seen
+                Mark seen
               </button>
             )}
           </div>
         )}
-
-        {!isPast && (
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <button
-              className={`mark-seen-btn want-to-see-btn${wantsToSee ? ' is-active' : ''}`}
-              onClick={() => toggleWantToSee(eventId, artist.id, { name: artist.name, image: artist.image })}
-              aria-pressed={wantsToSee}
-              aria-label={wantsToSee ? `Remove ${displayName} from want to see` : `Mark ${displayName} as want to see`}
-            >
-              {wantsToSee ? '★ Want to see' : '☆ Want to see'}
-            </button>
-          </div>
-        )}
-
-        <FollowButton artistId={dbId} artistName={displayName} variant="icon" />
-
-        {/* Options button — visible on card hover only, admin-only */}
-        {isAdmin && (
-          <button
-            className="artist-card-options-btn"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuState('options') }}
-            title="Options"
-          >
-            &#8943;
-          </button>
-        )}
-      </div>
+      </article>
 
       {menuState === 'options' && (
         <ArtistOptionsMenu
@@ -162,21 +175,13 @@ const ArtistCard = memo(function ArtistCard({
 
       {menuState === 'rename' && (
         <Suspense fallback={null}>
-          <ArtistRenameModal
-            artistName={displayName}
-            onSave={handleRename}
-            onClose={closeMenu}
-          />
+          <ArtistRenameModal artistName={displayName} onSave={handleRename} onClose={closeMenu} />
         </Suspense>
       )}
 
       {menuState === 'split' && (
         <Suspense fallback={null}>
-          <B2bSplitModal
-            artistName={displayName}
-            onSave={handleSplit}
-            onClose={closeMenu}
-          />
+          <B2bSplitModal artistName={displayName} onSave={handleSplit} onClose={closeMenu} />
         </Suspense>
       )}
 

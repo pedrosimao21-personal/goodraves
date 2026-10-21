@@ -1,0 +1,109 @@
+/* Shared modal: bottom sheet on mobile, centred dialog on desktop.
+   Board: docs/redesign/boards/AdminSheetMobile.dc.html, AccountMenu.dc.html. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--overlay-scrim);
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+  color: var(--gr-tx);
+}
+
+.handle {
+  display: none;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.eyebrow {
+  display: block;
+  color: var(--gr-tx3);
+  margin-bottom: 6px;
+}
+
+.title {
+  font-size: 28px;
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  margin: -10px -12px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+}
+
+.close:hover {
+  color: var(--gr-tx);
+}
+
+.body {
+  padding: 20px;
+}
+
+/* Footer actions: cancel on the left, the confirming action wider on the right. */
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.actions > :first-child {
+  flex: 1;
+}
+
+.actions > :last-child {
+  flex: 2;
+}
+
+@media (max-width: 639px) {
+  .scrim {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .panel {
+    max-width: none;
+    max-height: 90vh;
+    border-width: 1px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .handle {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 0;
+  }
+
+  .handle span {
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--gr-s3);
+  }
+}

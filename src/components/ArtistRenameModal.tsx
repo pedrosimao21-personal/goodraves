@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { keepKeyboardOpenOnTap } from '@/lib/touch-tap'
-
-const MODAL_Z_INDEX = 1000
-const MODAL_MAX_WIDTH = 480
+import Sheet, { SheetActions } from './Sheet'
 
 interface ArtistRenameModalProps {
   artistName: string
@@ -34,94 +32,32 @@ export default function ArtistRenameModal({ artistName, onSave, onClose }: Artis
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    color: 'var(--text-primary)',
-    fontSize: '0.9rem',
-    fontFamily: 'var(--font-sans)',
-    outline: 'none',
-    boxSizing: 'border-box',
-  }
-
   return (
-    <div
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{
-        position: 'fixed', inset: 0, zIndex: MODAL_Z_INDEX,
-        background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
-        display: 'flex', alignItems: 'flex-end',
-        justifyContent: 'center',
-        padding: '0 0 env(safe-area-inset-bottom, 0)',
-      }}
-    >
-      <div
-        className="fade-in"
-        style={{
-          background: 'var(--bg-card)',
-          width: '100%', maxWidth: MODAL_MAX_WIDTH,
-          borderRadius: '20px 20px 0 0',
-          border: '1px solid var(--border)',
-          overflow: 'hidden',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {/* Header */}
-        <div style={{
-          padding: '18px 20px 14px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>
-            Edit Artist Name
-          </span>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}
-          >
-            &times;
-          </button>
+    <Sheet title="Edit artist name" eyebrow="Admin · lineup" onClose={onClose}>
+      <div className="form-stack">
+        <p className="form-hint">
+          Rename &quot;{artistName}&quot;. If an artist with the new name already exists, they will be merged.
+        </p>
+        <div>
+          <label className="form-label" htmlFor="artist-rename-input">Artist name</label>
+          <input
+            id="artist-rename-input"
+            className="form-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
+            placeholder="Artist name"
+            autoFocus
+          />
         </div>
-
-        {/* Body */}
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-            Rename &quot;{artistName}&quot;. If an artist with the new name already exists, they will be merged.
-          </p>
-
-          <div>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 5, display: 'block', fontWeight: 600 }}>
-              Artist name
-            </label>
-            <input
-              style={inputStyle}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
-              placeholder="Artist name"
-              autoFocus
-            />
-          </div>
-
-          {error && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--error-text)', margin: 0 }}>{error}</p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
-          <button onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" style={{ flex: 2 }} disabled={saving || !isValid}>
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
+        {error && <p className="form-error" role="alert">{error}</p>}
       </div>
-    </div>
+      <SheetActions>
+        <button type="button" onClick={onClose} className="btn">Cancel</button>
+        <button type="button" onClick={handleSave} onPointerDown={keepKeyboardOpenOnTap} className="btn btn-primary" disabled={saving || !isValid}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </SheetActions>
+    </Sheet>
   )
 }

@@ -1,14 +1,20 @@
 'use client'
 
-import { memo, useState, lazy, Suspense } from 'react'
+import { memo, useState, lazy, Suspense, Fragment } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useUserDataActions } from '@/context/UserDataContext'
 import type { B2bSetData } from '@/context/user-data-state'
+import RatingInput from './rating/RatingInput'
+import Sheet, { SheetActions } from './Sheet'
+import { DotsIcon } from './icons'
+import styles from './B2bSetCard.module.css'
 
 const B2bMembersModal = lazy(() => import('./B2bMembersModal'))
 
-const STARS = [1, 2, 3, 4, 5]
+/** Up to three member avatars fit the square; more members still list by name. */
+const MAX_AVATARS = 3
+const AVATAR_SIZE = 160
 
 interface B2bSetCardProps {
   b2bSet: B2bSetData
@@ -22,32 +28,11 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
   const firstMember = b2bSet.members[0]
   const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
   const [isRatingVisible, setIsRatingVisible] = useState(false)
-  const [hover, setHover] = useState(0)
   const [showUnsplitConfirm, setShowUnsplitConfirm] = useState(false)
   const [showMembersModal, setShowMembersModal] = useState(false)
   const hasRating = currentRating > 0
-
-  const ariaDisplayName = b2bSet.members.map(m => m.artistName).join(' b2b ')
-
-  const displayName = b2bSet.members.map((m, idx) => (
-    <span key={m.artistId}>
-      {idx > 0 && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> b2b </span>}
-      <Link
-        href={`/artist/${m.artistId}/${encodeURIComponent(m.artistName)}`}
-        style={{ color: 'inherit', textDecoration: 'none' }}
-        onClick={e => e.stopPropagation()}
-        onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline' }}
-        onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none' }}
-      >
-        {m.artistName}
-      </Link>
-    </span>
-  ))
-
-  const handleSetRating = (star: number) => {
-    const newRating = star === currentRating ? 0 : star
-    rateB2bSet(b2bSet.id, newRating)
-  }
+  const avatarMembers = b2bSet.members.slice(0, MAX_AVATARS)
+  const ariaDisplayName = b2bSet.members.map((m) => m.artistName).join(' b2b ')
 
   const handleUnsplit = async () => {
     await unsplitB2bSet(b2bSet.id, b2bSet.festivalId)
@@ -56,196 +41,93 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, isPa
 
   return (
     <>
-      <div
-        className="artist-card fade-in"
-        style={{ position: 'relative', cursor: 'pointer' }}
-        onClick={() => setShowMembersModal(true)}
-      >
-        {/* B2B badge — top left corner */}
-        <span style={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          zIndex: 2,
-          fontSize: '0.7rem',
-          background: 'var(--bg-secondary)',
-          border: '1px solid var(--border)',
-          borderRadius: 4,
-          padding: '2px 7px',
-          color: 'var(--text-muted)',
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          lineHeight: '1.6',
-        }}>
-          B2B
-        </span>
-
-        <div style={{ position: 'relative', zIndex: 1, display: 'contents' }}>
-          {/* Overlapping avatars */}
-          <div style={{ display: 'flex', position: 'relative', width: 80 + (b2bSet.members.slice(0, 3).length - 1) * 30, height: 80, flexShrink: 0 }}>
-            {b2bSet.members.slice(0, 3).map((member, idx) => {
-              const sp = spotifyData[member.artistName]
-              const memberImage = sp?.image ?? null
-              const overlapOffset = idx * 30
-              return memberImage ? (
-                <Image
-                  key={member.artistId}
-                  className="artist-avatar"
-                  src={memberImage}
-                  alt={member.artistName}
-                  width={80}
-                  height={80}
-                  quality={85}
-                  sizes="80px"
-                  style={{
-                    objectFit: 'cover',
-                    position: 'absolute',
-                    left: overlapOffset,
-                    top: 0,
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    border: '2px solid var(--bg-card)',
-                    zIndex: b2bSet.members.length - idx,
-                  }}
-                />
-              ) : (
-                <div
-                  key={member.artistId}
-                  style={{
-                    position: 'absolute',
-                    left: overlapOffset,
-                    top: 0,
-                    width: 80,
-                    height: 80,
-                    borderRadius: '50%',
-                    background: 'var(--bg-secondary)',
-                    border: '2px solid var(--bg-card)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem',
-                    zIndex: b2bSet.members.length - idx,
-                  }}
-                >
-                  🎤
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="artist-name">{displayName}</div>
+      <article className={`${styles.card} fade-in`} onClick={() => setShowMembersModal(true)}>
+        <div
+          className={styles.avatars}
+          style={{ gridTemplateColumns: `repeat(${avatarMembers.length}, minmax(0, 1fr))` }}
+          aria-hidden="true"
+        >
+          {avatarMembers.map((member) => {
+            const memberImage = spotifyData[member.artistName]?.image ?? null
+            return (
+              <span key={member.artistId} className={styles.member}>
+                {memberImage ? (
+                  <Image className={styles.memberImage} src={memberImage} alt="" width={AVATAR_SIZE} height={AVATAR_SIZE} quality={85} sizes="120px" />
+                ) : (
+                  <span className={`display ${styles.monogram}`}>{member.artistName[0]}</span>
+                )}
+              </span>
+            )
+          })}
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            className={styles.adminButton}
+            onClick={(e) => { e.stopPropagation(); setShowUnsplitConfirm(true) }}
+            aria-label={`Admin options for ${ariaDisplayName}`}
+          >
+            <DotsIcon />
+          </button>
+        )}
+
+        <div className={styles.tagRow}><span className="tag">B2B</span></div>
+        <h3 className={styles.name}>
+          {b2bSet.members.map((m, idx) => (
+            <Fragment key={m.artistId}>
+              {idx > 0 && <span className={styles.joiner}> b2b </span>}
+              <Link
+                href={`/artist/${m.artistId}/${encodeURIComponent(m.artistName)}`}
+                className={styles.memberLink}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {m.artistName}
+              </Link>
+            </Fragment>
+          ))}
+        </h3>
 
         {isPast && (
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div className={styles.controls}>
             {hasRating || isRatingVisible ? (
-              <div className="star-rating" role="group" aria-label="B2B set rating">
-                {STARS.map(star => (
-                  <span
-                    key={star}
-                    className={`star ${(hover || currentRating) >= star ? 'filled' : ''}`}
-                    style={{ fontSize: '1.3rem' }}
-                    onClick={(e) => { e.stopPropagation(); handleSetRating(star) }}
-                    onMouseEnter={() => setHover(star)}
-                    onMouseLeave={() => setHover(0)}
-                    role="button"
-                    aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
+              <RatingInput
+                value={currentRating}
+                onChange={(rating) => rateB2bSet(b2bSet.id, rating)}
+                label={`Rate ${ariaDisplayName}`}
+              />
             ) : (
               <button
-                className="mark-seen-btn"
+                type="button"
+                className="btn btn-sm"
                 onClick={(e) => { e.stopPropagation(); setIsRatingVisible(true) }}
                 aria-label={`Mark ${ariaDisplayName} as seen`}
               >
-                Mark as seen
+                Mark seen
               </button>
             )}
           </div>
         )}
-
-        {/* Unsplit button — admin only */}
-        {isAdmin && (
-          <button
-            className="artist-card-options-btn"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowUnsplitConfirm(true) }}
-            title="Unsplit B2B"
-          >
-            &#8943;
-          </button>
-        )}
-      </div>
+      </article>
 
       {showMembersModal && (
         <Suspense fallback={null}>
-          <B2bMembersModal
-            b2bSet={b2bSet}
-            spotifyData={spotifyData}
-            onClose={() => setShowMembersModal(false)}
-          />
+          <B2bMembersModal b2bSet={b2bSet} spotifyData={spotifyData} onClose={() => setShowMembersModal(false)} />
         </Suspense>
       )}
 
-      {/* Unsplit confirmation overlay */}
       {showUnsplitConfirm && (
-        <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowUnsplitConfirm(false) }}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
-            background: 'var(--overlay-scrim)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            padding: '0 0 env(safe-area-inset-bottom, 0)',
-          }}
-        >
-          <div
-            className="fade-in"
-            style={{
-              background: 'var(--bg-card)',
-              width: '100%', maxWidth: 480,
-              borderRadius: '20px 20px 0 0',
-              border: '1px solid var(--border)',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{
-              padding: '18px 20px 14px',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>
-                Remove B2B
-              </span>
-              <button
-                onClick={() => setShowUnsplitConfirm(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer', padding: '4px 8px' }}
-              >
-                &times;
-              </button>
-            </div>
-            <div style={{ padding: '20px' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 16px' }}>
-                Remove the B2B grouping for <strong>{b2bSet.originalArtistName}</strong>? The artists will reappear individually in the lineup.
-              </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowUnsplitConfirm(false)} className="btn btn-secondary" style={{ flex: 1 }}>
-                  Cancel
-                </button>
-                <button onClick={handleUnsplit} className="btn btn-primary" style={{ flex: 2 }}>
-                  Remove B2B
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Sheet title="Remove B2B" eyebrow="Admin · lineup" onClose={() => setShowUnsplitConfirm(false)}>
+          <p className={styles.confirmText}>
+            Remove the B2B grouping for <strong>{b2bSet.originalArtistName}</strong>? The artists will reappear individually in the lineup.
+          </p>
+          <SheetActions>
+            <button type="button" className="btn" onClick={() => setShowUnsplitConfirm(false)}>Cancel</button>
+            <button type="button" className="btn btn-primary" onClick={handleUnsplit}>Remove B2B</button>
+          </SheetActions>
+        </Sheet>
       )}
     </>
   )
 })
 
 export default B2bSetCard
-

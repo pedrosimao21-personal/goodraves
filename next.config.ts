@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'lastfm.freetls.fastly.net' }, // Last.fm images
       { protocol: 'https', hostname: 'assets.awakenings.com' }, // Awakenings
       { protocol: 'https', hostname: 'festivalfans.nl' },       // FestivalFans
+      { protocol: 'https', hostname: 'img.festivalfans.nl' },   // FestivalFans image CDN
       { protocol: 'https', hostname: 'partyflock.nl' },          // Partyflock
       { protocol: 'https', hostname: 'photo.partyflock.nl' },    // Partyflock photos
       { protocol: 'https', hostname: 'static.partyflock.nl' },   // Partyflock static
@@ -52,7 +53,7 @@ const nextConfig: NextConfig = {
               `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://images.universe.com https://*.ra.co https://ra.co https://upload.wikimedia.org https://i.imgur.com https://assets.awakenings.com https://*.tile.openstreetmap.org https://lastfm.freetls.fastly.net https://*.basemaps.cartocdn.com https://festivalfans.nl https://partyflock.nl https://photo.partyflock.nl https://static.partyflock.nl",
+              "img-src 'self' data: blob: https://*.scdn.co https://i.scdn.co https://images.universe.com https://*.ra.co https://ra.co https://upload.wikimedia.org https://i.imgur.com https://assets.awakenings.com https://*.tile.openstreetmap.org https://lastfm.freetls.fastly.net https://*.basemaps.cartocdn.com https://festivalfans.nl https://img.festivalfans.nl https://partyflock.nl https://photo.partyflock.nl https://static.partyflock.nl",
               "connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://ws.audioscrobbler.com https://en.wikipedia.org",
               "frame-src 'self' https://open.spotify.com",
               "object-src 'none'",

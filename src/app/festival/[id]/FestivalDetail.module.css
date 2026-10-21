@@ -88,23 +88,6 @@
 
 /* ── Error ── */
 
-.error {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  max-width: 640px;
-  padding: 64px 0;
-}
-
-.errorTitle {
-  font-size: 56px;
-}
-
-.errorText {
-  color: var(--gr-tx2);
-}
-
 @media (max-width: 640px) {
   .playlist {
     margin-bottom: 48px;
@@ -124,9 +107,5 @@
   .skeletonGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-  }
-
-  .errorTitle {
-    font-size: 40px;
   }
 }

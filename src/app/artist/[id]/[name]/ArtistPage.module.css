@@ -34,23 +34,6 @@
   padding: 76px 0 56px;
 }
 
-.message {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  max-width: 640px;
-  padding: 64px 0;
-}
-
-.messageTitle {
-  font-size: 56px;
-}
-
-.messageText {
-  color: var(--gr-tx2);
-}
-
 @media (max-width: 640px) {
   .skeletonPhoto {
     width: 100%;
@@ -60,9 +43,5 @@
   .skeletonTop {
     gap: 24px;
     padding: 52px 0 32px;
-  }
-
-  .messageTitle {
-    font-size: 40px;
   }
 }

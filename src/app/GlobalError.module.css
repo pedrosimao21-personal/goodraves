@@ -1,0 +1,86 @@
+/*
+ * Rendered without globals.css, so the --gr-* tokens don't exist here.
+ * The colours mirror the dark and light token values in globals.css.
+ */
+
+.body {
+  margin: 0;
+  min-height: 100vh;
+  background: #0b0b0c;
+  color: #f2f0ea;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 96px 24px;
+}
+
+.brand,
+.button {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand {
+  margin: 0;
+  color: #94928a;
+}
+
+.title {
+  margin: 0;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.text {
+  margin: 0;
+  color: #bab8b0;
+}
+
+.button {
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 2px;
+  background: #d4ff3f;
+  color: #0b0b0c;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 2px solid #f2f0ea;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: light) {
+  .body {
+    background: #f4f2ec;
+    color: #0b0b0c;
+    color-scheme: light;
+  }
+
+  .brand {
+    color: #6b6962;
+  }
+
+  .text {
+    color: #4a4842;
+  }
+
+  .button:focus-visible {
+    outline-color: #0b0b0c;
+  }
+}

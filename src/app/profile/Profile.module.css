@@ -1,0 +1,251 @@
+/* Boards: docs/redesign/boards/Profile.dc.html, ProfileMobile.dc.html. */
+
+.muted {
+  color: var(--gr-tx3);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  flex: none;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line2);
+  font-size: 44px;
+}
+
+.name {
+  font-size: 56px;
+  overflow-wrap: anywhere;
+}
+
+.identity .muted {
+  margin-top: 6px;
+  color: var(--gr-tx2);
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  margin-top: 48px;
+}
+
+.fields {
+  flex: 999 1 640px;
+  min-width: 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.aside {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+/* ── Field rows ── */
+
+.field {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+  padding: 28px 0;
+  border-top: 1px solid var(--gr-line);
+}
+
+.fieldTitle {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.fieldHint {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--gr-tx2);
+}
+
+.fieldControl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inline {
+  display: flex;
+  gap: 8px;
+}
+
+.inline :global(.btn:not(.btn-sm)) {
+  min-height: 48px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.genreChip {
+  gap: 4px;
+  padding-right: 4px;
+  color: var(--gr-tx);
+  cursor: default;
+}
+
+.chipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--gr-tx3);
+  cursor: pointer;
+}
+
+.chipRemove:hover {
+  color: var(--gr-tx);
+}
+
+.genreInput {
+  width: 180px;
+  min-height: 36px;
+  font-size: 14px;
+}
+
+.seg {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--gr-line2);
+}
+
+.seg button {
+  min-height: 44px;
+  padding: 0 18px;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg .segOn {
+  background: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+.privacy {
+  color: var(--gr-tx2);
+}
+
+.privacy :global(.mono) {
+  margin-right: 10px;
+  color: var(--gr-tx);
+}
+
+/* ── Tailored for you ── */
+
+.asideHeader {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.asideTitle {
+  font-size: 28px;
+}
+
+.asideHeader .muted {
+  margin-top: 6px;
+}
+
+.tailoredRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.thumb {
+  display: block;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tailoredInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tailoredName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tailoredRow:hover .tailoredName {
+  text-decoration: underline;
+}
+
+.note {
+  margin-top: 16px;
+  color: var(--gr-tx2);
+}
+
+.skeleton {
+  height: 320px;
+}
+
+@media (max-width: 640px) {
+  .identity {
+    gap: 16px;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 32px;
+  }
+
+  .name {
+    font-size: 40px;
+  }
+
+  .layout {
+    gap: 40px;
+    margin-top: 32px;
+  }
+
+  .field {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 22px 0;
+  }
+}

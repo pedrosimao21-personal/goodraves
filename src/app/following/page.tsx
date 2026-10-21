@@ -9,6 +9,7 @@ import { getFollowSuggestions, type FollowSuggestion } from '@/db/actions/follow
 import FollowingGigList from './FollowingGigList'
 import FollowedArtistsGrid from './FollowedArtistsGrid'
 import FollowSuggestions from './FollowSuggestions'
+import MostFollowedList from './MostFollowedList'
 import FollowingArtistSearch from './FollowingArtistSearch'
 import styles from './Following.module.css'
 
@@ -104,6 +105,8 @@ export default function FollowingPage() {
         )}
 
         <FollowSuggestions suggestions={suggestions} />
+        {/* Without follows or rated sets to suggest from, fall back to what others follow. */}
+        {!hasArtists && suggestions.length === 0 && <MostFollowedList />}
       </div>
     </div>
   )

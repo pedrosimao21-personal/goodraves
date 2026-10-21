@@ -167,7 +167,11 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
                 onMonthChange={setTimelineMonth}
               />
             ) : displayList.length === 0 ? (
-              <DashboardEmpty isUpcoming={activeTab === 'upcoming'} />
+              <DashboardEmpty
+                isUpcoming={activeTab === 'upcoming'}
+                isFirstRun={attendedFestivals.length === 0 && upcomingFestivals.length === 0}
+                userCity={userCity}
+              />
             ) : (
               <FestivalList
                 festivalIds={displayList}

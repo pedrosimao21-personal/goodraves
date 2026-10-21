@@ -53,7 +53,119 @@
   min-height: 60px;
 }
 
+/* ── Popular · tap to add ── */
+
+.popularTitle {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+  color: var(--gr-tx2);
+}
+
+.popularRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 76px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.popularThumb {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--gr-s2);
+}
+
+.popularThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.popularMonogram {
+  font-size: 24px;
+  color: var(--gr-tx3);
+}
+
+.popularInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.popularName {
+  font-size: 17px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.popularName:hover {
+  text-decoration: underline;
+}
+
+.popularMeta {
+  color: var(--gr-tx3);
+}
+
+/* ── How it works (first run) ── */
+
+.steps {
+  list-style: none;
+  border-top: 1px solid var(--gr-line2);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.stepNumber {
+  font-size: 40px;
+  color: var(--gr-tx3);
+}
+
+.step:first-child .stepNumber {
+  color: var(--gr-tx);
+}
+
+.stepTitle {
+  display: block;
+  font-weight: 600;
+}
+
+.stepBody {
+  display: block;
+  margin-top: 2px;
+  color: var(--gr-tx2);
+  font-size: 14px;
+}
+
 @media (max-width: 640px) {
+  .popularRow {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 12px;
+    min-height: 72px;
+  }
+
+  .popularThumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .popularName {
+    font-size: 15px;
+  }
+
   .emptyTitle {
     font-size: 32px;
   }

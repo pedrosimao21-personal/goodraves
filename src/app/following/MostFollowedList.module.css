@@ -1,0 +1,68 @@
+/* Board: docs/redesign/boards/FollowingEmptyMobile.dc.html ("Most followed on Goodraves"). */
+
+.section {
+  max-width: 720px;
+  margin-top: 40px;
+}
+
+.title {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gr-line2);
+  color: var(--gr-tx2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  color: var(--gr-tx2);
+  font-size: 18px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  color: var(--gr-tx3);
+}
+
+.note {
+  margin-top: 16px;
+  color: var(--gr-tx3);
+  font-size: 14px;
+}

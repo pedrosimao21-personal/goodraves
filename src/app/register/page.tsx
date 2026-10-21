@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { keepKeyboardOpenOnTap } from "@/lib/touch-tap";
+import AuthLayout from "@/components/auth/AuthLayout";
+import styles from "@/components/auth/Auth.module.css";
+
+const MIN_USERNAME_LENGTH = 3;
+const MIN_PASSWORD_LENGTH = 6;
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +34,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login after registration
+      // Log in straight after registering.
       const { signIn } = await import("next-auth/react");
       await signIn("credentials", {
         username,
@@ -46,41 +49,43 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Create Account</h1>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Username
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              minLength={3}
-              required
-              autoComplete="username"
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-              autoComplete="new-password"
-            />
-          </label>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
-            {loading ? "Creating..." : "Register"}
-          </button>
-        </form>
-        <p className="auth-switch">
+    <AuthLayout title="Create account">
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div>
+          <label className="form-label" htmlFor="register-username">Username</label>
+          <input
+            id="register-username"
+            className="form-input"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            minLength={MIN_USERNAME_LENGTH}
+            required
+            autoComplete="username"
+          />
+        </div>
+        <div>
+          <label className="form-label" htmlFor="register-password">Password</label>
+          <input
+            id="register-password"
+            className="form-input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            minLength={MIN_PASSWORD_LENGTH}
+            required
+            autoComplete="new-password"
+          />
+          <p className="form-hint">At least {MIN_PASSWORD_LENGTH} characters.</p>
+        </div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
+          {loading ? "Creating…" : "Create account"}
+        </button>
+        <p className={styles.switch}>
           Already have an account? <Link href="/login">Log in</Link>
         </p>
-      </div>
-    </div>
+      </form>
+    </AuthLayout>
   );
 }

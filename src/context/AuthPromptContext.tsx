@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react'
 import Link from 'next/link'
+import Sheet, { SheetActions } from '@/components/Sheet'
 
 interface AuthPromptContextType {
   promptAuth: () => void
@@ -24,17 +25,13 @@ export function AuthPromptProvider({ children }: { children: React.ReactNode }) 
     <AuthPromptContext.Provider value={{ promptAuth }}>
       {children}
       {open && (
-        <div className="auth-prompt-overlay" onClick={() => setOpen(false)}>
-          <div className="auth-prompt-modal" onClick={e => e.stopPropagation()}>
-            <button className="auth-prompt-close" onClick={() => setOpen(false)} aria-label="Close">&times;</button>
-            <h2>Account required</h2>
-            <p>You need to be logged in to do that.</p>
-            <div className="auth-prompt-actions">
-              <Link href="/login" className="auth-prompt-btn auth-prompt-btn-primary" onClick={() => setOpen(false)}>Log In</Link>
-              <Link href="/register" className="auth-prompt-btn" onClick={() => setOpen(false)}>Register</Link>
-            </div>
-          </div>
-        </div>
+        <Sheet title="Account required" onClose={() => setOpen(false)}>
+          <p className="form-hint">Log in to do that. It takes a username and a password, nothing else.</p>
+          <SheetActions>
+            <Link href="/register" className="btn" onClick={() => setOpen(false)}>Create account</Link>
+            <Link href="/login" className="btn btn-primary" onClick={() => setOpen(false)}>Log in</Link>
+          </SheetActions>
+        </Sheet>
       )}
     </AuthPromptContext.Provider>
   )

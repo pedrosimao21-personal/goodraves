@@ -1,0 +1,116 @@
+/* Boards: docs/redesign/boards/Login.dc.html, LoginMobile.dc.html. The
+   global nav stays above, so the brand panel carries no logo of its own. */
+
+.page {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: calc(100vh - 65px);
+}
+
+.brand {
+  flex: 1 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px 56px;
+  border-right: 1px solid var(--gr-line);
+  background-color: var(--gr-s1);
+  background-image: repeating-linear-gradient(135deg, var(--gr-line) 0 1px, transparent 1px 9px);
+}
+
+.statement {
+  font-size: clamp(72px, 8vw, 128px);
+}
+
+.tagline {
+  margin-top: 28px;
+  color: var(--gr-tx2);
+}
+
+.formSide {
+  flex: 1 1 480px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.formBox {
+  width: 100%;
+  max-width: 380px;
+}
+
+.formTitle {
+  margin-bottom: 20px;
+  font-size: 56px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form :global(.form-input) {
+  min-height: 52px;
+}
+
+.submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.switch {
+  font-size: 14px;
+  color: var(--gr-tx2);
+}
+
+.switch a {
+  color: var(--gr-tx);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  /* Content height on mobile, so nothing ends up under the tab bar. */
+  .page {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    min-height: 0;
+  }
+
+  .brand {
+    flex: none;
+    padding: 40px 20px 0;
+    border-right: 0;
+    background: none;
+  }
+
+  .statement {
+    font-size: 64px;
+  }
+
+  /* Mobile keeps the first half of the statement only. */
+  .statementMore,
+  .tagline {
+    display: none;
+  }
+
+  .formSide {
+    flex: none;
+    padding: 48px 20px 32px;
+  }
+
+  .formTitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .switch {
+    text-align: center;
+  }
+}

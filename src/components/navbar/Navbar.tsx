@@ -13,6 +13,7 @@ const TAB_ICON_SIZE = 22
 
 export default function Navbar() {
   const pathname = usePathname()
+  const isAuthPage = pathname === '/login' || pathname === '/register'
   const { data: session, status } = useSession()
   const { isAdmin } = useUserData()
 
@@ -54,8 +55,15 @@ export default function Navbar() {
               <AccountMenu username={session.user.name ?? ''} isAdmin={isAdmin} />
             ) : status === 'unauthenticated' ? (
               <>
-                <Link href="/login" className="btn btn-sm btn-ghost">Log in</Link>
-                <Link href="/register" className="btn btn-sm btn-primary">Register</Link>
+                <Link href="/login" className="btn btn-sm btn-ghost" aria-current={pathname === '/login' ? 'page' : undefined}>Log in</Link>
+                {/* The auth pages have their own primary button; keep this one quiet there. */}
+                <Link
+                  href="/register"
+                  className={`btn btn-sm ${isAuthPage ? 'btn-ghost' : 'btn-primary'}`}
+                  aria-current={pathname === '/register' ? 'page' : undefined}
+                >
+                  Register
+                </Link>
               </>
             ) : null}
           </div>

@@ -4,28 +4,41 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '@/context/UserDataContext'
 import type { FollowingGig, GigArtist } from '@/db/actions/following-gig-builder'
+import AttendToggle from '@/components/AttendToggle'
+import { PinIcon } from '@/components/icons'
+import { parseLocalDate } from '@/lib/dates'
 import { formatDateRange } from '@/lib/format-date'
 import { formatGigSet, formatNameList } from '@/lib/following-display'
+import styles from './FollowingGigCard.module.css'
 
-const GIG_IMAGE_SIZE = 64
+const GIG_IMAGE_SIZE = 192
+const DAY_DIGITS = 2
+const MONOGRAM_WORDS = 2
+
+function DateBadge({ isoDate }: { isoDate: string }) {
+  const date = parseLocalDate(isoDate)
+  return (
+    <span className={styles.dateBadge} aria-hidden="true">
+      <span className="mono">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+      <span className={`display ${styles.dateDay}`}>{String(date.getDate()).padStart(DAY_DIGITS, '0')}</span>
+    </span>
+  )
+}
 
 function GigArtistLine({ artist, isMultiDay }: { artist: GigArtist; isMultiDay: boolean }) {
   const href = `/artist/${artist.artistId}/${encodeURIComponent(artist.name)}`
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '2px 8px', fontSize: '0.85rem' }}>
-      <Link href={href} style={{ fontWeight: 600, color: 'var(--accent-purple)', textDecoration: 'none' }}>
-        {artist.name}
-      </Link>
+    <span className={styles.act}>
+      <Link href={href} className={styles.actName}>{artist.name}</Link>
       {artist.sets.map((set, i) => (
-        <span key={i} style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{formatGigSet(set, isMultiDay)}</span>
+        <span key={i} className={`mono ${styles.actSet}`}>{formatGigSet(set, isMultiDay)}</span>
       ))}
-    </div>
+    </span>
   )
 }
 
-function GoingButton({ gig }: { gig: FollowingGig }) {
+function GoingToggle({ gig }: { gig: FollowingGig }) {
   const { isUpcoming, toggleFestival } = useUserDataActions()
-  const isGoing = isUpcoming(gig.festivalId)
 
   const handleClick = () => {
     // Same payload shape as FestivalCard, so the optimistic update files the
@@ -41,64 +54,47 @@ function GoingButton({ gig }: { gig: FollowingGig }) {
     })
   }
 
-  return (
-    <button
-      className={`btn btn-sm ${isGoing ? 'btn-secondary' : 'btn-primary'}`}
-      onClick={handleClick}
-      aria-pressed={isGoing}
-      style={{ whiteSpace: 'nowrap' }}
-    >
-      {isGoing ? '✓ Going' : 'Mark as Going'}
-    </button>
-  )
+  return <AttendToggle size="sm" isFuture isActive={isUpcoming(gig.festivalId)} onToggle={handleClick} compactOnMobile />
 }
 
+/** One festival where artists you follow play. Board: Following. */
 export default function FollowingGigCard({ gig, isNear }: { gig: FollowingGig; isNear: boolean }) {
   const isMultiDay = Boolean(gig.endDate && gig.endDate !== gig.date)
   const place = [gig.venue, gig.location].filter(Boolean).join(', ')
+  const href = `/festival/${gig.festivalId}`
+  const monogram = gig.name.split(/\s+/).slice(0, MONOGRAM_WORDS).map((word) => word[0]).join('')
 
   return (
-    <div className={`following-gig-card${isNear ? ' is-near' : ''}`}>
-      <Link href={`/festival/${gig.festivalId}`} style={{ flexShrink: 0 }} aria-label={gig.name}>
-        {gig.imageUrl ? (
-          <Image src={gig.imageUrl} alt={gig.name} width={GIG_IMAGE_SIZE} height={GIG_IMAGE_SIZE} sizes={`${GIG_IMAGE_SIZE}px`} style={{ borderRadius: 10, objectFit: 'cover' }} />
-        ) : (
-          <div className="following-gig-placeholder">🎪</div>
-        )}
+    <article className={styles.card}>
+      <DateBadge isoDate={gig.date} />
+      <Link href={href} className={styles.thumb} tabIndex={-1} aria-hidden="true">
+        {gig.imageUrl
+          ? <Image src={gig.imageUrl} alt="" width={GIG_IMAGE_SIZE} height={GIG_IMAGE_SIZE} sizes="96px" />
+          : <span className={`display ${styles.monogram}`}>{monogram}</span>}
       </Link>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          <span>{formatDateRange(gig.date, gig.endDate)}</span>
-          {isNear && <span className="following-near-badge">Near you</span>}
+      <div className={styles.info}>
+        <div className={styles.titleRow}>
+          <Link href={href} className={`display ${styles.name}`}>{gig.name}</Link>
+          {isNear && <span className="tag"><PinIcon size={11} strokeWidth={2.2} />Near you</span>}
         </div>
-        <Link href={`/festival/${gig.festivalId}`} style={{ display: 'block', fontWeight: 700, color: 'inherit', textDecoration: 'none', margin: '2px 0' }}>
-          {gig.name}
-        </Link>
-        {place && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 6 }}>{place}</div>}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {gig.artists.map((artist) => (
-            <GigArtistLine key={artist.artistId} artist={artist} isMultiDay={isMultiDay} />
-          ))}
+        <span className={styles.place}>{[isMultiDay ? formatDateRange(gig.date, gig.endDate) : null, place].filter(Boolean).join(' · ')}</span>
+        <div className={styles.acts}>
+          {gig.artists.map((artist) => <GigArtistLine key={artist.artistId} artist={artist} isMultiDay={isMultiDay} />)}
         </div>
-
         {gig.clashes.map((clash, i) => (
-          <div key={i} className="following-clash">
-            ⚠ {clash.artistA} and {clash.artistB} overlap
-          </div>
+          <span key={i} className={`mono ${styles.clash}`}>Clash · {clash.artistA} and {clash.artistB} overlap</span>
         ))}
-
         {gig.friendsGoing.length > 0 && (
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 6 }}>
-            👥 {formatNameList(gig.friendsGoing)} {gig.friendsGoing.length === 1 ? 'is' : 'are'} going
-          </div>
+          <span className={`mono ${styles.friends}`}>
+            {formatNameList(gig.friendsGoing)} {gig.friendsGoing.length === 1 ? 'is' : 'are'} going
+          </span>
         )}
       </div>
 
-      <div style={{ flexShrink: 0 }}>
-        <GoingButton gig={gig} />
+      <div className={styles.action}>
+        <GoingToggle gig={gig} />
       </div>
-    </div>
+    </article>
   )
 }

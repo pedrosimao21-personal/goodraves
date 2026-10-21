@@ -1,64 +1,66 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import FollowButton from '@/components/FollowButton'
 import type { FollowedArtist } from '@/db/actions/following-feed'
 import { formatDate } from '@/lib/format-date'
 import { formatNameList } from '@/lib/following-display'
+import styles from './Following.module.css'
 
-const AVATAR_SIZE = 56
+const AVATAR_SIZE = 88
+const COLLAPSED_COUNT = 8
 
-function NextGigLine({ artist }: { artist: FollowedArtist }) {
-  if (!artist.nextGig) {
-    return <span style={{ color: 'var(--text-muted)' }}>No upcoming gigs on Goodraves yet</span>
-  }
-  const moreCount = artist.upcomingCount - 1
-  return (
-    <span>
-      Next:{' '}
-      <Link href={`/festival/${artist.nextGig.festivalId}`} style={{ color: 'inherit', fontWeight: 600 }}>
-        {artist.nextGig.name}
-      </Link>
-      {' · '}{formatDate(artist.nextGig.date)}
-      {moreCount > 0 && <span style={{ color: 'var(--text-muted)' }}> (+{moreCount} more)</span>}
-    </span>
-  )
+function describeNext(artist: FollowedArtist): string {
+  if (!artist.nextGig) return 'No upcoming gigs yet'
+  const more = artist.upcomingCount - 1
+  return `Next · ${artist.nextGig.name} · ${formatDate(artist.nextGig.date)}${more > 0 ? ` · +${more}` : ''}`
 }
 
-function FollowedArtistCard({ artist }: { artist: FollowedArtist }) {
+function FollowedArtistRow({ artist }: { artist: FollowedArtist }) {
   const href = `/artist/${artist.artistId}/${encodeURIComponent(artist.name)}`
   return (
-    <div className="followed-artist-card">
-      <Link href={href} style={{ flexShrink: 0 }} aria-label={artist.name}>
-        {artist.imageUrl ? (
-          <Image src={artist.imageUrl} alt={artist.name} width={AVATAR_SIZE} height={AVATAR_SIZE} sizes={`${AVATAR_SIZE}px`} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-        ) : (
-          <div className="followed-artist-placeholder">🎤</div>
-        )}
+    <div className={styles.followRow}>
+      <Link href={href} className={styles.avatar} aria-label={artist.name}>
+        {artist.imageUrl
+          ? <Image src={artist.imageUrl} alt="" width={AVATAR_SIZE} height={AVATAR_SIZE} sizes="44px" />
+          : <span className="display" aria-hidden="true">{artist.name[0]}</span>}
       </Link>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <Link href={href} style={{ fontWeight: 700, color: 'inherit', textDecoration: 'none' }}>{artist.name}</Link>
-        <div style={{ fontSize: '0.78rem', marginTop: 2 }}>
-          <NextGigLine artist={artist} />
-        </div>
+      <div className={styles.followInfo}>
+        <Link href={href} className={styles.followName}>{artist.name}</Link>
+        {artist.nextGig ? (
+          <Link href={`/festival/${artist.nextGig.festivalId}`} className={`mono ${styles.followMeta}`}>{describeNext(artist)}</Link>
+        ) : (
+          <span className={`mono ${styles.followMeta}`}>{describeNext(artist)}</span>
+        )}
         {artist.friendsFollowing.length > 0 && (
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>
-            👥 {formatNameList(artist.friendsFollowing)} {artist.friendsFollowing.length === 1 ? 'follows' : 'follow'} too
-          </div>
+          <span className={`mono ${styles.followMeta}`}>
+            {formatNameList(artist.friendsFollowing)} {artist.friendsFollowing.length === 1 ? 'follows' : 'follow'} too
+          </span>
         )}
       </div>
-      <FollowButton artistId={artist.artistId} artistName={artist.name} />
+      <FollowButton artistId={artist.artistId} artistName={artist.name} variant="icon" />
     </div>
   )
 }
 
+/** The artists you follow, each with their next gig. Board: Following (aside). */
 export default function FollowedArtistsGrid({ artists }: { artists: FollowedArtist[] }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const visible = isExpanded ? artists : artists.slice(0, COLLAPSED_COUNT)
+
   return (
-    <div className="followed-artists-grid">
-      {artists.map((artist) => (
-        <FollowedArtistCard key={artist.artistId} artist={artist} />
-      ))}
+    <div>
+      <div className={styles.sectionHeader}>
+        <h2 className={`display ${styles.asideTitle}`}>You follow <span className={styles.count}>{artists.length}</span></h2>
+      </div>
+      {visible.map((artist) => <FollowedArtistRow key={artist.artistId} artist={artist} />)}
+      {artists.length > COLLAPSED_COUNT && (
+        <button type="button" className={`btn ${styles.fullWidth}`} onClick={() => setIsExpanded(!isExpanded)}>
+          {isExpanded ? 'Show fewer' : `Show all ${artists.length}`}
+        </button>
+      )}
     </div>
   )
 }

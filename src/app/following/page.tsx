@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useFollows } from '@/context/FollowsContext'
 import { getFollowingPage, type FollowingPageData } from '@/db/actions/following-feed'
 import { getFollowSuggestions, type FollowSuggestion } from '@/db/actions/follow-suggestions'
@@ -11,32 +10,22 @@ import FollowingGigList from './FollowingGigList'
 import FollowedArtistsGrid from './FollowedArtistsGrid'
 import FollowSuggestions from './FollowSuggestions'
 import FollowingArtistSearch from './FollowingArtistSearch'
+import styles from './Following.module.css'
 
 const SKELETON_ROWS = [1, 2, 3]
 
 function FollowingSkeleton() {
   return (
-    <div className="page">
-      <div className="container" style={{ paddingTop: 32 }}>
-        <div style={{ height: 40, width: 220, marginBottom: 24, borderRadius: 8, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        {SKELETON_ROWS.map((i) => (
-          <div key={i} style={{ height: 96, marginBottom: 10, borderRadius: 12, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        ))}
+    <div className="page" aria-busy="true" aria-label="Loading the artists you follow">
+      <div className="container">
+        <div className={`skeleton ${styles.skeletonTitle}`} />
+        {SKELETON_ROWS.map((i) => <div key={i} className={`skeleton ${styles.skeletonRow}`} />)}
       </div>
     </div>
   )
 }
 
-function EmptyFollowing() {
-  return (
-    <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-      You don&apos;t follow anyone yet. Search above, or tap ♡ on an artist in a{' '}
-      <Link href="/" style={{ color: 'var(--accent-purple)' }}>festival lineup</Link> or on their profile, and
-      their upcoming festivals show up here.
-    </p>
-  )
-}
-
+/** Following. Boards: Following, FollowingMobile, FollowingEmptyMobile. */
 export default function FollowingPage() {
   const { status } = useSession()
   const router = useRouter()
@@ -46,7 +35,7 @@ export default function FollowingPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Refetch whenever a follow changes anywhere (version bumps), so following
-  // a suggestion or unfollowing from the grid updates the gig feed too.
+  // a suggestion or unfollowing from the list updates the gig feed too.
   useEffect(() => {
     if (status !== 'authenticated') return
     Promise.all([getFollowingPage(), getFollowSuggestions()])
@@ -68,45 +57,53 @@ export default function FollowingPage() {
 
   if (error) {
     return (
-      <div className="page"><div className="container" style={{ paddingTop: 32 }}>
-        <p style={{ color: 'var(--error-text)' }}>{error}</p>
-      </div></div>
+      <div className="page">
+        <div className="container">
+          <p className="form-error" role="alert">{error}</p>
+        </div>
+      </div>
     )
   }
   if (status !== 'authenticated' || !data) return <FollowingSkeleton />
 
-  const hasArtists = data.artists.length > 0
+  const artistCount = data.artists.length
+  const hasArtists = artistCount > 0
 
   return (
     <div className="page">
-      <div className="container" style={{ paddingTop: 32, paddingBottom: 48 }}>
-        <h1 className="section-title" style={{ fontSize: '2.5rem', marginBottom: 8 }}>Following</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-          Upcoming festivals of the artists you follow, straight from Goodraves lineups.
-        </p>
+      <div className="container">
+        <div className={styles.header}>
+          <div>
+            {hasArtists && (
+              <p className={`mono ${styles.eyebrow}`}>
+                Gigs from the {artistCount} artist{artistCount === 1 ? '' : 's'} you follow
+              </p>
+            )}
+            <h1 className={`display ${styles.title}`}>Following</h1>
+          </div>
+          <FollowingArtistSearch />
+        </div>
 
-        <FollowingArtistSearch />
-        {!hasArtists && <EmptyFollowing />}
-
-        {hasArtists && (
-          <>
-            <section style={{ marginBottom: 40 }}>
-              <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>Upcoming gigs</h2>
-              <FollowingGigList gigs={data.gigs} userCity={data.userCity} />
-            </section>
-
-            <section>
-              <h2 className="section-title" style={{ fontSize: '1.1rem', marginBottom: 12 }}>
-                Artists you follow ({data.artists.length})
-              </h2>
-              <FollowedArtistsGrid artists={data.artists} />
-            </section>
-          </>
+        {!hasArtists && (
+          <p className={styles.intro}>
+            Follow an artist and their next gigs on Goodraves land here, with set times and clashes.
+            Search above, or tap the heart on an artist in a lineup or on their page. Only your friends
+            can see who you follow.
+          </p>
         )}
 
-        <div style={{ marginTop: hasArtists ? 40 : 0 }}>
-          <FollowSuggestions suggestions={suggestions} />
-        </div>
+        {hasArtists && (
+          <div className={styles.layout}>
+            <section className={styles.main}>
+              <FollowingGigList gigs={data.gigs} userCity={data.userCity} />
+            </section>
+            <aside className={styles.aside}>
+              <FollowedArtistsGrid artists={data.artists} />
+            </aside>
+          </div>
+        )}
+
+        <FollowSuggestions suggestions={suggestions} />
       </div>
     </div>
   )

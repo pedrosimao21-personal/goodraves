@@ -1,0 +1,128 @@
+/* Board: docs/redesign/boards/Following.dc.html (search beside the title). */
+
+.search {
+  position: relative;
+  flex: 0 1 440px;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 16px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+}
+
+.field:focus-within {
+  border-color: var(--gr-tx);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--gr-tx3);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--gr-tx);
+  font: 400 16px var(--font-sans);
+}
+
+.input::placeholder {
+  color: var(--gr-tx3);
+}
+
+/* Floats over the page, so results don't push the heading around. */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0 14px;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+}
+
+.noResults,
+.dropdown :global(.form-error) {
+  padding: 14px 0;
+  font-size: 14px;
+  color: var(--gr-tx2);
+}
+
+.dropdown :global(.form-error) {
+  color: var(--gr-err);
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.result:last-child {
+  border-bottom: 0;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  font-size: 18px;
+  color: var(--gr-tx3);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.resultInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.resultName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.resultName:hover {
+  text-decoration: underline;
+}
+
+.resultMeta {
+  color: var(--gr-tx3);
+}
+
+@media (max-width: 640px) {
+  .search {
+    flex-basis: 100%;
+  }
+}

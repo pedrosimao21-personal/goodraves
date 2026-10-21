@@ -1,0 +1,205 @@
+/* Boards: docs/redesign/boards/Following.dc.html, FollowingMobile.dc.html,
+   FollowingEmptyMobile.dc.html. Gig rows: FollowingGigCard.module.css. */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.eyebrow {
+  color: var(--gr-tx2);
+}
+
+.title {
+  margin-top: 16px;
+  font-size: 56px;
+}
+
+.intro {
+  max-width: 640px;
+  margin-top: 24px;
+  color: var(--gr-tx2);
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 56px;
+  margin-top: 48px;
+}
+
+.main {
+  flex: 999 1 640px;
+  min-width: 0;
+}
+
+.aside {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.muted {
+  margin-top: 16px;
+  color: var(--gr-tx2);
+}
+
+.textLink {
+  color: var(--gr-tx2);
+}
+
+.textLink:hover {
+  color: var(--gr-tx);
+}
+
+/* ── Section headers ── */
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--gr-line2);
+}
+
+.sectionTitle {
+  font-size: 40px;
+}
+
+.asideTitle {
+  font-size: 32px;
+}
+
+.count {
+  color: var(--gr-tx3);
+}
+
+.month {
+  margin-top: 28px;
+  color: var(--gr-tx2);
+}
+
+/* Segmented filter: the selected option is a white (light: black) fill. */
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--gr-line2);
+}
+
+.seg button {
+  min-height: 40px;
+  padding: 0 16px;
+  background: none;
+  border: 0;
+  color: var(--gr-tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.seg .segOn {
+  background: var(--gr-tx);
+  color: var(--gr-bg);
+}
+
+/* ── You follow ── */
+
+.followRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  overflow: hidden;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line);
+  font-size: 18px;
+  color: var(--gr-tx3);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.followInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.followName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.followName:hover {
+  text-decoration: underline;
+}
+
+.followMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gr-tx3);
+}
+
+.fullWidth {
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* ── Skeleton ── */
+
+.skeletonTitle {
+  height: 56px;
+  width: 280px;
+  max-width: 100%;
+  margin-bottom: 40px;
+}
+
+.skeletonRow {
+  height: 120px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .header {
+    gap: 20px;
+  }
+
+  .title {
+    margin-top: 10px;
+    font-size: 40px;
+  }
+
+  .layout {
+    gap: 40px;
+    margin-top: 32px;
+  }
+
+  .sectionTitle {
+    font-size: 32px;
+  }
+}

@@ -4,31 +4,31 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import FollowButton from '@/components/FollowButton'
+import { SearchIcon } from '@/components/icons'
 import { searchArtists, type ArtistSearchResult } from '@/db/actions/artist-search'
+import styles from './FollowingSearch.module.css'
 
 const SEARCH_DEBOUNCE_MS = 300
 const MIN_QUERY_LENGTH = 2
-const AVATAR_SIZE = 40
+const AVATAR_SIZE = 88
 
 function describeUpcoming(count: number): string {
-  if (count === 0) return 'No upcoming festivals on Goodraves'
+  if (count === 0) return 'No upcoming festivals'
   return `${count} upcoming ${count === 1 ? 'festival' : 'festivals'}`
 }
 
 function SearchResultRow({ result }: { result: ArtistSearchResult }) {
   const href = `/artist/${result.artistId}/${encodeURIComponent(result.name)}`
   return (
-    <div className="artist-search-result">
-      <Link href={href} style={{ flexShrink: 0 }} aria-label={result.name}>
-        {result.imageUrl ? (
-          <Image src={result.imageUrl} alt={result.name} width={AVATAR_SIZE} height={AVATAR_SIZE} sizes={`${AVATAR_SIZE}px`} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-        ) : (
-          <div className="followed-artist-placeholder" style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, fontSize: '1rem' }}>🎤</div>
-        )}
+    <div className={styles.result}>
+      <Link href={href} className={styles.avatar} aria-label={result.name}>
+        {result.imageUrl
+          ? <Image src={result.imageUrl} alt="" width={AVATAR_SIZE} height={AVATAR_SIZE} sizes="44px" />
+          : <span className="display" aria-hidden="true">{result.name[0]}</span>}
       </Link>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <Link href={href} style={{ fontWeight: 700, color: 'inherit', textDecoration: 'none' }}>{result.name}</Link>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{describeUpcoming(result.upcomingCount)}</div>
+      <div className={styles.resultInfo}>
+        <Link href={href} className={styles.resultName}>{result.name}</Link>
+        <span className={`mono ${styles.resultMeta}`}>{describeUpcoming(result.upcomingCount)}</span>
       </div>
       <FollowButton artistId={result.artistId} artistName={result.name} isCompactOnMobile />
     </div>
@@ -67,25 +67,27 @@ export default function FollowingArtistSearch() {
   const hasCurrentResults = isActive && searchedFor === trimmed
 
   return (
-    <div style={{ marginBottom: 32, maxWidth: 560 }}>
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search for an artist to follow"
-        aria-label="Search for an artist to follow"
-        autoComplete="off"
-        className="artist-search-input"
-      />
-      {isActive && error && <p style={{ color: 'var(--error-text)', fontSize: '0.85rem', marginTop: 8 }}>{error}</p>}
-      {hasCurrentResults && !error && results.length === 0 && (
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 8 }}>No artists named like &ldquo;{trimmed}&rdquo; on Goodraves yet.</p>
-      )}
-      {isActive && results.length > 0 && (
-        <div className="artist-search-results">
-          {results.map((result) => (
-            <SearchResultRow key={result.artistId} result={result} />
-          ))}
+    <div className={styles.search}>
+      <div className={styles.field} role="search">
+        <SearchIcon size={20} className={styles.icon} />
+        <label htmlFor="following-artist-search" className="sr-only">Search for an artist to follow</label>
+        <input
+          id="following-artist-search"
+          type="search"
+          className={styles.input}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search for an artist to follow"
+          autoComplete="off"
+        />
+      </div>
+      {isActive && (error || hasCurrentResults || results.length > 0) && (
+        <div className={styles.dropdown}>
+          {error && <p className="form-error">{error}</p>}
+          {hasCurrentResults && !error && results.length === 0 && (
+            <p className={styles.noResults}>No artists named like &ldquo;{trimmed}&rdquo; on Goodraves yet.</p>
+          )}
+          {results.map((result) => <SearchResultRow key={result.artistId} result={result} />)}
         </div>
       )}
     </div>

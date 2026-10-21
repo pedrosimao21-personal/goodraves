@@ -1,0 +1,155 @@
+/* Boards: docs/redesign/boards/States.dc.html, StatesMobile.dc.html. */
+
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--gr-line);
+}
+
+.skeletonMedia {
+  aspect-ratio: 1 / 1;
+}
+
+.skeletonBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}
+
+.skeletonLine {
+  height: 10px;
+  width: 50%;
+}
+
+.skeletonTitle {
+  height: 22px;
+  width: 85%;
+}
+
+.skeletonLineWide {
+  height: 10px;
+  width: 65%;
+}
+
+.importStatus {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--gr-line2);
+  background: var(--gr-s1);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid var(--gr-tx);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: discoverSpin 0.8s linear infinite;
+}
+
+@keyframes discoverSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 720px;
+  padding: 32px 0;
+}
+
+.stateTitle {
+  font-size: 40px;
+  overflow-wrap: anywhere;
+}
+
+.stateText {
+  color: var(--gr-tx2);
+}
+
+.stateStrong {
+  color: var(--gr-tx);
+}
+
+.stateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stateHint {
+  font-size: 14px;
+  color: var(--gr-tx3);
+}
+
+.start {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 0;
+  border-top: 1px solid var(--gr-line);
+  color: var(--gr-tx2);
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--gr-warn);
+  background: color-mix(in srgb, var(--gr-warn) 6%, transparent);
+}
+
+.warningIcon {
+  flex-shrink: 0;
+  color: var(--gr-warn);
+}
+
+.warningText {
+  flex: 1;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .skeletonCard {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border: 0;
+    border-top: 1px solid var(--gr-line);
+  }
+
+  .skeletonMedia {
+    width: 80px;
+    height: 80px;
+    flex: none;
+  }
+
+  .skeletonBody {
+    flex: 1;
+    padding: 0;
+  }
+
+  .stateTitle {
+    font-size: 32px;
+  }
+
+  .warning {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,116 @@
+/* Board: docs/redesign/boards/Discover.dc.html (filter bar). */
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--gr-line);
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.dropdown {
+  position: relative;
+}
+
+.trigger {
+  gap: 6px;
+}
+
+.triggerLabel {
+  color: var(--gr-tx3);
+}
+
+.triggerActive {
+  border-color: var(--gr-tx);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  min-width: 240px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--gr-s1);
+  border: 1px solid var(--gr-line2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  color: var(--gr-tx2);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover,
+.option:focus-visible {
+  background: var(--gr-s2);
+  color: var(--gr-tx);
+}
+
+.optionSelected {
+  color: var(--gr-tx);
+  font-weight: 600;
+}
+
+.optionCheck {
+  display: inline-flex;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.optionLabel {
+  flex: 1;
+}
+
+.optionCount {
+  color: var(--gr-tx3);
+}
+
+.clear {
+  color: var(--gr-tx2);
+}
+
+.count {
+  margin-left: auto;
+  color: var(--gr-tx2);
+}
+
+@media (max-width: 640px) {
+  .bar {
+    gap: 8px;
+    padding: 12px 0;
+  }
+
+  .count {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .menu {
+    min-width: 200px;
+  }
+
+  /* Keep the last dropdown's menu inside the viewport. */
+  .dropdown:last-of-type .menu {
+    left: auto;
+    right: 0;
+  }
+}

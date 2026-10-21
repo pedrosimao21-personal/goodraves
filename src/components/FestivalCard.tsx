@@ -126,7 +126,7 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
             alt=""
             width={CARD_IMAGE_SIZE}
             height={CARD_IMAGE_SIZE}
-            sizes="(max-width: 640px) 100vw, 400px"
+            sizes="(max-width: 640px) 80px, 400px"
             quality={85}
           />
         ) : (
@@ -167,6 +167,7 @@ export default memo(function FestivalCard({ event, skipImageFetch = false }: Fes
           isFuture={Boolean(isFuture)}
           isActive={isFuture ? upcoming : attended}
           onToggle={handleToggle}
+          compactOnMobile
         />
       </div>
     </article>

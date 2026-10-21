@@ -108,3 +108,63 @@
 .meta {
   color: var(--gr-tx3);
 }
+
+/* Mobile: a row with an 80px thumbnail and an icon-only Going toggle
+   (board: DiscoverMobile.dc.html). */
+@media (max-width: 640px) {
+  .card {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--gr-line);
+  }
+
+  .card:hover {
+    border-color: var(--gr-line);
+  }
+
+  .media {
+    width: 80px;
+    height: 80px;
+    flex: none;
+  }
+
+  .monogram {
+    right: -2px;
+    bottom: -6px;
+    font-size: 48px;
+  }
+
+  .badges {
+    display: none;
+  }
+
+  .body {
+    min-width: 0;
+    gap: 3px;
+    padding: 0;
+  }
+
+  .title {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+
+  .place {
+    font-size: 13px;
+  }
+
+  .tags,
+  .meta {
+    display: none;
+  }
+
+  .footer {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}

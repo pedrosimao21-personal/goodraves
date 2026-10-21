@@ -11,6 +11,7 @@ import { CalendarIcon, PlusIcon } from '@/components/icons'
 import type { TrendingFestival } from '@/db/actions/trending-festivals'
 import { buildIcsCalendar, downloadIcsFile, type IcsFestival } from '@/lib/ics'
 import EditFestivalModal from './EditFestivalModal'
+import ClearListSheet from './ClearListSheet'
 import DashboardStats from './DashboardStats'
 import DashboardEmpty from './DashboardEmpty'
 import FestivalList from './FestivalList'
@@ -49,6 +50,7 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showVibeModal, setShowVibeModal] = useState(false)
+  const [clearingList, setClearingList] = useState<'past' | 'upcoming' | null>(null)
   const [activeTab, setActiveTab] = useState<ActiveTab>(getTabFromHash)
   // Kept here so the timeline filters survive switching tabs.
   const [timelineYear, setTimelineYear] = useState<number | null>(null)
@@ -81,10 +83,7 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
   }
 
   const handleClear = () => {
-    const list = activeTab === 'attended' ? 'past' : 'upcoming'
-    if (confirm(`Are you sure you want to clear your ${list} list? This will also remove any artist ratings associated with these festivals.`)) {
-      clearFestivals(list)
-    }
+    setClearingList(activeTab === 'attended' ? 'past' : 'upcoming')
   }
 
   const handleAddEvent = () => {
@@ -196,6 +195,14 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
 
       {showAddCustom && <AddCustomEvent onClose={() => setShowAddCustom(false)} />}
       {editingId && <EditFestivalModal eventId={editingId} onClose={() => setEditingId(null)} />}
+      {clearingList && (
+        <ClearListSheet
+          list={clearingList}
+          count={clearingList === 'past' ? attendedFestivals.length : upcomingFestivals.length}
+          onConfirm={() => clearFestivals(clearingList)}
+          onClose={() => setClearingList(null)}
+        />
+      )}
       {showVibeModal && (
         <Suspense fallback={null}>
           <AvgVibeModal festivals={mine.ratedFestivals} onClose={() => setShowVibeModal(false)} />

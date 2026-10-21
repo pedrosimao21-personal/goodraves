@@ -366,14 +366,16 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
     return id
   }, [userId, promptAuth])
 
+  // Server first, then local state: clearing is confirmed in a sheet that
+  // shows progress, and a failed delete must leave the list as it is.
   const clearFestivals = useCallback(async (type: string) => {
+    if (userId) {
+      await clearUserFestivals(type as 'past' | 'upcoming')
+    }
     setState(prev => {
       if (type === 'past') return { ...prev, attendedFestivals: [] }
       return { ...prev, upcomingFestivals: [] }
     })
-    if (userId) {
-      await clearUserFestivals(type as 'past' | 'upcoming')
-    }
   }, [userId])
 
   const updateFestivalMeta = useCallback((id: string, meta: any) => {

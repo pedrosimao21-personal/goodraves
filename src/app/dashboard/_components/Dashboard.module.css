@@ -184,6 +184,12 @@
   margin-bottom: 8px;
 }
 
+/* Body text of the clear-list confirm sheet. */
+.sheetText {
+  margin-bottom: 16px;
+  color: var(--gr-tx2);
+}
+
 @media (max-width: 640px) {
   .title {
     margin-top: 10px;

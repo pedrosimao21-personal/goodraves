@@ -1,0 +1,49 @@
+/* Boards: Artist.dc.html and ArtistMobile.dc.html ("Your sets" rows). */
+
+/* date | festival | rating */
+.row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  grid-template-areas: 'date name rating';
+  align-items: center;
+  gap: 4px 20px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gr-line);
+}
+
+.row:hover .name {
+  text-decoration: underline;
+}
+
+.date {
+  grid-area: date;
+  color: var(--gr-tx3);
+}
+
+.name {
+  grid-area: name;
+  min-width: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.rating {
+  grid-area: rating;
+  display: flex;
+}
+
+.unrated {
+  color: var(--gr-tx3);
+}
+
+@media (max-width: 639px) {
+  /* Board ArtistMobile: festival over date, rating on the right. */
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'name rating' 'date rating';
+    gap: 2px 12px;
+    min-height: 60px;
+  }
+}

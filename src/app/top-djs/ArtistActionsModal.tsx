@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import Sheet, { SheetActions } from '@/components/Sheet'
 import FollowButton from '@/components/FollowButton'
-import RatingSquares from '@/components/rating/RatingSquares'
-import { formatDate } from '@/lib/format-date'
+import ArtistSetHistory from '@/components/ArtistSetHistory'
 import type { RankedArtist } from './use-top-djs-ranking'
 import styles from './TopDjs.module.css'
 
@@ -20,6 +19,9 @@ export default function ArtistActionsModal({
 }) {
   if (!artist) return null
 
+  const sets = artist.festivals
+    .map((fest) => ({ festivalId: fest.id, name: fest.name, date: fest.date, rating: performanceRatings[`${fest.id}::${artist.id}`] ?? 0 }))
+    .reverse()
   const eyebrow = [
     `Seen ${artist.count}×`,
     artist.avgSetRating > 0 ? `${artist.avgSetRating.toFixed(1)} average` : null,
@@ -31,20 +33,7 @@ export default function ArtistActionsModal({
         <FollowButton artistId={artist.id} artistName={artist.name} />
       </div>
       <p className={`mono ${styles.sheetLabel}`}>Your sets</p>
-      <div className={styles.history}>
-        {artist.festivals.map((fest, idx) => {
-          const setRating = performanceRatings?.[`${fest.id}::${artist.id}`] ?? 0
-          return (
-            <Link key={fest.id + idx} href={`/festival/${fest.id}`} className={styles.historyRow} onClick={onClose}>
-              <span className={styles.historyInfo}>
-                <span className={styles.historyName}>{fest.name}</span>
-                <span className={`mono ${styles.muted}`}>{formatDate(fest.date)}</span>
-              </span>
-              {setRating > 0 && <RatingSquares value={setRating} size="sm" />}
-            </Link>
-          )
-        })}
-      </div>
+      <ArtistSetHistory sets={sets} onNavigate={onClose} />
       <SheetActions>
         <button type="button" className="btn" onClick={onClose}>Close</button>
         <Link href={`/artist/${artist.id}/${encodeURIComponent(artist.name)}`} className="btn btn-primary">

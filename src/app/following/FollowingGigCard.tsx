@@ -92,7 +92,7 @@ export default function FollowingGigCard({ gig, isNear }: { gig: FollowingGig; i
         )}
       </div>
 
-      <div className={styles.action}>
+      <div>
         <GoingToggle gig={gig} />
       </div>
     </article>

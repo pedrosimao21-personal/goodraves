@@ -23,8 +23,9 @@ function toMonogram(name: string): string {
 
 type Stat = { value: string; label: string; rating?: number }
 
-function buildStats(artist: ArtistData | null, averageRating: number, context: ArtistFollowContext | null): Stat[] {
+function buildStats(artist: ArtistData | null, averageRating: number, seenCount: number, context: ArtistFollowContext | null): Stat[] {
   const stats: Stat[] = []
+  if (seenCount > 0) stats.push({ value: `${seenCount}×`, label: 'Seen by you' })
   if (averageRating > 0) stats.push({ value: averageRating.toFixed(1), label: 'Your average', rating: averageRating })
   if ((artist?.spotifyFollowers ?? 0) > 0) {
     stats.push({ value: formatFollowers(artist?.spotifyFollowers), label: 'Spotify followers' })
@@ -42,14 +43,16 @@ interface ArtistHeaderProps {
   displayName: string
   artist: ArtistData | null
   averageRating: number
+  /** Festivals where the user saw this artist. */
+  seenCount: number
   followContext: ArtistFollowContext | null
 }
 
 /** Board: Artist (desktop) and ArtistMobile. */
-export default function ArtistHeader({ displayName, artist, averageRating, followContext }: ArtistHeaderProps) {
+export default function ArtistHeader({ displayName, artist, averageRating, seenCount, followContext }: ArtistHeaderProps) {
   const router = useRouter()
   const tags = [...new Set(artist?.genres ?? [])].slice(0, MAX_TAGS)
-  const stats = buildStats(artist, averageRating, followContext)
+  const stats = buildStats(artist, averageRating, seenCount, followContext)
   const links = [
     artist?.spotifyId ? { label: 'Spotify', href: `https://open.spotify.com/artist/${artist.spotifyId}` } : null,
     artist?.lastfmId ? { label: 'Last.fm', href: `https://www.last.fm/music/${encodeURIComponent(artist.name)}` } : null,

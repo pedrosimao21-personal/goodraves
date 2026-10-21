@@ -17,6 +17,14 @@ export interface FestivalMeta {
   [key: string]: any
 }
 
+/** One festival where the user saw an artist, with their rating of that set (0 = not rated). */
+export interface ArtistSetEntry {
+  festivalId: string
+  name: string
+  date: string | null
+  rating: number
+}
+
 export interface B2bSetData {
   id: string
   festivalId: string
@@ -98,6 +106,7 @@ export interface UserDataContextType {
   getArtistMeta: (artistId: string) => any
   getArtistSeenCounts: () => Record<string, { count: number; events: string[] }>
   getAverageArtistRating: (artistId: string) => number
+  getArtistHistory: (artistId: string) => ArtistSetEntry[]
   getB2bSets: (festivalId: string) => B2bSetData[]
   // Actions
   exportData: () => void

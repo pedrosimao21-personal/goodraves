@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { UserDataState, B2bSetData } from './user-data-state'
+import type { UserDataState, B2bSetData, ArtistSetEntry } from './user-data-state'
 
 /** Builds read-only accessors that close over one snapshot of user data state. */
 function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set<string>) {
@@ -36,16 +36,30 @@ function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set
     return counts
   }
 
+  /** Average of the user's set ratings for the artist, over festivals on their lists (as in getArtistHistory). */
   const getAverageArtistRating = (artistId: string) => {
     const ratings: number[] = []
     for (const [key, value] of Object.entries(state.performanceRatings)) {
       if (!value) continue
-      const keyArtistId = key.split('::')[1]
-      if (keyArtistId === artistId) ratings.push(value)
+      const [eventId, keyArtistId] = key.split('::')
+      if (keyArtistId !== artistId) continue
+      if (attended.has(eventId) || upcoming.has(eventId)) ratings.push(value)
     }
     if (ratings.length === 0) return 0
     return ratings.reduce((sum, r) => sum + r, 0) / ratings.length
   }
+
+  /** Every festival on the user's lists where they saw the artist, newest first. */
+  const getArtistHistory = (artistId: string): ArtistSetEntry[] =>
+    Object.entries(state.seenArtists)
+      .filter(([eventId, artistIds]) => (attended.has(eventId) || upcoming.has(eventId)) && artistIds.includes(artistId))
+      .map(([eventId]) => ({
+        festivalId: eventId,
+        name: state.festivalMeta[eventId]?.name ?? eventId,
+        date: state.festivalMeta[eventId]?.date ?? null,
+        rating: state.performanceRatings[`${eventId}::${artistId}`] ?? 0,
+      }))
+      .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''))
 
   const getB2bSets = (festivalId: string): B2bSetData[] => state.b2bSets[festivalId] ?? []
 
@@ -63,7 +77,7 @@ function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set
     isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalPublicComment, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
-    getB2bSets,
+    getB2bSets, getArtistHistory,
   }
 }
 

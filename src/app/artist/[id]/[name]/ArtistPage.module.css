@@ -34,6 +34,11 @@
   padding: 76px 0 56px;
 }
 
+.slowNote {
+  padding: 24px 0;
+  color: var(--gr-tx2);
+}
+
 @media (max-width: 640px) {
   .skeletonPhoto {
     width: 100%;

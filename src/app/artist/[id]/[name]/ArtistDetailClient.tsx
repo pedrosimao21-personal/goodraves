@@ -3,9 +3,11 @@
 import { useParams, useRouter } from 'next/navigation'
 import type { ArtistData } from '@/db/actions/artists'
 import { useUserData } from '@/context/UserDataContext'
+import PageMessage from '@/components/PageMessage'
 import ArtistHeader from './ArtistHeader'
 import ArtistAside from './ArtistAside'
 import { GoodravesUpcoming, RaUpcoming } from './ArtistUpcoming'
+import ArtistYourSets from './ArtistYourSets'
 import { Releases, TopTracks } from './ArtistMedia'
 import { useArtistData } from './use-artist-data'
 import { useArtistFollowContext } from './use-artist-follow-context'
@@ -18,7 +20,7 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
   const artistId = Array.isArray(params.id) ? params.id[0] : (params.id ?? '')
   const encodedName = Array.isArray(params.name) ? params.name[0] : (params.name ?? '')
   const artistName = decodeURIComponent(encodedName)
-  const { getAverageArtistRating } = useUserData()
+  const { getAverageArtistRating, getArtistHistory } = useUserData()
   const { artist, loading, refreshing, notFound, timedOut, reportSent, reportWrongData } =
     useArtistData(artistId, artistName, initialArtist)
   // The URL id can be a not-yet-resolved one (see getOrCreateArtistByName), so
@@ -27,19 +29,16 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
 
   if (notFound) {
     return (
-      <div className="page">
-        <div className="container">
-          <div className={pageStyles.message} role="alert">
-            <h1 className={`display ${pageStyles.messageTitle}`}>Artist not found.</h1>
-            <p className={pageStyles.messageText}>We couldn&apos;t find this artist.</p>
-            <button type="button" className="btn btn-primary" onClick={() => router.back()}>Go back</button>
-          </div>
-        </div>
-      </div>
+      <PageMessage isAlert title="Artist not found." text="We couldn't find this artist.">
+        <button type="button" className="btn btn-primary" onClick={() => router.back()}>Go back</button>
+      </PageMessage>
     )
   }
 
   const displayName = artist?.name ?? artistName
+  // Ratings and seen sets are keyed by the DB id; the URL id can still be unresolved.
+  const resolvedId = artist?.id ?? artistId
+  const history = loading ? [] : getArtistHistory(resolvedId)
   const hasTracks = (artist?.lastfmTopTracks?.length ?? 0) > 0
   const hasAlbums = (artist?.spotifyAlbums?.length ?? 0) > 0
 
@@ -49,7 +48,8 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
         <ArtistHeader
           displayName={displayName}
           artist={artist}
-          averageRating={loading ? 0 : getAverageArtistRating(artistId)}
+          averageRating={loading ? 0 : getAverageArtistRating(resolvedId)}
+          seenCount={history.length}
           followContext={followContext}
         />
 
@@ -61,7 +61,7 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
         )}
 
         {timedOut && !artist && (
-          <p className={pageStyles.messageText}>Still loading enrichment data… check back in a moment.</p>
+          <p className={pageStyles.slowNote}>Still loading enrichment data… check back in a moment.</p>
         )}
 
         {!loading && (
@@ -69,6 +69,7 @@ export default function ArtistDetail({ initialArtist = null }: { initialArtist?:
             <div className={bodyStyles.main}>
               <GoodravesUpcoming festivals={followContext?.upcomingFestivals ?? []} />
               <RaUpcoming artistName={displayName} raArtistId={artist?.raArtistId ?? null} events={artist?.raUpcomingEvents ?? []} />
+              <ArtistYourSets sets={history} />
               {(hasTracks || hasAlbums) && (
                 <div className={bodyStyles.mediaGrid}>
                   {hasTracks && <TopTracks tracks={artist!.lastfmTopTracks} artistName={displayName} />}

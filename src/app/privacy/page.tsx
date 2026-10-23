@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import LegalPage from '@/components/legal/LegalPage'
-import { CONTACT_EMAIL } from '@/lib/site'
+import { CONTACT_EMAIL, TEAM } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'Privacy · Goodraves',
@@ -20,9 +20,14 @@ export default function PrivacyPage() {
       <section>
         <h2>Who is responsible</h2>
         <p>
-          Goodraves is run by one person, who is the data controller for the personal data described here. Questions,
-          requests and complaints go to {mail}.
+          Goodraves is run by {TEAM.map(person => person.name).join(' and ')}, who are jointly responsible (joint data
+          controllers) for the personal data described here. Questions, requests and complaints can go to either of us:
         </p>
+        <ul>
+          {TEAM.map(person => (
+            <li key={person.email}><strong>{person.name}:</strong> <a href={`mailto:${person.email}`}>{person.email}</a></li>
+          ))}
+        </ul>
       </section>
 
       <section>
@@ -50,7 +55,7 @@ export default function PrivacyPage() {
           <li><strong>Other users</strong> can find you by username to send a friend request.</li>
           <li><strong>Friends</strong> you&apos;ve accepted see your festivals, set ratings, comments and the artists you follow.</li>
           <li><strong>Only you</strong> see your personal notes, home city and genres.</li>
-          <li>The person running Goodraves can access the database to keep it working and to answer your requests.</li>
+          <li>The two of us running Goodraves can access the database to keep it working and to answer your requests.</li>
         </ul>
       </section>
 

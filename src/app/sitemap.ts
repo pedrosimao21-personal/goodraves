@@ -11,7 +11,7 @@ export const revalidate = 86400
 // Google's per-file cap is 50,000 URLs; upcoming festivals are a few thousand.
 const MAX_FESTIVAL_URLS = 10_000
 
-const STATIC_PATHS = ['/', '/top-djs', '/privacy', '/terms']
+const STATIC_PATHS = ['/', '/top-djs', '/contact', '/privacy', '/terms']
 
 /** Static pages plus every festival that hasn't ended yet. User-created (custom) festivals stay out. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

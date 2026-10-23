@@ -59,6 +59,10 @@ hook (`.claude/hooks/check-doc-sync.sh`) reminds you if you miss one.
   Commands block in this file (and `README.md` if it's a user-facing command).
 - Add an external image domain → both places in `next.config.ts` (see Conventions).
 - Change a coding convention → `AGENTS.md`.
+- Store a new kind of personal data, change who can see it, or add a third-party service/embed
+  that the browser loads → update `/privacy` (`src/app/privacy/page.tsx`) and bump
+  `LEGAL_LAST_UPDATED` in `src/lib/site.ts`. The "no cookie banner" claim there holds only while
+  nothing non-essential (analytics, embeds) loads before the user opts in.
 
 Prefer describing code over mirroring it (e.g. point at `schema.ts` rather than
 re-listing columns) so there's less to keep in sync.
@@ -70,7 +74,7 @@ endpoints for app data. Mutations and reads live as `"use server"` functions in
 `src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers,
 registration, and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
 `CRON_SECRET` bearer token — see `vercel.json`: `import-pf-agenda` at 04:00, then
-`daily-maintenance` at 06:00 — dedupe, timetable re-sync for the next 2 weeks, timetable
+`daily-maintenance` at 06:00 — prune old `rate_limit_counters` rows (they hold IPs), dedupe, timetable re-sync for the next 2 weeks, timetable
 auto-link; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
 1. Call `requireAuth()` (or `requireAdmin()`) from `festival-helpers.ts` to verify the session.
 2. Use the Drizzle query builder against `db` from `src/db/index.ts`.

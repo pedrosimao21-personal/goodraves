@@ -4,11 +4,13 @@ import { Archivo, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/navbar/Navbar'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import SiteFooter from '@/components/SiteFooter'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
 import { FollowsProvider } from '@/context/FollowsContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { THEME_STORAGE_KEY, THEME_COLORS } from '@/lib/theme-constants'
+import { SITE_URL } from '@/lib/site'
 import { auth } from '../../auth'
 import { Suspense } from 'react'
 
@@ -46,6 +48,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  // Resolves relative share-image and canonical URLs to the public domain.
+  metadataBase: new URL(SITE_URL),
   title: 'Goodraves',
   description: 'Goodraves – discover raves & festivals, track what you attended, rate the DJs you saw.',
   // The lime brand square on the dark ground; the PNGs are rendered from
@@ -103,6 +107,7 @@ export default async function RootLayout({
                     {children}
                   </Suspense>
                 </ErrorBoundary>
+                <SiteFooter />
               </FollowsProvider>
             </UserDataProvider>
           </Providers>

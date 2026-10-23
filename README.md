@@ -102,7 +102,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 | `user_festival_artist_ratings` | Per-festival, per-artist performance ratings |
 | `user_artist_global` | A user's overall rating/notes for an artist |
 | `user_artist_follows` | Artists a user follows. Drives `/following` (upcoming festivals of followed artists, read from `festival_artists` whatever the festival's source), follow suggestions, and the friends feed's "started following" items. Visible to accepted friends, never public |
-| `rate_limit_counters` | Fixed-window rate-limit counters (login attempts, search/import actions), one row per identifier + action + window |
+| `rate_limit_counters` | Fixed-window rate-limit counters (login attempts, search/import actions), one row per identifier + action + window; rows older than 24h are pruned by the daily-maintenance cron |
 
 ### External data sources
 

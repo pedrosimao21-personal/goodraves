@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { isRateLimited } from "@/db/rate-limit";
 import { getClientIp } from "@/lib/client-ip";
+import { getPasswordError, hashPassword } from "@/lib/password";
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 30;
-const MIN_PASSWORD_LENGTH = 6;
-// bcrypt silently truncates input at 72 bytes; cap length to avoid a false sense
-// of added strength (and to bound hashing cost on absurdly long input).
-const MAX_PASSWORD_LENGTH = 128;
-const BCRYPT_SALT_ROUNDS = 12;
 
 export async function POST(req: NextRequest) {
   try {
@@ -67,18 +62,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!password || typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
-      return NextResponse.json(
-        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` },
-        { status: 400 }
-      );
-    }
-
-    if (password.length > MAX_PASSWORD_LENGTH) {
-      return NextResponse.json(
-        { error: `Password must be at most ${MAX_PASSWORD_LENGTH} characters` },
-        { status: 400 }
-      );
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
     // Check if username already exists (case-insensitive). Only existence is
@@ -97,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+    const passwordHash = await hashPassword(password);
 
     await db.insert(users).values({
       username,

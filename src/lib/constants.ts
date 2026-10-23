@@ -27,6 +27,13 @@ export const MAX_ENRICHMENT_BATCH_SIZE = 20;
  */
 export const IMAGE_ENRICH_CHUNK_SIZE = 6;
 
+/**
+ * Password length bounds for registration and password changes. bcrypt
+ * silently ignores input past 72 bytes; the max mainly bounds hashing cost.
+ */
+export const MIN_PASSWORD_LENGTH = 8;
+export const MAX_PASSWORD_LENGTH = 128;
+
 /** Max lengths for free-text profile fields. */
 export const MAX_CITY_LENGTH = 200;
 export const MAX_GENRES_LENGTH = 500;
@@ -40,6 +47,11 @@ export const RATE_LIMIT_CACHE_MAX = 10;
 // so this limit is deliberately generous — it exists to cap abuse of the
 // Spotify/Wikipedia proxy, not to throttle normal scrolling.
 export const RATE_LIMIT_IMAGE_MAX = 200;
+// Password change / account deletion both check the current password, so they
+// share a tight limit against password guessing on a hijacked session.
+export const RATE_LIMIT_ACCOUNT_MAX = 5;
+/** rate_limit_counters rows (keyed by IP or user) older than this are pruned daily. Must exceed the longest window (15 min). */
+export const RATE_LIMIT_RETENTION_HOURS = 24;
 
 /**
  * Artist-enrichment cache staleness windows. Cached provider data is refetched

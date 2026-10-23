@@ -1,0 +1,35 @@
+/* Not designed on its own; kept quiet so it never competes with page content. */
+
+.footer {
+  border-top: 1px solid var(--gr-line);
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 32px;
+  padding-top: 24px;
+  padding-bottom: 32px;
+}
+
+.links {
+  display: flex;
+  gap: 20px;
+}
+
+.links a {
+  color: var(--gr-tx2);
+}
+
+.links a:hover {
+  color: var(--gr-tx);
+  text-decoration: underline;
+}
+
+.note {
+  max-width: 560px;
+  color: var(--gr-tx3);
+  font-size: 13px;
+}

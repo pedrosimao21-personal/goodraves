@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { RATE_LIMIT_RETENTION_HOURS } from "@/lib/constants";
 
 /**
  * Database-backed rate limiter that works correctly in serverless environments.
@@ -58,4 +59,17 @@ export async function isRateLimited(
   ).catch(() => {});
 
   return count > maxAttempts;
+}
+
+/**
+ * Delete every bucket older than RATE_LIMIT_RETENTION_HOURS. The per-key
+ * cleanup above only runs when the same caller comes back, so without this an
+ * IP that visits once keeps its row forever — and those rows hold IP
+ * addresses, which the privacy policy promises are kept only briefly. Run by
+ * the daily-maintenance cron. Returns the number of rows removed.
+ */
+export async function pruneRateLimitCounters(): Promise<number> {
+  const cutoff = new Date(Date.now() - RATE_LIMIT_RETENTION_HOURS * 60 * 60 * 1000);
+  const result = await db.execute(sql`DELETE FROM rate_limit_counters WHERE window_start < ${cutoff}`);
+  return result.rowCount ?? 0;
 }

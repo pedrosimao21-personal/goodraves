@@ -1,9 +1,9 @@
 import { addDays } from './dates'
+import { SITE_URL } from './site'
 
 const ICS_LINE_ENDING = '\r\n'
 const MINUTES_PER_DAY = 1440
 const MINUTES_PER_HOUR = 60
-const SITE_URL = 'https://goodraves.vercel.app'
 
 export type IcsFestival = {
   id: string

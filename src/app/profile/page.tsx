@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { formatDateRange } from '@/lib/format-date'
-import { AccountField, CityField, GenresField, PrivacyField, ThemeField } from './ProfileFields'
+import { CityField, GenresField, PrivacyField, ThemeField } from './ProfileFields'
+import { AccountField, PasswordField } from './AccountFields'
 import type { TailoredFestival } from '@/db/actions/tailored-festivals-core'
 import { parseGenres, useProfile } from './use-profile'
 import styles from './Profile.module.css'
@@ -80,6 +81,7 @@ export default function ProfilePage() {
             <GenresField value={genres} onSave={saveGenres} />
             <ThemeField />
             <PrivacyField />
+            <PasswordField />
             <AccountField />
           </section>
 

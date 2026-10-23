@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import { signOut } from 'next-auth/react'
 import { useTheme } from '@/context/ThemeContext'
 import { THEME_PREFERENCES, type ThemePreference } from '@/lib/theme-constants'
 import { MAX_CITY_LENGTH, MAX_GENRES_LENGTH } from '@/lib/constants'
@@ -14,7 +13,7 @@ const THEME_LABELS: Record<ThemePreference, string> = { dark: 'Dark', light: 'Li
 const SAVE_FAILED = 'Could not save. Try again.'
 
 /** One settings row: title and hint on the left, the control on the right. Board: Profile. */
-function Field({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+export function Field({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
     <div className={styles.field}>
       <div>
@@ -157,16 +156,6 @@ export function PrivacyField() {
     <Field title="What friends see">
       <p className={styles.privacy}><span className="mono">Shared</span>Festivals, set ratings, comments for friends, follows</p>
       <p className={styles.privacy}><span className="mono">Private</span>Personal notes</p>
-    </Field>
-  )
-}
-
-export function AccountField() {
-  return (
-    <Field title="Account">
-      <div>
-        <button type="button" className="btn" onClick={() => signOut({ callbackUrl: '/' })}>Sign out</button>
-      </div>
     </Field>
   )
 }

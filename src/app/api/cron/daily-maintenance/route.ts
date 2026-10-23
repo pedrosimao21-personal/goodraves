@@ -5,6 +5,7 @@ import { refreshUpcomingTimetables } from "@/db/actions/festival-timetable-refre
 import { autoLinkPFTimetables } from "@/db/actions/festival-timetable-autolink";
 import { timetableCacheTag } from "@/db/actions/festival-helpers";
 import { recordCronRun } from "@/db/actions/cron-runs-core";
+import { pruneRateLimitCounters } from "@/db/rate-limit";
 import { isValidCronBearer } from "@/lib/cron-auth";
 import { toIsoDate, addDays } from "@/lib/dates";
 import { PF_AUTOLINK_DAYS_AHEAD, PF_AUTOLINK_RECHECK_DAYS } from "@/lib/constants";
@@ -31,9 +32,10 @@ function revalidateFestival(festivalId: string): void {
 
 /**
  * Daily maintenance cron (see vercel.json — scheduled after the 04:00
- * Partyflock import, with room for Hobby's ±59 min trigger window). Three
- * steps, sharing one time budget, each idempotent so a run cut short simply
- * continues the next day:
+ * Partyflock import, with room for Hobby's ±59 min trigger window). After a
+ * quick prune of old rate-limit rows (they hold IP addresses), three steps
+ * share one time budget, each idempotent so a run cut short simply continues
+ * the next day:
  *   1. Dedupe — merge confidently-duplicate festivals, queue uncertain pairs
  *      for /admin/duplicates (DB-only, fast, so it runs first).
  *   2. Timetable refresh — re-sync Partyflock timetables of festivals in the
@@ -54,8 +56,18 @@ export async function GET(request: Request) {
   return NextResponse.json(summary);
 }
 
+/** A failed prune is reported in the run summary but never blocks the steps after it. */
+async function runRateLimitPrune(): Promise<{ removed: number; errors: string[] }> {
+  try {
+    return { removed: await pruneRateLimitCounters(), errors: [] };
+  } catch (err) {
+    return { removed: 0, errors: [err instanceof Error ? err.message : String(err)] };
+  }
+}
+
 async function runMaintenance() {
   const startedAt = Date.now();
+  const rateLimitPrune = await runRateLimitPrune();
   const dedupe = await runDedupe({
     onMerged: (winnerId, loserIds) => {
       revalidateFestival(winnerId);
@@ -77,5 +89,5 @@ async function runMaintenance() {
     onLinked: revalidateFestival,
   });
 
-  return { dedupe, timetables, autoLink };
+  return { rateLimitPrune, dedupe, timetables, autoLink };
 }

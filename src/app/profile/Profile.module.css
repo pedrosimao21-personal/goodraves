@@ -158,6 +158,15 @@
   color: var(--gr-tx);
 }
 
+.accountNote {
+  margin-top: 8px;
+}
+
+.deleteText {
+  margin-bottom: 16px;
+  color: var(--gr-tx2);
+}
+
 /* ── Tailored for you ── */
 
 .asideHeader {

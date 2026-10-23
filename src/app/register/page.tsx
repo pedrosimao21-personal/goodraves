@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { keepKeyboardOpenOnTap } from "@/lib/touch-tap";
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/constants";
 import AuthLayout from "@/components/auth/AuthLayout";
 import styles from "@/components/auth/Auth.module.css";
 
 const MIN_USERNAME_LENGTH = 3;
-const MIN_PASSWORD_LENGTH = 6;
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -73,15 +73,20 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={MIN_PASSWORD_LENGTH}
+            maxLength={MAX_PASSWORD_LENGTH}
             required
             autoComplete="new-password"
           />
-          <p className="form-hint">At least {MIN_PASSWORD_LENGTH} characters.</p>
+          <p className="form-hint">At least {MIN_PASSWORD_LENGTH} characters. There&apos;s no email reset, so keep it somewhere safe.</p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>
           {loading ? "Creating…" : "Create account"}
         </button>
+        <p className={styles.switch}>
+          By creating an account you agree to the <Link href="/terms">terms</Link> and confirm you&apos;re 16 or older.
+          Read how your data is used in the <Link href="/privacy">privacy policy</Link>.
+        </p>
         <p className={styles.switch}>
           Already have an account? <Link href="/login">Log in</Link>
         </p>

@@ -1,0 +1,68 @@
+/* Not designed on its own; a plain reading column in the site's type. */
+
+.article {
+  max-width: 720px;
+}
+
+.eyebrow {
+  color: var(--gr-tx3);
+}
+
+.title {
+  margin-top: 12px;
+  font-size: 56px;
+}
+
+.intro {
+  margin-top: 24px;
+  color: var(--gr-tx2);
+  font-size: 17px;
+}
+
+.article section {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--gr-line);
+}
+
+.article h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.article p,
+.article ul {
+  color: var(--gr-tx2);
+}
+
+.article p + p,
+.article p + ul,
+.article ul + p {
+  margin-top: 12px;
+}
+
+.article ul {
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.article li + li {
+  margin-top: 6px;
+}
+
+.article strong {
+  color: var(--gr-tx);
+  font-weight: 600;
+}
+
+.article a {
+  color: var(--gr-tx);
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 40px;
+  }
+}

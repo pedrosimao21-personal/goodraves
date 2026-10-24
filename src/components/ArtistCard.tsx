@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import StarRating from './StarRating'
-import RatingMeter from './rating/RatingMeter'
+import RatingSquares from './rating/RatingSquares'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
 import { mergeLineupArtists, removeArtistFromLineup } from '@/db/actions/lineup-admin'
 import FollowButton from './FollowButton'
@@ -130,7 +130,7 @@ const ArtistCard = memo(function ArtistCard({
             <h3 className={styles.name}>{displayName}</h3>
             {averageRating > 0 && (
               <span className={`mono ${styles.average}`} title={`Your average rating: ${averageRating.toFixed(1)}`}>
-                <RatingMeter value={averageRating} size="sm" />
+                <RatingSquares value={averageRating} size="sm" />
                 {averageRating.toFixed(1)}
               </span>
             )}
@@ -153,7 +153,7 @@ const ArtistCard = memo(function ArtistCard({
         {/* One tap rates the set and marks it as seen; tapping the current
             rating again clears both (setPerformanceRating). */}
         {canRate && (
-          <div className={styles.controls}>
+          <div className={`${styles.controls} ${styles.ratingRow}`}>
             <StarRating artistId={artist.id} eventId={eventId} artistName={displayName} />
             {isSeenUnrated && <span className={`mono ${styles.seenNote}`}>Seen</span>}
           </div>

@@ -1,6 +1,6 @@
 /**
  * Artist/set ratings run from 0.5 to 5 in half points (0 = not rated). The
- * rating meter draws one bar per half point, so ten bars cover the range.
+ * rating fader draws one bar per half point, so ten bars cover the range.
  * Festival "vibe" ratings are separate and stay whole numbers (see
  * MIN_RATING/MAX_RATING in constants.ts).
  */
@@ -29,7 +29,7 @@ export function validateArtistRating(rating: number): number {
   return snapped;
 }
 
-/** Colour of meter bar `index` (0 = shortest): green through yellow and orange to red. */
+/** Colour of fader bar `index` (0 = shortest): green through yellow and orange to red. */
 export function ratingBarColor(index: number): string {
   const hue = Math.round(SPECTRUM_GREEN_HUE - (SPECTRUM_GREEN_HUE * index) / (RATING_BAR_COUNT - 1));
   return `hsl(${hue} 78% 52%)`;

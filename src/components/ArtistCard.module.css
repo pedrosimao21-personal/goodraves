@@ -98,6 +98,12 @@
   color: var(--gr-tx3);
 }
 
+/* The rating row sits at the bottom of the card, so faders line up across a
+   row of cards whatever sits above them (average line, B2B label, name lines). */
+.ratingRow {
+  margin-top: auto;
+}
+
 /* Interactive controls must sit above the stretched link. */
 .controls {
   position: relative;

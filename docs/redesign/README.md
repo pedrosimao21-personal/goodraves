@@ -34,7 +34,7 @@ To see a board rendered, open the canvas link above.
 | Ground | `#0B0B0C` | Page background |
 | Surface | `#141416` | Cards, panels, inputs |
 | Raised | `#1C1C1F` | Avatars, timetable blocks |
-| Empty | `#2C2C31` | Unlit rating bars, skeletons |
+| Empty | `#2C2C31` | Empty rating squares (display), unlit fader bars, skeletons |
 | Text | `#F2F0EA` | Body text, active tab underline |
 | Text 2 | `#BAB8B0` | Secondary text |
 | Text 3 | `#94928A` | Meta, labels |
@@ -88,14 +88,16 @@ Primary button in light mode: black background, lime text.
 - **Follow:** one control everywhere. The label is always "Follow" (so the button keeps
   its width); outline heart = not following, filled lime button with a filled heart =
   following; icon-only in dense lists.
-- **Rating:** a volume meter of ten ascending bars, one per half point (0.5 to 5; the
-  festival "vibe" rating stays whole numbers). Lit bars take their colour from their
-  position, green through yellow and orange to red; unlit bars are grey. Input = the
-  fader: the meter with a cap on a rail below. Tap to set the nearest half point (tapping
-  the current value clears it) or drag sideways; vertical swipes still scroll, so it is
-  safe in lineup grids. A hollow cap parked at the left means unrated. Tapping on a past
-  festival also marks the set as seen. Display = the same meter without the fader; an
-  average such as 4.6 lights the nearest half point.
+- **Rating:** two looks. *Input* = the fader, used only where you rate (lineup cards, B2B
+  sets, Live mode): ten ascending bars, one per half point (0.5 to 5), lit bars coloured by
+  position (green low, red high), with a cap on a rail below. Tap to set the nearest half
+  point (tapping the current value clears it) or drag sideways; vertical swipes still scroll,
+  so it is safe in lineup grids. The rating you are giving shows as a number in the corner
+  above the short bars; a hollow cap parked at the left means unrated. The fader is pinned
+  to the bottom of its card so faders line up across a row. Tapping on a past festival also
+  marks the set as seen. *Display* = five squares everywhere else: filled lime, grey empties,
+  and a partial square for decimals (4.6 shows four full and 60% of the fifth; 4.5 half of
+  the fifth). The festival "vibe" rating stays whole numbers.
 - **Tabs and segmented controls:** active tab is a white underline (black in light);
   segmented "on" is a white fill. Tabs use `role="tab"` + `aria-selected`; filters and
   sorts are toggle groups with `aria-pressed`.

@@ -3,11 +3,11 @@
 import { memo } from 'react'
 import { useUserDataActions } from '../context/UserDataContext'
 import RatingFader from './rating/RatingFader'
-import RatingMeter from './rating/RatingMeter'
+import RatingSquares from './rating/RatingSquares'
 
 /**
  * A user's rating of an artist: per set when `eventId` is given (a festival
- * performance), otherwise their global rating. Renders the rating fader, or the read-only meter.
+ * performance), otherwise their global rating. Renders the rating fader, or read-only squares.
  */
 export default memo(function StarRating({ artistId, eventId, readonly = false, size = 'md', artistName }: {
   artistId: string
@@ -19,7 +19,7 @@ export default memo(function StarRating({ artistId, eventId, readonly = false, s
   const { getRating, setRating, getPerformanceRating, setPerformanceRating } = useUserDataActions()
   const current = eventId ? getPerformanceRating(eventId, artistId) : getRating(artistId)
 
-  if (readonly) return <RatingMeter value={current} size={size} />
+  if (readonly) return <RatingSquares value={current} size={size} />
 
   const handleChange = (rating: number) => {
     if (eventId) setPerformanceRating(eventId, artistId, rating)

@@ -64,6 +64,8 @@
 .controls {
   display: flex;
   align-items: center;
+  /* Bottom of the card, so the fader lines up with the others in the row. */
+  margin-top: auto;
 }
 
 .seenNote {

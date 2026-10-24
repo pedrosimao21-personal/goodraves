@@ -10,9 +10,9 @@ function barHeight(index: number): number {
 }
 
 /**
- * The ten ascending meter bars shared by the fader and the read-only meter:
- * one bar per half point, lit up to `value`. Lit bars take their colour from
- * their position (green low, red high), so the value reads without the colour.
+ * The ten ascending bars of the rating fader: one per half point, lit up to
+ * `value`. Lit bars take their colour from their position (green low, red
+ * high), so the value reads without the colour.
  */
 export default function RatingBars({ value, className }: { value: number; className: string }) {
   const litCount = snapRating(value) / RATING_STEP

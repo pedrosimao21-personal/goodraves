@@ -111,6 +111,7 @@ export default function RatingFader({ value, onChange, label }: RatingFaderProps
       onKeyDown={handleKeyDown}
     >
       <RatingBars value={shown} className={styles.faderBars} />
+      {shown > 0 && <span className={styles.faderValue} aria-hidden="true">{formatRating(shown)}</span>}
       <span className={styles.rail} aria-hidden="true" />
       {Array.from({ length: NOTCH_COUNT }, (_, index) => (
         <span key={index} className={styles.notch} style={{ left: position(index + 1) }} aria-hidden="true" />

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import FollowButton from '@/components/FollowButton'
-import RatingMeter from '@/components/rating/RatingMeter'
+import RatingSquares from '@/components/rating/RatingSquares'
 import type { RankedArtist } from './use-top-djs-ranking'
 import styles from './TopDjsRanking.module.css'
 
@@ -31,7 +31,7 @@ function Rating({ value }: { value: number }) {
   if (value <= 0) return <span className={`mono ${styles.muted}`}>Not rated</span>
   return (
     <span className={styles.rating}>
-      <RatingMeter value={value} size="sm" />
+      <RatingSquares value={value} size="sm" />
       <span className="mono">{value.toFixed(1)}</span>
     </span>
   )

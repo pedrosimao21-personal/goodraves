@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '@/context/UserDataContext'
-import RatingMeter from '@/components/rating/RatingMeter'
+import RatingSquares from '@/components/rating/RatingSquares'
 import RemoveFestivalSheet from '@/components/RemoveFestivalSheet'
 import { CloseIcon, EditIcon } from '@/components/icons'
 import { parseLocalDate } from '@/lib/dates'
@@ -73,7 +73,7 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         </span>
       )}
       {!isUpcomingTab && (
-        <span className={styles.vibe}>{vibe > 0 && <RatingMeter value={vibe} size="sm" />}</span>
+        <span className={styles.vibe}>{vibe > 0 && <RatingSquares value={vibe} size="sm" />}</span>
       )}
 
       <div className={styles.actions}>

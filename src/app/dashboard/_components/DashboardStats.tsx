@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import RatingMeter from '@/components/rating/RatingMeter'
+import RatingSquares from '@/components/rating/RatingSquares'
 import { ArrowRightIcon } from '@/components/icons'
 import styles from './Dashboard.module.css'
 
@@ -65,7 +65,7 @@ export default function DashboardStats(props: DashboardStatsProps) {
       <StatButton
         value={averageVibe > 0 ? averageVibe.toFixed(1) : '–'}
         label={`Average vibe · ${ratedCount} rated`}
-        extra={averageVibe > 0 ? <RatingMeter value={averageVibe} /> : null}
+        extra={averageVibe > 0 ? <RatingSquares value={averageVibe} /> : null}
         onClick={props.onShowVibes}
       />
       <StatButton value={String(artistsSeen)} label="Artists seen" onClick={props.onShowArtists} />

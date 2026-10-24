@@ -1,0 +1,22 @@
+/* The brand mark in the page's theme colours (public/icon.svg is the fixed-colour master). */
+
+.mark {
+  display: block;
+  flex-shrink: 0;
+}
+
+.tile {
+  fill: var(--gr-acc);
+}
+
+.faders {
+  fill: var(--gr-on-acc);
+}
+
+:global(:root[data-theme='light']) .tile {
+  fill: var(--gr-tx);
+}
+
+:global(:root[data-theme='light']) .faders {
+  fill: var(--gr-acc);
+}

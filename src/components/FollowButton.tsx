@@ -79,7 +79,7 @@ export default function FollowButton({
       title={hasError ? 'Could not update, try again' : undefined}
     >
       <HeartIcon size={PILL_ICON_SIZE} filled={following} />
-      <span className={styles.label}>{following ? 'Following' : 'Follow'}</span>
+      <span className={styles.label}>Follow</span>
     </button>
   )
 }

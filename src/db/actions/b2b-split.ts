@@ -9,7 +9,8 @@ import {
   festivalB2bSetMembers,
   userFestivalArtistRatings,
 } from "@/db/schema";
-import { requireAuth, requireAdmin, validateRating } from "./festival-helpers";
+import { requireAuth, requireAdmin } from "./festival-helpers";
+import { validateArtistRating } from "@/lib/rating";
 import { revalidatePath } from "next/cache";
 
 const MIN_MEMBER_COUNT = 2;
@@ -239,7 +240,7 @@ export async function rateB2bSet(b2bSetId: string, rating: number) {
     return;
   }
 
-  const validRating = validateRating(rating);
+  const validRating = validateArtistRating(rating);
   const ratingInserts = memberArtistIds.map((artistId) => ({
     userId,
     festivalId: b2bSet.festivalId,

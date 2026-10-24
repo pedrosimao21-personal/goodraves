@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Sheet from '@/components/Sheet'
-import RatingSquares from '@/components/rating/RatingSquares'
+import RatingMeter from '@/components/rating/RatingMeter'
 import { formatDate } from '@/lib/format-date'
 import type { RatedFestival } from './use-my-festivals'
 import styles from './AvgVibeModal.module.css'
@@ -21,7 +21,7 @@ export default function AvgVibeModal({ festivals, onClose }: { festivals: RatedF
                 <span className={styles.sheetRowName}>{fest.name}</span>
                 {fest.date && <span className={`mono ${styles.muted}`}>{formatDate(fest.date)}</span>}
               </span>
-              <RatingSquares value={fest.rating} size="sm" />
+              <RatingMeter value={fest.rating} size="sm" />
             </Link>
           ))}
         </div>

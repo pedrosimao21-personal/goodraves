@@ -34,7 +34,7 @@ To see a board rendered, open the canvas link above.
 | Ground | `#0B0B0C` | Page background |
 | Surface | `#141416` | Cards, panels, inputs |
 | Raised | `#1C1C1F` | Avatars, timetable blocks |
-| Empty | `#2C2C31` | Empty rating squares (display), skeletons |
+| Empty | `#2C2C31` | Unlit rating bars, skeletons |
 | Text | `#F2F0EA` | Body text, active tab underline |
 | Text 2 | `#BAB8B0` | Secondary text |
 | Text 3 | `#94928A` | Meta, labels |
@@ -44,7 +44,7 @@ To see a board rendered, open the canvas link above.
 | Lilac | `#B2A6FF` | Going |
 | Signal | `#FF9A52` | Clash, warnings |
 | Error | `#FF7A7A` | Admin only (cron errors, destructive admin actions) |
-| Off | `#77756E` | Outline of empty rating squares (input) |
+| Off | `#77756E` | Notches on the rating fader's rail |
 
 ### Light
 
@@ -85,11 +85,17 @@ Primary button in light mode: black background, lime text.
 
 - **Going toggle:** outline "+ Going" when off, lilac outline with a check when on.
   Always `aria-pressed`.
-- **Follow:** one control everywhere. Outline heart "Follow" / filled lime heart
-  "Following"; icon-only in dense lists.
-- **Rating:** five squares. Display = filled grey empties with a partial square for
-  decimals (4.6 shows four full and 60% of the fifth). Input = outlined empties, and
-  tapping a square on a past festival also marks the set as seen.
+- **Follow:** one control everywhere. The label is always "Follow" (so the button keeps
+  its width); outline heart = not following, filled lime button with a filled heart =
+  following; icon-only in dense lists.
+- **Rating:** a volume meter of ten ascending bars, one per half point (0.5 to 5; the
+  festival "vibe" rating stays whole numbers). Lit bars take their colour from their
+  position, green through yellow and orange to red; unlit bars are grey. Input = the
+  fader: the meter with a cap on a rail below. Tap to set the nearest half point (tapping
+  the current value clears it) or drag sideways; vertical swipes still scroll, so it is
+  safe in lineup grids. A hollow cap parked at the left means unrated. Tapping on a past
+  festival also marks the set as seen. Display = the same meter without the fader; an
+  average such as 4.6 lights the nearest half point.
 - **Tabs and segmented controls:** active tab is a white underline (black in light);
   segmented "on" is a white fill. Tabs use `role="tab"` + `aria-selected`; filters and
   sorts are toggle groups with `aria-pressed`.

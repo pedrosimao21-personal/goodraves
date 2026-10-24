@@ -30,14 +30,8 @@
 }
 
 .logoMark {
-  display: block;
-  width: 14px;
-  height: 14px;
-  background: var(--gr-acc);
-}
-
-:global(:root[data-theme='light']) .logoMark {
-  background: var(--gr-tx);
+  width: 26px;
+  height: 26px;
 }
 
 .logoWord {
@@ -120,8 +114,8 @@
   }
 
   .logoMark {
-    width: 12px;
-    height: 12px;
+    width: 24px;
+    height: 24px;
   }
 
   .logoWord {

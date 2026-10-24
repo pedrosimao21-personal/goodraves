@@ -5,8 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useUserDataActions } from '../context/UserDataContext'
 import StarRating from './StarRating'
-import RatingSquares from './rating/RatingSquares'
+import RatingMeter from './rating/RatingMeter'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
+import { mergeLineupArtists, removeArtistFromLineup } from '@/db/actions/lineup-admin'
 import FollowButton from './FollowButton'
 import { BookmarkIcon, DotsIcon } from './icons'
 import styles from './ArtistCard.module.css'
@@ -14,8 +15,10 @@ import styles from './ArtistCard.module.css'
 const ArtistRenameModal = lazy(() => import('./ArtistRenameModal'))
 const B2bSplitModal = lazy(() => import('./B2bSplitModal'))
 const B2bCreateModal = lazy(() => import('./B2bCreateModal'))
+const LineupRemoveSheet = lazy(() => import('./LineupRemoveSheet'))
+const LineupMergeSheet = lazy(() => import('./LineupMergeSheet'))
 
-type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b'
+type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b' | 'merge' | 'remove'
 
 const AVATAR_SIZE = 240
 const MONOGRAM_LETTERS = 2
@@ -48,7 +51,7 @@ const ArtistCard = memo(function ArtistCard({
   const wantsToSee = didWantToSee(eventId, artist.id)
   const [menuState, setMenuState] = useState<MenuState>('closed')
   const [nameOverride, setNameOverride] = useState<string | null>(null)
-  // A set can be stored as seen with no rating; empty squares alone would read as untouched.
+  // A set can be stored as seen with no rating; an empty fader alone would read as untouched.
   const isSeenUnrated = performanceRating === 0 && didSeeArtist(eventId, artist.id)
 
   const displayName = nameOverride ?? artist.name
@@ -75,6 +78,18 @@ const ArtistCard = memo(function ArtistCard({
   }
 
   const closeMenu = () => setMenuState('closed')
+
+  // A removed or merged entry changes the lineup, timetable and B2B sets at once,
+  // so reload the page (admin-only, rare) instead of patching each piece of state.
+  const handleRemove = async () => {
+    await removeArtistFromLineup(eventId, artist.id)
+    window.location.reload()
+  }
+
+  const handleMerge = async (keepId: string) => {
+    await mergeLineupArtists(eventId, artist.id, keepId)
+    window.location.reload()
+  }
 
   return (
     <>
@@ -115,7 +130,7 @@ const ArtistCard = memo(function ArtistCard({
             <h3 className={styles.name}>{displayName}</h3>
             {averageRating > 0 && (
               <span className={`mono ${styles.average}`} title={`Your average rating: ${averageRating.toFixed(1)}`}>
-                <RatingSquares value={averageRating} size="sm" />
+                <RatingMeter value={averageRating} size="sm" />
                 {averageRating.toFixed(1)}
               </span>
             )}
@@ -136,7 +151,7 @@ const ArtistCard = memo(function ArtistCard({
         </div>
 
         {/* One tap rates the set and marks it as seen; tapping the current
-            square again clears both (setPerformanceRating). */}
+            rating again clears both (setPerformanceRating). */}
         {canRate && (
           <div className={styles.controls}>
             <StarRating artistId={artist.id} eventId={eventId} artistName={displayName} />
@@ -150,6 +165,8 @@ const ArtistCard = memo(function ArtistCard({
           onEditName={() => setMenuState('rename')}
           onSplitB2b={() => setMenuState('split')}
           onCreateB2b={() => setMenuState('createB2b')}
+          onMergeDuplicate={() => setMenuState('merge')}
+          onRemove={() => setMenuState('remove')}
           onClose={closeMenu}
         />
       )}
@@ -163,6 +180,23 @@ const ArtistCard = memo(function ArtistCard({
       {menuState === 'split' && (
         <Suspense fallback={null}>
           <B2bSplitModal artistName={displayName} onSave={handleSplit} onClose={closeMenu} />
+        </Suspense>
+      )}
+
+      {menuState === 'remove' && (
+        <Suspense fallback={null}>
+          <LineupRemoveSheet artistName={displayName} onConfirm={handleRemove} onClose={closeMenu} />
+        </Suspense>
+      )}
+
+      {menuState === 'merge' && (
+        <Suspense fallback={null}>
+          <LineupMergeSheet
+            artist={{ id: artist.id, name: displayName }}
+            candidates={availableArtistsForB2b}
+            onConfirm={handleMerge}
+            onClose={closeMenu}
+          />
         </Suspense>
       )}
 

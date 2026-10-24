@@ -1,13 +1,20 @@
-/* One follow control everywhere: outline heart "Follow" / filled lime heart
-   "Following"; icon-only in dense lists. */
+/* One follow control everywhere. The label is always "Follow" so the button
+   keeps its width (rows next to it stay aligned); being followed shows as a
+   filled lime button with a filled heart, like the primary button. Icon-only
+   in dense lists. */
 
-.following {
-  border-color: var(--gr-acc-ink);
-  color: var(--gr-acc-ink);
+.following,
+.following:hover {
+  background: var(--gr-acc);
+  border-color: var(--gr-acc);
+  color: var(--gr-on-acc);
 }
 
-.following:hover {
-  border-color: var(--gr-acc-ink);
+:root[data-theme='light'] .following,
+:root[data-theme='light'] .following:hover {
+  background: var(--gr-tx);
+  border-color: var(--gr-tx);
+  color: var(--gr-acc);
 }
 
 .icon {

@@ -160,6 +160,11 @@
   gap: 2px;
 }
 
+.rowRating {
+  flex: 0 0 160px;
+  display: flex;
+}
+
 .rowName {
   flex: 1;
   min-width: 0;

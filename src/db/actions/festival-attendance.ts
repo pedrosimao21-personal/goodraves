@@ -10,6 +10,7 @@ import {
   userArtistWantToSee,
 } from "@/db/schema";
 import { requireAuth, validateRating, MAX_NOTES_LENGTH } from "./festival-helpers";
+import { validateArtistRating } from "@/lib/rating";
 import { toIsoDate } from "@/lib/dates";
 
 // ── Add / remove attendance ────────────────────────────
@@ -190,7 +191,7 @@ export async function rateArtist(
     return;
   }
 
-  const validRating = validateRating(rating);
+  const validRating = validateArtistRating(rating);
   await db
     .insert(userFestivalArtistRatings)
     .values({ userId, festivalId, artistId, rating: validRating })
@@ -252,7 +253,7 @@ export async function setGlobalArtistRating(
   rating: number
 ) {
   const userId = await requireAuth();
-  const validRating = validateRating(rating);
+  const validRating = validateArtistRating(rating);
   await db
     .insert(userArtistGlobal)
     .values({ userId, artistId, rating: validRating })

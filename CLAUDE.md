@@ -27,6 +27,8 @@ npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Force the Partyflock f
 npx tsx --env-file=.env.local scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one (all dates)
 npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sync timetables of festivals in the next 2 weeks (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
+npx tsx --env-file=.env.local scripts/dedupe-lineup-artists.ts [--dry-run] # One-off: merge lineup entries that differ only by accents/punctuation ("Adrián"/"Adrian Mills")
+node scripts/generate-brand-icons.mjs  # Regenerate public/icon.svg, favicon.ico and the app/touch icons from the master mark in the script
 npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--start-after <id>] [--limit <n>] # Re-verify stored Spotify artist matches
@@ -142,7 +144,7 @@ pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock ti
 `artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
-`user_festival_artist_ratings`, `user_artist_global`, `user_artist_follows` (followed artists →
+`user_festival_artist_ratings` and `user_artist_global` (ratings in half points, 0.5-5, `real`), `user_artist_follows` (followed artists →
 `/following`, which reads their upcoming festivals from `festival_artists` only; follows are
 visible to friends, never public), `festival_b2b_sets`/`_members`
 (splitting back-to-back DJ sets into individuals), `festival_timetable_slots` (per-stage
@@ -152,6 +154,9 @@ enough to auto-merge; resolved on `/admin/duplicates`; dismissed pairs stay so t
 re-suggested), `festival_merges` (audit trail for the hard-merge dedup in `festival-merge.ts` — old
 `/festival/<id>` URLs for a merged-away row redirect via `getMergeRedirectTarget`, and every
 importer checks `resolveMergedFestivalId` first so a merged-away id is never re-created),
+`festival_lineup_exclusions` (admin "remove from lineup" / "merge duplicate" edits, keyed by the folded artist
+name so they survive re-imports; every lineup write goes through `canonicalizeLineupIds` in
+`lineup-canonical.ts`, which applies them and collapses same-name spellings within one festival),
 `cron_runs` (one row per cron run, written by `recordCronRun` in `cron-runs-core.ts`, which wraps
 both cron routes; read by the `/admin` dashboard; pruned after 90 days).
 

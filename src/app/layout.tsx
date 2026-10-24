@@ -5,6 +5,7 @@ import './globals.css'
 import Navbar from '@/components/navbar/Navbar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import SiteFooter from '@/components/SiteFooter'
+import StructuredData from '@/components/StructuredData'
 import Providers from '@/components/Providers'
 import { UserDataProvider } from '@/context/UserDataContext'
 import { FollowsProvider } from '@/context/FollowsContext'
@@ -52,10 +53,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Goodraves',
   description: 'Goodraves – discover raves & festivals, track what you attended, rate the DJs you saw.',
-  // The lime brand square on the dark ground; the PNGs are rendered from
-  // icon.svg (iOS ignores SVG touch icons).
+  // The faders mark on lime. favicon.ico carries 16/32/48 px (Google wants a
+  // multiple of 48 for search results), icon.svg is for browsers that take SVG,
+  // and the PNGs are all rendered by scripts/generate-brand-icons.mjs
+  // (iOS ignores SVG touch icons).
   icons: {
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48' },
+      { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
+    ],
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
@@ -96,6 +102,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
+        <StructuredData />
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider>
           <Providers session={session}>

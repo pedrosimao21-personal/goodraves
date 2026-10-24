@@ -271,7 +271,7 @@ export const userFestivalArtistRatings = pgTable(
     artistId: uuid("artist_id")
       .notNull()
       .references(() => artists.id, { onDelete: "cascade" }),
-    rating: integer("rating"),
+    rating: real("rating"), // half points, 0.5..5
     notes: text("notes"),
   },
   (t) => [
@@ -432,6 +432,23 @@ export const festivalTimetableSlots = pgTable(
   ]
 );
 
+// ── Lineup exclusions (admin removals / merges that survive re-imports) ─
+// name_key is the accent- and punctuation-folded artist name (see
+// src/lib/lineup-name.ts); replaced_by_name is the artist to use instead, or
+// null when the artist was simply removed from the lineup.
+export const festivalLineupExclusions = pgTable(
+  "festival_lineup_exclusions",
+  {
+    festivalId: text("festival_id")
+      .notNull()
+      .references(() => festivals.id, { onDelete: "cascade" }),
+    nameKey: text("name_key").notNull(),
+    replacedByName: text("replaced_by_name"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.festivalId, t.nameKey] })]
+);
+
 // ── User Artist Global (overall artist ratings & notes) ─
 export const userArtistGlobal = pgTable(
   "user_artist_global",
@@ -442,7 +459,7 @@ export const userArtistGlobal = pgTable(
     artistId: uuid("artist_id")
       .notNull()
       .references(() => artists.id, { onDelete: "cascade" }),
-    rating: integer("rating"),
+    rating: real("rating"), // half points, 0.5..5
     notes: text("notes"),
   },
   (t) => [primaryKey({ columns: [t.userId, t.artistId] })]

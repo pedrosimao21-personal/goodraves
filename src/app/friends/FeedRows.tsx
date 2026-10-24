@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getFriendArtistRatingsForFestival, type FriendArtistRating } from '@/db/actions/friends'
 import type { FeedItem, FestivalFeedItem, FollowFeedItem } from '@/db/actions/friends-feed'
-import RatingSquares from '@/components/rating/RatingSquares'
+import RatingMeter from '@/components/rating/RatingMeter'
 import { ChevronDownIcon } from '@/components/icons'
 import { formatDate, formatRelativeTime } from '@/lib/format-date'
 import { getFestivalPhase } from '@/lib/festival-date'
@@ -85,7 +85,7 @@ function FestivalFeedRow({ item }: { item: FestivalFeedItem }) {
           <div className={styles.festivalInfo}>
             <span className="mono">{formatDate(item.festivalDate)}</span>
             {item.publicComment && <p className={styles.quote}>&ldquo;{item.publicComment}&rdquo;</p>}
-            {item.rating ? <RatingSquares value={item.rating} size="sm" /> : null}
+            {item.rating ? <RatingMeter value={item.rating} size="sm" /> : null}
           </div>
         </div>
         {item.seenCount > 0 && <DjsSeen friendUserId={item.userId} festivalId={item.festivalId} seenCount={item.seenCount} />}

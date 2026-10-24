@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { ArtistData } from '@/db/actions/artists'
 import type { ArtistFollowContext } from '@/db/actions/artist-follow-context'
 import FollowButton from '@/components/FollowButton'
-import RatingSquares from '@/components/rating/RatingSquares'
+import RatingMeter from '@/components/rating/RatingMeter'
 import { ArrowLeftIcon, ExternalIcon } from '@/components/icons'
 import { formatNameList } from '@/lib/following-display'
 import { formatFollowers } from './format-counts'
@@ -101,7 +101,7 @@ export default function ArtistHeader({ displayName, artist, averageRating, seenC
             <div key={stat.label} className={styles.stat}>
               <div className={styles.statValue}>
                 <span className="display">{stat.value}</span>
-                {stat.rating !== undefined && <RatingSquares value={stat.rating} />}
+                {stat.rating !== undefined && <RatingMeter value={stat.rating} />}
               </div>
               <p className={`mono ${styles.statLabel}`}>{stat.label}</p>
             </div>

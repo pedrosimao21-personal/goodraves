@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { artists, festivalArtists, festivalTimetableSlots } from "@/db/schema";
 import { ensureArtistsAndGetIds, insertTimetableSlots } from "./festival-helpers";
+import { canonicalizeLineupIds } from "./lineup-canonical";
 import type { TimetableSlot } from "@/services/lineup-types";
 
 /**
@@ -60,7 +61,9 @@ export async function syncTimetableDay(
   const artistNames = [...new Set(slots.map((slot) => slot.artistName))];
   // A dry run must not create artist rows either, so it can only compare
   // slots of artists that already exist (new names count as "added").
-  const nameToId = opts.dryRun ? await lookupExistingArtistIds(artistNames) : await ensureArtistsAndGetIds(artistNames);
+  const nameToId = opts.dryRun
+    ? await lookupExistingArtistIds(artistNames)
+    : await canonicalizeLineupIds(festivalId, artistNames, await ensureArtistsAndGetIds(artistNames));
   const newNameCount = artistNames.filter((name) => !nameToId[name]).length;
 
   const freshKeys = new Set(

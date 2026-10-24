@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useUserDataActions } from '@/context/UserDataContext'
 import type { B2bSetData } from '@/context/user-data-state'
-import RatingInput from './rating/RatingInput'
+import RatingFader from './rating/RatingFader'
 import Sheet, { SheetActions } from './Sheet'
 import { DotsIcon } from './icons'
 import styles from './B2bSetCard.module.css'
@@ -90,7 +90,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canR
         {/* One tap rates every member and marks them as seen (rateB2bSet). */}
         {canRate && (
           <div className={styles.controls}>
-            <RatingInput
+            <RatingFader
               value={currentRating}
               onChange={(rating) => rateB2bSet(b2bSet.id, rating)}
               label={`Rate ${ariaDisplayName}`}

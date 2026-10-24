@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useUserData } from '@/context/UserDataContext'
 import { RefreshIcon } from '@/components/icons'
+import BrandMark from '@/components/BrandMark'
 import AccountMenu from './AccountMenu'
 import { NAV_ITEMS, isNavItemActive } from './nav-items'
 import styles from './Navbar.module.css'
@@ -22,7 +23,7 @@ export default function Navbar() {
       <header className={styles.bar}>
         <div className={styles.inner}>
           <Link href="/" className={styles.logo}>
-            <span className={styles.logoMark} aria-hidden="true" />
+            <BrandMark className={styles.logoMark} />
             <span className={styles.logoWord}>Goodraves</span>
           </Link>
 

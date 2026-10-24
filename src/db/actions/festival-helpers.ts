@@ -8,6 +8,7 @@ import { MIN_RATING, MAX_RATING } from "@/lib/constants";
 import { isRateLimited } from "@/db/rate-limit";
 import { type B2bLineupEntry, type LineupEntry, type TimetableSlot, flattenLineupNames, filterB2bEntries } from "@/services/lineup-types";
 import { normalizeArtistName } from "@/utils/text-normalizer";
+import { canonicalizeLineupIds } from "./lineup-canonical";
 import { extractPFPartyId, fetchPFEventHtml } from "@/services/partyflock/client";
 import { parsePFEventPage } from "@/services/partyflock/parser";
 
@@ -258,7 +259,7 @@ export async function persistLineup(
   const allNames = flattenLineupNames(lineupEntries);
   if (allNames.length === 0) return {};
 
-  const nameToId = await ensureArtistsAndGetIds(allNames);
+  const nameToId = await canonicalizeLineupIds(festivalId, allNames, await ensureArtistsAndGetIds(allNames));
 
   const rows = allNames
     .filter((name) => nameToId[name])
@@ -340,7 +341,7 @@ export async function importPFTimetable(
   const existingArtistIds = new Set(existingLineup.map((r) => r.artistId));
 
   const artistNames = [...new Set(parsed.timetable.map((slot) => slot.artistName))];
-  const nameToId = await ensureArtistsAndGetIds(artistNames);
+  const nameToId = await canonicalizeLineupIds(festivalId, artistNames, await ensureArtistsAndGetIds(artistNames));
 
   const lineupRows = artistNames
     .filter((name) => nameToId[name])

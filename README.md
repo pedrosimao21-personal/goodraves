@@ -49,6 +49,8 @@ npx tsx --env-file=.env scripts/refresh-pf-festivals.ts # Refresh imported Party
 npx tsx --env-file=.env.local scripts/link-pf-timetables.ts [--dry-run] # Backfill Partyflock timetables for festivals missing one (all dates)
 npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sync timetables of festivals in the next 2 weeks (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
+npx tsx --env-file=.env.local scripts/dedupe-lineup-artists.ts [--dry-run] # One-off: merge lineup entries that differ only by accents/punctuation ("Adrián"/"Adrian Mills")
+node scripts/generate-brand-icons.mjs  # Regenerate public/icon.svg, favicon.ico and the app/touch icons from the master mark in the script
 npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 ```
@@ -96,11 +98,12 @@ npm run db:migrate:down  # Roll back the most recent migration
 | `festival_b2b_sets` / `festival_b2b_set_members` | Back-to-back sets split into their individual member artists |
 | `festival_timetable_slots` | Per-stage timetable slots (stage, start/end time, ordering). `slot_date` distinguishes days once a multi-day festival's per-day rows are merged into one — see `festival_merges` |
 | `festival_merges` | Audit trail for the hard-merge duplicate-festival dedup (`src/db/actions/festival-merge.ts`, `scripts/dedupe-festivals.ts`): records which festival id was merged into which winner, plus a JSON snapshot of the loser's full state. Old `/festival/<id>` links for a merged-away row redirect to the winner instead of 404ing, and importers resolve a merged-away id to its winner instead of re-creating it |
+| `festival_lineup_exclusions` | Admin edits to one festival's lineup that must survive re-imports: an artist removed (`replaced_by_name` null) or merged into another. Keyed by the accent- and punctuation-folded name (`src/lib/lineup-name.ts`); applied to every lineup write by `canonicalizeLineupIds` (`src/db/actions/lineup-canonical.ts`), which also keeps spellings like "Adrián"/"Adrian Mills" from both landing in one lineup |
 | `festival_duplicate_candidates` | Review queue for the daily dedupe: festival pairs that might be the same event but weren't certain enough to auto-merge. Resolved by an admin on `/admin/duplicates` — merged (row cascades away with the loser) or dismissed (kept, so the pair is never suggested again) |
 | `cron_runs` | One row per Vercel Cron run (`job`, `status`, start/finish times, the route's JSON `summary`, thrown `error`), written by `recordCronRun` in `src/db/actions/cron-runs-core.ts` and shown on `/admin`. Inserted as `running` before the job starts, so a run killed at `maxDuration` stays visible with no `finished_at`. Rows older than 90 days are pruned by each run |
 | `user_festivals` | A user's attendance/interest, with optional `rating` and `notes` |
-| `user_festival_artist_ratings` | Per-festival, per-artist performance ratings |
-| `user_artist_global` | A user's overall rating/notes for an artist |
+| `user_festival_artist_ratings` | Per-festival, per-artist performance ratings, in half points (0.5-5, `real`; `src/lib/rating.ts`) |
+| `user_artist_global` | A user's overall rating (half points, like the above) and notes for an artist |
 | `user_artist_follows` | Artists a user follows. Drives `/following` (upcoming festivals of followed artists, read from `festival_artists` whatever the festival's source), follow suggestions, and the friends feed's "started following" items. Visible to accepted friends, never public |
 | `rate_limit_counters` | Fixed-window rate-limit counters (login attempts, search/import actions), one row per identifier + action + window; rows older than 24h are pruned by the daily-maintenance cron |
 

@@ -31,7 +31,7 @@ export default function LineupArtistGrid({ id, event, spotifyData, canPick, canR
 
   return (
     <>
-      {canRate && <p className={styles.hint}>Tap a square to rate a set. Rating it marks it as seen.</p>}
+      {canRate && <p className={styles.hint}>Tap or drag the fader to rate a set, in half points. Rating it marks it as seen.</p>}
       <div className={styles.grid}>
         {b2bSets.map(b2bSet => (
           <B2bSetCard key={b2bSet.id} b2bSet={b2bSet} eventId={id} spotifyData={spotifyData} canRate={canRate} />

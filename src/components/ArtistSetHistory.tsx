@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ArtistSetEntry } from '@/context/user-data-state'
-import RatingSquares from './rating/RatingSquares'
+import RatingMeter from './rating/RatingMeter'
 import { formatDate } from '@/lib/format-date'
 import styles from './ArtistSetHistory.module.css'
 
@@ -19,7 +19,7 @@ export default function ArtistSetHistory({ sets, onNavigate }: Props) {
           <span className={`mono ${styles.date}`}>{formatDate(set.date)}</span>
           <span className={styles.name}>{set.name}</span>
           <span className={styles.rating}>
-            {set.rating > 0 ? <RatingSquares value={set.rating} size="sm" /> : <span className={`mono ${styles.unrated}`}>Not rated</span>}
+            {set.rating > 0 ? <RatingMeter value={set.rating} size="sm" /> : <span className={`mono ${styles.unrated}`}>Not rated</span>}
           </span>
         </Link>
       ))}

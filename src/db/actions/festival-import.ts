@@ -12,6 +12,7 @@ import {
   MAX_FESTIVAL_NAME_LENGTH,
 } from "./festival-helpers";
 import { RATE_LIMIT_IMPORT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
+import { canonicalizeLineupIds } from "./lineup-canonical";
 
 // ── Upsert a custom festival ──────────────────────────
 export async function upsertFestival(data: {
@@ -99,7 +100,7 @@ export async function upsertFestival(data: {
       .where(eq(festivalArtists.festivalId, data.id));
 
     if (data.lineup.length > 0) {
-      const nameToId = await ensureArtistsAndGetIds(data.lineup);
+      const nameToId = await canonicalizeLineupIds(data.id, data.lineup, await ensureArtistsAndGetIds(data.lineup));
 
       await db
         .insert(festivalArtists)

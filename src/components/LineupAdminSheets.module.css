@@ -1,0 +1,16 @@
+/* Shared bits of the admin "remove from lineup" and "merge duplicate" sheets. */
+
+.text {
+  margin-bottom: 16px;
+  color: var(--gr-tx2);
+}
+
+.text strong {
+  color: var(--gr-tx);
+  font-weight: 600;
+}
+
+.likely {
+  margin-left: auto;
+  color: var(--gr-acc-ink);
+}

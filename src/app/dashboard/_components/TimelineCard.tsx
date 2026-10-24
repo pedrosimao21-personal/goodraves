@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import RatingSquares from '@/components/rating/RatingSquares'
+import RatingMeter from '@/components/rating/RatingMeter'
 import { formatDate } from '@/lib/format-date'
 import styles from './Timeline.module.css'
 
@@ -36,7 +36,7 @@ interface TimelineCardProps {
 const ArtistChip = React.memo(({ artist }: { artist: TimelineArtist }) => (
   <Link href={`/artist/${artist.id}/${encodeURIComponent(artist.name)}`} className={styles.artist}>
     <span className={styles.artistName}>{artist.name}</span>
-    {artist.rating > 0 && <RatingSquares value={artist.rating} size="sm" />}
+    {artist.rating > 0 && <RatingMeter value={artist.rating} size="sm" />}
   </Link>
 ))
 

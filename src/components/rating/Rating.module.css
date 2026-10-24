@@ -1,77 +1,135 @@
-/* Five-square rating (docs/redesign/README.md › Component rules › Rating).
-   Display: filled grey empties, partial square for decimals.
-   Input: outlined empties, each square a 44px-tall button. */
+/* Rating meter and fader (docs/redesign/README.md › Component rules › Rating).
+   Ten ascending bars, one per half point; lit bars take their colour from
+   their position (--bar, set per bar): green low, red high. */
 
-.squares {
-  display: inline-flex;
-  gap: 3px;
-  vertical-align: middle;
+.fader,
+.meter {
+  --bar-off: var(--gr-s3);
 }
 
-.square {
-  display: block;
-  width: 10px;
-  height: 10px;
-  background: var(--gr-s3);
-}
+/* ── Fader (input) ── */
 
-.small .square {
-  width: 8px;
-  height: 8px;
-}
-
-.large .square {
-  width: 14px;
-  height: 14px;
-}
-
-.input {
-  display: inline-flex;
-}
-
-.inputButton {
-  width: 28px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: none;
-  border: 0;
-}
-
-.inputSquare {
-  display: block;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--gr-off);
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.large .inputButton {
-  width: auto;
+.fader {
+  position: relative;
   flex: 1;
-  height: 48px;
-  padding: 0 2px;
+  min-width: 120px;
+  max-width: 260px;
+  height: 52px;
+  cursor: pointer;
+  user-select: none;
+  /* Sideways drags rate; vertical swipes still scroll the page. */
+  touch-action: pan-y;
 }
 
-.large .inputSquare {
-  width: 100%;
-  height: 44px;
+.fader:focus-visible {
+  outline: 2px solid var(--gr-acc-ink);
+  outline-offset: 2px;
 }
 
-.large.input {
+.faderBars {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 0;
+  height: 34px;
   display: flex;
-  width: 100%;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40px;
+  height: 4px;
+  background: var(--gr-s2);
+  border-top: 1px solid var(--gr-line2);
+}
+
+.notch {
+  position: absolute;
+  top: 47px;
+  width: 1px;
+  height: 5px;
+  margin-left: -0.5px;
+  background: var(--gr-off);
+}
+
+.cap {
+  position: absolute;
+  top: 31px;
+  width: 14px;
+  height: 22px;
+  margin-left: -7px;
+  background: var(--gr-tx);
+  border-top: 2px solid var(--gr-tx);
+  border-bottom: 2px solid var(--gr-tx2);
+  transition: left var(--transition-fast);
+}
+
+/* The grip line down the middle of the cap. */
+.cap::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--gr-bg);
+}
+
+/* Parked at the left end, hollow: not rated yet. */
+.capOff {
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-off);
+}
+
+.capOff::after {
+  background: var(--gr-off);
+}
+
+.dragging .cap {
+  transition: none;
+}
+
+/* ── Shared bars ── */
+
+.faderBars i,
+.meterBars i {
+  flex: 1;
+  background: var(--bar-off);
+}
+
+.faderBars i.lit,
+.meterBars i.lit {
+  background: var(--bar);
+}
+
+/* ── Meter (read-only) ── */
+
+.meter {
+  display: inline-flex;
+  vertical-align: middle;
+  width: 60px;
+  height: 16px;
+}
+
+.meterBars {
+  display: flex;
+  align-items: flex-end;
   gap: 2px;
+  width: 100%;
+  height: 100%;
 }
 
-.on {
-  background: var(--gr-acc);
-  border-color: var(--gr-acc);
+.meterSmall {
+  width: 48px;
+  height: 12px;
 }
 
-.preview {
-  background: color-mix(in srgb, var(--gr-acc) 45%, transparent);
-  border-color: var(--gr-acc-ink);
+.meterLarge {
+  width: 90px;
+  height: 24px;
 }

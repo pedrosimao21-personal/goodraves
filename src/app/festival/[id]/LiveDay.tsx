@@ -2,7 +2,7 @@
 
 import { Fragment } from 'react'
 import { useUserData } from '@/context/UserDataContext'
-import RatingInput from '@/components/rating/RatingInput'
+import RatingFader from '@/components/rating/RatingFader'
 import { parseLocalDate } from '@/lib/dates'
 import { findClashingPicks, formatClock, setNames, type LiveSet } from './live-state'
 import styles from './LiveMode.module.css'
@@ -25,11 +25,13 @@ export function LiveRate({ festivalId, sets }: { festivalId: string; sets: LiveS
                 <span className={styles.rowName}>{name}</span>
                 <span className={`mono ${styles.rowMeta}`}>{set.stageName} · {set.group.startTime}–{set.group.endTime}</span>
               </span>
-              <RatingInput
-                value={rating}
-                label={`Rate ${name}`}
-                onChange={(next) => set.group.artists.forEach((artist) => setPerformanceRating(festivalId, artist.artistId, next))}
-              />
+              <span className={styles.rowRating}>
+                <RatingFader
+                  value={rating}
+                  label={`Rate ${name}`}
+                  onChange={(next) => set.group.artists.forEach((artist) => setPerformanceRating(festivalId, artist.artistId, next))}
+                />
+              </span>
             </div>
           )
         })}

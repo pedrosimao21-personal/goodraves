@@ -16,6 +16,13 @@ import { lastfmGetArtistInfo, lastfmGetArtistTopTracks } from "@/services/lastfm
 import { fetchRArtistEvents, fetchRArtistByName, type RAUpcomingEvent } from "@/services/ra/client";
 import { requireAuth, enforceRateLimit } from "./festival-helpers";
 import {
+  SPOTIFY_UPSERT_IMAGE,
+  canSpotifyReplacePhoto,
+  raPhotoFieldsFromLookup,
+  spotifyPhotoFields,
+} from "./artist-image-guard";
+import { resolveSpotifyArtist } from "./spotify-verify-core";
+import {
   MAX_ARTIST_NAME_LENGTH,
   MAX_ENRICHMENT_BATCH_SIZE,
   RATE_LIMIT_CACHE_MAX,
@@ -214,12 +221,20 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
 
   if (spotifyUpdate) {
     updateFields.spotifyId = spotifyUpdate.id ?? null;
-    updateFields.imageUrl = spotifyUpdate.image ?? null;
+    // An RA or admin-set photo is never replaced by Spotify's.
+    if (canSpotifyReplacePhoto(row)) Object.assign(updateFields, spotifyPhotoFields(spotifyUpdate.image));
     updateFields.spotifyFollowers = spotifyUpdate.followers ?? null;
     updateFields.spotifyAlbums = JSON.stringify(spotifyUpdate.albums ?? []);
     // Only overwrite top tracks with Spotify data if we actually got tracks back
     if (spotifyUpdate.topTracks?.length) {
       updateFields.lastfmTopTracks = JSON.stringify(spotifyUpdate.topTracks);
+    }
+    if (spotifyUpdate.id === null) {
+      // The stored link pointed at somebody else and nothing replaces it: drop
+      // what was derived from it, so the next view re-derives it (Last.fm tracks).
+      updateFields.relatedArtists = null;
+      updateFields.relatedArtistsFetchedAt = null;
+      if (!updateFields.lastfmTopTracks) updateFields.lastfmTopTracks = null;
     }
     updateFields.spotifyFetchedAt = now;
   }
@@ -250,6 +265,8 @@ export async function getArtistData(id: string): Promise<ArtistData | null> {
     }
     updateFields.raUpcomingEvents = JSON.stringify(raDataUpdate.events);
     updateFields.raEventsFetchedAt = now;
+    // RA's curated profile photo, when the profile found is this artist.
+    Object.assign(updateFields, raPhotoFieldsFromLookup(row, raDataUpdate, now));
   }
 
   if (Object.keys(updateFields).length > 0) {
@@ -381,7 +398,7 @@ async function refreshLastfm(name: string) {
       const similarRows = similarNames.map((similarName: string) => ({
         name: similarName,
         spotifyId: spotifyResults[similarName]?.id ?? null,
-        imageUrl: spotifyResults[similarName]?.image ?? null,
+        ...spotifyPhotoFields(spotifyResults[similarName]?.image),
         spotifyFollowers: spotifyResults[similarName]?.followers ?? null,
         spotifyFetchedAt: now,
       }));
@@ -396,7 +413,8 @@ async function refreshLastfm(name: string) {
           target: artists.id,
           set: {
             spotifyId: sql`excluded.spotify_id`,
-            imageUrl: sql`excluded.image_url`,
+            // An RA or admin-set photo stays; see artist-image-guard.ts.
+            ...SPOTIFY_UPSERT_IMAGE,
             spotifyFollowers: sql`excluded.spotify_followers`,
             spotifyFetchedAt: sql`excluded.spotify_fetched_at`,
           },
@@ -434,15 +452,25 @@ async function refreshLastfm(name: string) {
   }
 }
 
+/** Result of refreshSpotify when a wrong stored link is dropped. */
+const CLEARED_SPOTIFY = {
+  id: null as string | null,
+  image: null as string | null,
+  followers: 0,
+  albums: [] as any[],
+  topTracks: [] as any[],
+};
+
 async function refreshSpotify(name: string, existingSpotifyId: string | null) {
   try {
-    const spArtist = existingSpotifyId
-      ? await spotifyGetArtist(existingSpotifyId).catch(() => spotifySearchArtist(name))
-      : await spotifySearchArtist(name);
+    // The stored link is only kept while it still points at an artist with our
+    // name (Franck was linked to Frank Ocean); otherwise re-matched by exact name.
+    const { artist: spArtist, hadWrongLink } = await resolveSpotifyArtist(name, existingSpotifyId);
 
     if (!spArtist) {
       console.warn(`[artists] No Spotify artist found for "${name}" — followers will not be updated`);
-      return null;
+      // A stored link that pointed at somebody else, with nothing to replace it, is cleared.
+      return hadWrongLink ? CLEARED_SPOTIFY : null;
     }
 
     console.log(`[artists] Spotify found for "${name}": ${spArtist.followers} followers, id=${spArtist.id}`);

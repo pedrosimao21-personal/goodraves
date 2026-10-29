@@ -97,6 +97,21 @@ export const PF_AUTOLINK_DAYS_AHEAD = 30;
 /** Don't search Partyflock again for the same unmatched festival more often than this. */
 export const PF_AUTOLINK_RECHECK_DAYS = 3;
 
+/** Artist photos from Resident Advisor (see src/db/actions/artist-photo-core.ts). */
+/** An artist with no RA photo (or not on RA) isn't looked up again for this long. */
+export const RA_PHOTO_RECHECK_DAYS = 90;
+export const RA_PHOTO_REQUEST_DELAY_MS = 300; // gap between successive RA requests in a batch
+export const RA_PHOTO_ON_DEMAND_CONCURRENCY = 3; // lineup views look a few artists up at once
+export const RA_PHOTO_MAX_CONSECUTIVE_ERRORS = 5; // a batch stops after this many failed requests in a row
+/** Pacing for the Spotify match verification (sequential: concurrent /search calls get 429-blocked). */
+export const SPOTIFY_VERIFY_REQUEST_DELAY_MS = 500;
+/** The verification stops after this many failed lookups in a row (each already left untouched). */
+export const SPOTIFY_VERIFY_MAX_CONSECUTIVE_FAILURES = 5;
+/** Artists the daily maintenance cron looks up on RA per run. */
+export const RA_PHOTOS_PER_DAILY_RUN = 120;
+/** Stored Spotify matches the daily maintenance cron re-verifies per run (2 Spotify calls at most each). */
+export const SPOTIFY_VERIFY_PER_DAILY_RUN = 60;
+
 /** cron_runs rows older than this are pruned by each new cron run. */
 export const CRON_RUN_RETENTION_DAYS = 90;
 /** Runs per job listed in the /admin run history. */

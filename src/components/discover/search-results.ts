@@ -1,3 +1,4 @@
+import { isFestivalPast } from '@/lib/festival-date'
 import {
   fetchFFEventImageUrl,
   fetchRAEventImageUrl,
@@ -37,12 +38,26 @@ export function buildResultKey(result: SearchResult): string {
   return `${result.name?.toLowerCase()}::${result.date ?? ''}`
 }
 
-export function sortByDateDesc(list: SearchResult[]): SearchResult[] {
-  return [...list].sort((a, b) => {
-    if (!a.date) return 1
-    if (!b.date) return -1
-    return b.date.localeCompare(a.date)
-  })
+/** True once the result's last day is over; a result without a date counts as past. */
+export function isPastResult(result: SearchResult): boolean {
+  return isFestivalPast(result.date, result.endDate)
+}
+
+/**
+ * Discover order: what is on or coming up first, soonest at the top (October,
+ * then November, ...; a festival in progress sits above the ones still to
+ * start), then the past ones, most recent first. Undated results come last.
+ */
+export function sortUpcomingThenPast(list: SearchResult[]): SearchResult[] {
+  const byDateAsc = (a: SearchResult, b: SearchResult) => a.date.localeCompare(b.date)
+  const byDateDesc = (a: SearchResult, b: SearchResult) => b.date.localeCompare(a.date)
+  const upcoming = list.filter((r) => !isPastResult(r)).sort(byDateAsc)
+  const past = list.filter((r) => isPastResult(r))
+  return [
+    ...upcoming,
+    ...past.filter((r) => r.date).sort(byDateDesc),
+    ...past.filter((r) => !r.date),
+  ]
 }
 
 /** Source ids of DB rows imported from `source`, so a live hit for them is skipped. */

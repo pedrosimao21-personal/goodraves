@@ -6,9 +6,16 @@ import { autoLinkPFTimetables } from "@/db/actions/festival-timetable-autolink";
 import { timetableCacheTag } from "@/db/actions/festival-helpers";
 import { recordCronRun } from "@/db/actions/cron-runs-core";
 import { pruneRateLimitCounters } from "@/db/rate-limit";
+import { runArtistPhotoBackfill } from "@/db/actions/artist-photo-core";
+import { verifySpotifyLinks } from "@/db/actions/spotify-verify-core";
 import { isValidCronBearer } from "@/lib/cron-auth";
 import { toIsoDate, addDays } from "@/lib/dates";
-import { PF_AUTOLINK_DAYS_AHEAD, PF_AUTOLINK_RECHECK_DAYS } from "@/lib/constants";
+import {
+  PF_AUTOLINK_DAYS_AHEAD,
+  PF_AUTOLINK_RECHECK_DAYS,
+  RA_PHOTOS_PER_DAILY_RUN,
+  SPOTIFY_VERIFY_PER_DAILY_RUN,
+} from "@/lib/constants";
 
 // Hits partyflock.nl many times with delays; must run as a Node function,
 // never be statically cached, and have a long execution budget. 300s is also
@@ -21,8 +28,13 @@ export const maxDuration = 300;
 // returns its summary instead of being killed mid-request.
 const DEADLINE_MS = 270_000;
 
-function remaining(startedAt: number): number {
-  return Math.max(0, DEADLINE_MS - (Date.now() - startedAt));
+// The artist-data steps run last; the timetable steps stop this much earlier so
+// they can never starve them of time.
+const ARTIST_STEPS_RESERVE_MS = 110_000;
+const ARTIST_PHOTOS_BUDGET_MS = 60_000;
+
+function remaining(startedAt: number, reserveMs = 0): number {
+  return Math.max(0, DEADLINE_MS - reserveMs - (Date.now() - startedAt));
 }
 
 function revalidateFestival(festivalId: string): void {
@@ -33,7 +45,7 @@ function revalidateFestival(festivalId: string): void {
 /**
  * Daily maintenance cron (see vercel.json — scheduled after the 04:00
  * Partyflock import, with room for Hobby's ±59 min trigger window). After a
- * quick prune of old rate-limit rows (they hold IP addresses), three steps
+ * quick prune of old rate-limit rows (they hold IP addresses), these steps
  * share one time budget, each idempotent so a run cut short simply continues
  * the next day:
  *   1. Dedupe — merge confidently-duplicate festivals, queue uncertain pairs
@@ -42,6 +54,10 @@ function revalidateFestival(festivalId: string): void {
  *      next two weeks.
  *   3. Timetable auto-link — find a Partyflock timetable for upcoming
  *      festivals that don't have one yet.
+ *   4. Artist photos — look the next artists up on Resident Advisor for a
+ *      curated profile photo (artist-photo-core.ts).
+ *   5. Spotify links — re-verify a few stored Spotify matches against the
+ *      artist's name, healing wrong ones (spotify-verify-core.ts).
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -65,6 +81,26 @@ async function runRateLimitPrune(): Promise<{ removed: number; errors: string[] 
   }
 }
 
+/** RA profile photos for the next artists in line. A failure is reported, never blocks the next step. */
+async function runArtistPhotosStep(deadlineMs: number) {
+  try {
+    const summary = await runArtistPhotoBackfill({ limit: RA_PHOTOS_PER_DAILY_RUN, deadlineMs });
+    return { ...summary, errors: summary.errors > 0 ? [`${summary.errors} RA lookups failed`] : [] };
+  } catch (err) {
+    return { errors: [err instanceof Error ? err.message : String(err)] };
+  }
+}
+
+/** Re-verifies a few stored Spotify matches per day (upcoming lineups first); a spent Spotify quota ends it quietly. */
+async function runSpotifyVerifyStep(deadlineMs: number) {
+  try {
+    const summary = await verifySpotifyLinks({ limit: SPOTIFY_VERIFY_PER_DAILY_RUN, deadlineMs });
+    return { ...summary, aborted: summary.abortedBecause !== null, errors: summary.abortedBecause ? [summary.abortedBecause] : [] };
+  } catch (err) {
+    return { errors: [err instanceof Error ? err.message : String(err)] };
+  }
+}
+
 async function runMaintenance() {
   const startedAt = Date.now();
   const rateLimitPrune = await runRateLimitPrune();
@@ -76,7 +112,7 @@ async function runMaintenance() {
   });
 
   const timetables = await refreshUpcomingTimetables({
-    deadlineMs: remaining(startedAt),
+    deadlineMs: remaining(startedAt, ARTIST_STEPS_RESERVE_MS),
     onChanged: revalidateFestival,
   });
 
@@ -85,9 +121,12 @@ async function runMaintenance() {
     fromDate: today,
     toDate: addDays(today, PF_AUTOLINK_DAYS_AHEAD),
     recheckDays: PF_AUTOLINK_RECHECK_DAYS,
-    deadlineMs: remaining(startedAt),
+    deadlineMs: remaining(startedAt, ARTIST_STEPS_RESERVE_MS),
     onLinked: revalidateFestival,
   });
 
-  return { rateLimitPrune, dedupe, timetables, autoLink };
+  const artistPhotos = await runArtistPhotosStep(Math.min(remaining(startedAt), ARTIST_PHOTOS_BUDGET_MS));
+  const spotifyLinks = await runSpotifyVerifyStep(remaining(startedAt));
+
+  return { rateLimitPrune, dedupe, timetables, autoLink, artistPhotos, spotifyLinks };
 }

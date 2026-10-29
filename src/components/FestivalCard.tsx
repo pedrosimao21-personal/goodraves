@@ -60,9 +60,11 @@ type FestivalCardProps = {
   skipImageFetch?: boolean
   /** Usernames of the viewer's friends going (Discover). */
   friendsGoing?: string[]
+  /** Mute the card when the festival is over, so past results read as history next to upcoming ones. */
+  shouldMutePast?: boolean
 }
 
-export default memo(function FestivalCard({ event, skipImageFetch = false, friendsGoing }: FestivalCardProps) {
+export default memo(function FestivalCard({ event, skipImageFetch = false, friendsGoing, shouldMutePast = false }: FestivalCardProps) {
   const { isAttended, isUpcoming, toggleFestival, getSeenCount } = useUserDataActions()
 
   const attended = isAttended(event.id)
@@ -120,7 +122,7 @@ export default memo(function FestivalCard({ event, skipImageFetch = false, frien
   const place = [event.venue?.name, event.venue?.city].filter(Boolean).join(' · ')
 
   return (
-    <article className={`${styles.card} fade-in`}>
+    <article className={`${styles.card} ${shouldMutePast && !isFuture ? styles.cardPast : ''} fade-in`}>
       <Link href={festivalHref} className={styles.media} aria-label={event.name} tabIndex={-1}>
         {displayImage ? (
           <Image

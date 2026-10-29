@@ -15,6 +15,22 @@
   border-color: var(--gr-line2);
 }
 
+/* A festival that is over, shown among upcoming ones: quieter, not hidden. */
+.cardPast .image {
+  opacity: 0.5;
+  filter: grayscale(0.6);
+}
+
+.cardPast .title,
+.cardPast .place {
+  color: var(--gr-tx3);
+}
+
+.cardPast:hover .image {
+  opacity: 0.85;
+  filter: none;
+}
+
 .media {
   position: relative;
   display: block;

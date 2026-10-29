@@ -125,9 +125,16 @@ export const artists = pgTable("artists", {
   // Spotify cache
   spotifyId: text("spotify_id"),
   imageUrl: text("image_url"),
+  // Where imageUrl came from: 'ra' (Resident Advisor profile photo, preferred),
+  // 'spotify', or 'manual' (an admin set it). image_locked = an admin fixed or
+  // removed the photo, so no automatic lookup replaces it.
+  imageSource: text("image_source"),
+  imageLocked: boolean("image_locked").default(false).notNull(),
   spotifyFollowers: integer("spotify_followers"),
   spotifyAlbums: text("spotify_albums"),    // JSON SpotifyAlbum[]
   spotifyFetchedAt: timestamp("spotify_fetched_at", { withTimezone: true }),
+  // Last time the stored Spotify match was checked against the artist's name.
+  spotifyVerifiedAt: timestamp("spotify_verified_at", { withTimezone: true }),
   // Related artists (Spotify)
   relatedArtists: text("related_artists"),  // JSON { id, name, image, followers }[]
   relatedArtistsFetchedAt: timestamp("related_artists_fetched_at", { withTimezone: true }),
@@ -143,6 +150,8 @@ export const artists = pgTable("artists", {
   raArtistId: text("ra_artist_id"),
   raUpcomingEvents: text("ra_upcoming_events"),   // JSON RAUpcomingEvent[]
   raEventsFetchedAt: timestamp("ra_events_fetched_at", { withTimezone: true }),
+  // Last RA photo lookup (found or not), so artists not on RA aren't re-queried daily.
+  raPhotoCheckedAt: timestamp("ra_photo_checked_at", { withTimezone: true }),
   // Country (from RA)
   countryCode: text("country_code"),    // ISO code, e.g. "BE", "DE", "UK"
   countryName: text("country_name"),    // Full name, e.g. "Belgium", "Germany"

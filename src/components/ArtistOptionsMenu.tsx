@@ -1,7 +1,7 @@
 'use client'
 
 import Sheet from './Sheet'
-import { CloseIcon, EditIcon, FriendsIcon, MergeIcon } from './icons'
+import { CloseIcon, EditIcon, FriendsIcon, LinkIcon, MergeIcon } from './icons'
 import styles from './SheetMenu.module.css'
 
 interface ArtistOptionsMenuProps {
@@ -9,12 +9,13 @@ interface ArtistOptionsMenuProps {
   onSplitB2b: () => void
   onCreateB2b: () => void
   onMergeDuplicate: () => void
+  onFixPhoto: () => void
   onRemove: () => void
   onClose: () => void
 }
 
 /** Admin actions for one lineup artist. */
-export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onCreateB2b, onMergeDuplicate, onRemove, onClose }: ArtistOptionsMenuProps) {
+export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onCreateB2b, onMergeDuplicate, onFixPhoto, onRemove, onClose }: ArtistOptionsMenuProps) {
   return (
     <Sheet title="Lineup artist" eyebrow="Admin · lineup" onClose={onClose}>
       <div className={styles.list}>
@@ -29,6 +30,9 @@ export default function ArtistOptionsMenu({ onEditName, onSplitB2b, onCreateB2b,
         </button>
         <button type="button" className={styles.item} onClick={onMergeDuplicate}>
           <MergeIcon />Merge duplicate into…
+        </button>
+        <button type="button" className={styles.item} onClick={onFixPhoto}>
+          <LinkIcon />Fix photo…
         </button>
         <button type="button" className={`${styles.item} ${styles.danger}`} onClick={onRemove}>
           <CloseIcon />Remove from lineup

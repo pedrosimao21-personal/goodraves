@@ -14,3 +14,17 @@
   margin-left: auto;
   color: var(--gr-acc-ink);
 }
+
+.errorGap {
+  margin-top: 8px;
+}
+
+/* Secondary actions under the main form of the photo sheet. */
+.photoShortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gr-line);
+}

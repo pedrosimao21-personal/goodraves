@@ -8,6 +8,7 @@ import StarRating from './StarRating'
 import RatingSquares from './rating/RatingSquares'
 import ArtistOptionsMenu from './ArtistOptionsMenu'
 import { mergeLineupArtists, removeArtistFromLineup } from '@/db/actions/lineup-admin'
+import { removeArtistPhoto, resetArtistPhoto, setArtistPhotoFromLink } from '@/db/actions/artist-photo-admin'
 import FollowButton from './FollowButton'
 import { BookmarkIcon, DotsIcon } from './icons'
 import styles from './ArtistCard.module.css'
@@ -17,8 +18,9 @@ const B2bSplitModal = lazy(() => import('./B2bSplitModal'))
 const B2bCreateModal = lazy(() => import('./B2bCreateModal'))
 const LineupRemoveSheet = lazy(() => import('./LineupRemoveSheet'))
 const LineupMergeSheet = lazy(() => import('./LineupMergeSheet'))
+const ArtistPhotoSheet = lazy(() => import('./ArtistPhotoSheet'))
 
-type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b' | 'merge' | 'remove'
+type MenuState = 'closed' | 'options' | 'rename' | 'split' | 'createB2b' | 'merge' | 'remove' | 'photo'
 
 const AVATAR_SIZE = 240
 const MONOGRAM_LETTERS = 2
@@ -83,6 +85,13 @@ const ArtistCard = memo(function ArtistCard({
   // so reload the page (admin-only, rare) instead of patching each piece of state.
   const handleRemove = async () => {
     await removeArtistFromLineup(eventId, artist.id)
+    window.location.reload()
+  }
+
+  // The photo comes from the artist's database row, not the lineup entry, so the
+  // card needs the page reloaded to show the new one.
+  const reloadAfter = (action: () => Promise<unknown>) => async () => {
+    await action()
     window.location.reload()
   }
 
@@ -166,6 +175,7 @@ const ArtistCard = memo(function ArtistCard({
           onSplitB2b={() => setMenuState('split')}
           onCreateB2b={() => setMenuState('createB2b')}
           onMergeDuplicate={() => setMenuState('merge')}
+          onFixPhoto={() => setMenuState('photo')}
           onRemove={() => setMenuState('remove')}
           onClose={closeMenu}
         />
@@ -180,6 +190,18 @@ const ArtistCard = memo(function ArtistCard({
       {menuState === 'split' && (
         <Suspense fallback={null}>
           <B2bSplitModal artistName={displayName} onSave={handleSplit} onClose={closeMenu} />
+        </Suspense>
+      )}
+
+      {menuState === 'photo' && (
+        <Suspense fallback={null}>
+          <ArtistPhotoSheet
+            artistName={displayName}
+            onSetFromLink={(link) => reloadAfter(() => setArtistPhotoFromLink(artist.id, link))()}
+            onRemove={reloadAfter(() => removeArtistPhoto(artist.id))}
+            onReset={reloadAfter(() => resetArtistPhoto(artist.id))}
+            onClose={closeMenu}
+          />
         </Suspense>
       )}
 

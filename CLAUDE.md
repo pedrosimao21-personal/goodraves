@@ -31,7 +31,8 @@ npx tsx --env-file=.env.local scripts/dedupe-lineup-artists.ts [--dry-run] # One
 node scripts/generate-brand-icons.mjs  # Regenerate public/icon.svg, favicon.ico and the app/touch icons from the master mark in the script
 npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
-npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--start-after <id>] [--limit <n>] # Re-verify stored Spotify artist matches
+npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--limit <n>] # Re-verify stored Spotify artist matches (stamps spotify_verified_at; daily cron step too)
+npx tsx --env-file=.env.local scripts/backfill-artist-photos.ts [--dry-run] [--limit <n>] # Give artists a Resident Advisor profile photo, RA first then Spotify (daily cron step too)
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.
@@ -77,7 +78,7 @@ endpoints for app data. Mutations and reads live as `"use server"` functions in
 registration, and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
 `CRON_SECRET` bearer token — see `vercel.json`: `import-pf-agenda` at 04:00, then
 `daily-maintenance` at 06:00 — prune old `rate_limit_counters` rows (they hold IPs), dedupe, timetable re-sync for the next 2 weeks, timetable
-auto-link; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
+auto-link, RA artist photos, Spotify match re-verification; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
 1. Call `requireAuth()` (or `requireAdmin()`) from `festival-helpers.ts` to verify the session.
 2. Use the Drizzle query builder against `db` from `src/db/index.ts`.
 3. Return plain serializable objects.
@@ -141,7 +142,10 @@ Partyflock party for timetable import, independent of `source`; `lineup_checked_
 `country_code`/`country_name` are populated at import time — see
 `src/utils/location-normalizer.ts` — and by `scripts/backfill-festival-countries.ts` for
 pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock timetable search),
-`artists`, `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
+`artists` (photos: `image_source` is `ra`|`spotify`|`manual`, `image_locked` = an admin fixed it; RA's curated
+profile photo is preferred over Spotify's name match and neither replaces a locked one — see
+`artist-photo-core.ts` and `artist-image-guard.ts`; `ra_photo_checked_at` / `spotify_verified_at` pace the daily jobs),
+`festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings` and `user_artist_global` (ratings in half points, 0.5-5, `real`), `user_artist_follows` (followed artists →

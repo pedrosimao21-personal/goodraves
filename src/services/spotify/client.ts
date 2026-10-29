@@ -44,6 +44,9 @@ function normalizeForMatch(name: string): string {
 // this app, so we fetch each artist one at a time and cap the fan-out to
 // avoid tripping the 429 rate limiter on large lineups.
 const ARTIST_FETCH_CONCURRENCY = 8;
+// Of several exact-name matches, the top one is only trusted if it has at least
+// this many times the runner-up's followers.
+const FOLLOWER_DOMINANCE_RATIO = 3;
 const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
 const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
 const SPOTIFY_MARKET = "NL";
@@ -185,11 +188,20 @@ export async function spotifySearchArtist(name: string) {
   const exactMatches = candidates.filter(a => normalizeForMatch(a.name ?? "") === target);
   if (!exactMatches.length) return null;
 
-  // Multiple accounts can share an exact name (rare, but real); prefer the
-  // more-followed one as the more likely intended artist.
+  // Several accounts can share an exact name. Only a clearly dominant one is
+  // taken as the intended artist: a development-mode Spotify app sees 0
+  // followers for everyone, so the ranking can't tell them apart and picking
+  // one would be a coin flip. No match beats the wrong person.
   exactMatches.sort((a, b) => (b.followers?.total ?? 0) - (a.followers?.total ?? 0));
+  if (exactMatches.length > 1 && !isClearlyMostFollowed(exactMatches[0], exactMatches[1])) return null;
 
   return normalizeArtist(exactMatches[0]);
+}
+
+/** The top account has real followers and at least FOLLOWER_DOMINANCE_RATIO times the runner-up's. */
+function isClearlyMostFollowed(top: any, runnerUp: any): boolean {
+  const topFollowers = top.followers?.total ?? 0;
+  return topFollowers > 0 && topFollowers >= FOLLOWER_DOMINANCE_RATIO * (runnerUp.followers?.total ?? 0);
 }
 
 export async function spotifyGetArtist(spotifyId: string) {
@@ -233,7 +245,7 @@ export async function spotifyGetPlaylistArtistNames(playlistId: string): Promise
         ((entry?.track ?? entry?.item)?.artists ?? []).map((a: any) => a?.name).filter(Boolean)
       );
     } catch (err) {
-      if (!(err instanceof Error && /Spotify error (403|404)/.test(err.message))) throw err;
+      if (!(err instanceof Error && /Spotify error (403|404)\b/.test(err.message))) throw err;
     }
   }
   return null;

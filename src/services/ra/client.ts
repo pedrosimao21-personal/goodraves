@@ -12,10 +12,10 @@ import { fetchWithTimeout } from "@/lib/fetch-timeout";
 import { withRetry } from "@/lib/retry";
 
 const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
-const RA_GRAPHQL_URL = "https://ra.co/graphql";
-const RA_USER_AGENT = "Mozilla/5.0";
+export const RA_GRAPHQL_URL = "https://ra.co/graphql";
+export const RA_USER_AGENT = "Mozilla/5.0";
 const RA_EVENTS_BASE_URL = "https://ra.co/events";
-const RA_ARTIST_BASE_URL = "https://ra.co/dj";
+export const RA_ARTIST_BASE_URL = "https://ra.co/dj";
 const MAX_UPCOMING_EVENTS = 10;
 
 const SEARCH_EVENTS_QUERY = `
@@ -251,6 +251,7 @@ const GET_ARTIST_BY_SLUG_QUERY = `
     artist(slug: $slug) {
       id
       name
+      image
       country {
         name
         urlCode
@@ -273,6 +274,10 @@ const GET_ARTIST_BY_SLUG_QUERY = `
 
 export type RArtistData = {
   raArtistId: string | null;
+  /** The artist's name as RA spells it, to verify the slug lookup found the same artist. */
+  name: string | null;
+  /** RA's curated square profile photo, when the artist has one. */
+  imageUrl: string | null;
   countryCode: string | null;
   countryName: string | null;
   events: RAUpcomingEvent[];
@@ -295,6 +300,8 @@ function artistNameToSlug(name: string): string {
 export async function fetchRArtistByName(artistName: string): Promise<RArtistData> {
   const emptyResult: RArtistData = {
     raArtistId: null,
+    name: null,
+    imageUrl: null,
     countryCode: null,
     countryName: null,
     events: [],
@@ -348,6 +355,8 @@ export async function fetchRArtistByName(artistName: string): Promise<RArtistDat
 
     return {
       raArtistId: String(artistData.id),
+      name: artistData.name ?? null,
+      imageUrl: artistData.image ?? null,
       countryCode: artistData.country?.urlCode ?? null,
       countryName: artistData.country?.name ?? null,
       events,

@@ -20,7 +20,7 @@ import {
   mapFfResult,
   mapPfResult,
   mapRaResult,
-  sortByDateDesc,
+  sortUpcomingThenPast,
 } from './search-results'
 
 /**
@@ -49,7 +49,7 @@ export function useFestivalSearch() {
     // `results` mirrors what's on screen so the image pass at the end sees the
     // full merged set without reading React state.
     const results: SearchResult[] = []
-    const publish = () => setEvents(sortByDateDesc(results))
+    const publish = () => setEvents(sortUpcomingThenPast(results))
 
     // DB results paint as soon as they land. The live sources are each a
     // scrape, and Next runs client-triggered server actions one at a time, so

@@ -9,6 +9,8 @@ import {
 } from "@/services/spotify/client";
 import { SPOTIFY_STALE_MS, RATE_LIMIT_IMAGE_MAX, RATE_LIMIT_WINDOW_MS, MAX_ENRICHMENT_BATCH_SIZE } from "@/lib/constants";
 import { enforceRateLimit } from "./festival-helpers";
+import { SPOTIFY_UPSERT_IMAGE, spotifyPhotoFields } from "./artist-image-guard";
+import { ensureRaPhotos } from "./artist-photo-core";
 
 function isStaleSpotify(fetchedAt: Date | string | null | undefined): boolean {
   if (!fetchedAt) return true;
@@ -70,6 +72,17 @@ export async function getArtistsWithImages(
 
   if (needsFetch.length) {
     await fetchAndUpsertArtists(needsFetch, byLowerName);
+  }
+
+  // RA's curated photo beats Spotify's name search; each artist is looked up on
+  // RA once per recheck window, so this costs requests on a lineup's first views only.
+  const raPhotos = await ensureRaPhotos(names).catch((err) => {
+    console.error("[artists] RA photo lookup failed:", err instanceof Error ? err.message : err);
+    return new Map<string, string>();
+  });
+  for (const [lowerName, imageUrl] of raPhotos) {
+    const row = byLowerName.get(lowerName);
+    if (row) byLowerName.set(lowerName, { ...row, imageUrl });
   }
 
   return Object.fromEntries(
@@ -154,14 +167,15 @@ async function fetchAndUpsertArtists(
             id: existingByLower.get(name.toLowerCase())!,
             name,
             spotifyId: data?.id ?? null,
-            imageUrl: data?.image ?? null,
+            ...spotifyPhotoFields(data?.image),
             spotifyFetchedAt: now,
           }))
         ).onConflictDoUpdate({
           target: artists.id,
           set: {
             spotifyId: sql`excluded.spotify_id`,
-            imageUrl: sql`excluded.image_url`,
+            // An RA or admin-set photo stays; see artist-image-guard.ts.
+            ...SPOTIFY_UPSERT_IMAGE,
             spotifyFetchedAt: sql`excluded.spotify_fetched_at`,
           },
         });
@@ -179,7 +193,7 @@ async function fetchAndUpsertArtists(
           inserts.map(({ name, data }) => ({
             name,
             spotifyId: data?.id ?? null,
-            imageUrl: data?.image ?? null,
+            ...spotifyPhotoFields(data?.image),
             spotifyFetchedAt: now,
           }))
         ).onConflictDoNothing();

@@ -89,6 +89,21 @@
   margin-top: 8px;
 }
 
+/* Divider between upcoming and past results. */
+.pastHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gr-line2);
+  color: var(--gr-tx2);
+}
+
+.pastHeading span {
+  color: var(--gr-tx3);
+}
+
 /* ── Mobile ──────────────────────────────────── */
 
 @media (max-width: 640px) {

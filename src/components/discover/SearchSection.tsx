@@ -14,7 +14,7 @@ import { dismissKeyboard } from '@/lib/touch-tap'
 import SearchForm from './SearchForm'
 import DiscoverHome from './DiscoverHome'
 import SearchFilters, { type DropdownKey } from './SearchFilters'
-import { hasSourceImageLookup } from './search-results'
+import { hasSourceImageLookup, isPastResult } from './search-results'
 import { useFestivalSearch } from './use-festival-search'
 import { useFriendsGoing } from './use-friends-going'
 import { ImportStatus, LoadingGrid, NoResults, SearchError, SourceWarning, StartPrompt } from './SearchStates'
@@ -37,6 +37,11 @@ export default function SearchSection() {
   const friendsEventCount = useMemo(() => eventIds.filter((id) => friendsGoing[id]?.length > 0).length, [eventIds, friendsGoing])
   const filterOptions = useMemo(() => extractFilterOptions(events), [events])
   const filteredEvents = useMemo(() => applyFilters(events, filters, friendsGoing), [events, filters, friendsGoing])
+  // The list is already ordered upcoming-then-past (sortUpcomingThenPast); the
+  // split only adds the heading between the two groups.
+  const upcomingEvents = useMemo(() => filteredEvents.filter((event) => !isPastResult(event)), [filteredEvents])
+  const pastEvents = useMemo(() => filteredEvents.filter(isPastResult), [filteredEvents])
+  const hasBothGroups = upcomingEvents.length > 0 && pastEvents.length > 0
 
   // Mirrors the query and filters into the address bar for sharing. This uses
   // history.replaceState, not router.replace: a router navigation re-renders
@@ -142,14 +147,33 @@ export default function SearchSection() {
           </>
         )}
 
-        {filteredEvents.length > 0 && (
+        {upcomingEvents.length > 0 && (
           <div className={styles.grid}>
-            {filteredEvents.map((event) => (
+            {upcomingEvents.map((event) => (
               // The search resolves images for these results itself, so the
               // card skips its own lookup for them.
               <FestivalCard key={event.id} event={event} skipImageFetch={hasSourceImageLookup(event.id)} friendsGoing={friendsGoing[event.id]} />
             ))}
           </div>
+        )}
+
+        {pastEvents.length > 0 && (
+          <>
+            {hasBothGroups && (
+              <h2 className={`mono ${styles.pastHeading}`}>Past festivals <span>{pastEvents.length}</span></h2>
+            )}
+            <div className={styles.grid}>
+              {pastEvents.map((event) => (
+                <FestivalCard
+                  key={event.id}
+                  event={event}
+                  skipImageFetch={hasSourceImageLookup(event.id)}
+                  friendsGoing={friendsGoing[event.id]}
+                  shouldMutePast={hasBothGroups}
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
     </>

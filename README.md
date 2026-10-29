@@ -50,6 +50,7 @@ npx tsx --env-file=.env.local scripts/link-pf-timetables.ts [--dry-run] # Backfi
 npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sync timetables of festivals in the next 2 weeks (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-lineup-artists.ts [--dry-run] # One-off: merge lineup entries that differ only by accents/punctuation ("Adrián"/"Adrian Mills")
+npx tsx --env-file=.env.local scripts/backfill-artist-photos.ts [--dry-run] [--limit N] # Give artists a Resident Advisor profile photo (RA first, then Spotify); the daily cron does the same in batches
 node scripts/generate-brand-icons.mjs  # Regenerate public/icon.svg, favicon.ico and the app/touch icons from the master mark in the script
 npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
@@ -91,7 +92,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 |---|---|
 | `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
 | `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` and an optional `pf_party_id` linking to a Partyflock party for timetable import, independent of `source`. `lineup_checked_at`/`image_checked_at` record the last on-demand lineup/image backfill attempt so a festival with nothing to import isn't re-scraped on every view. `country_code`/`country_name` back the search country filter — populated at import time, backfilled for older rows by `scripts/backfill-festival-countries.ts`. `pf_link_checked_at` records the daily cron's last unsuccessful Partyflock timetable search, so unmatched festivals aren't re-searched every day |
-| `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps |
+| `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps. `image_url` is the artist's photo and `image_source` says where it came from (`ra` preferred, `spotify`, or `manual`); `image_locked` stops any automatic lookup replacing an admin's fix |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |
 | `festival_genres` | Festival↔genre join (from the Partyflock genre estimate) |
 | `festival_artists` | Lineup join between festivals and artists |

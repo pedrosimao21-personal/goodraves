@@ -142,7 +142,9 @@ Partyflock party for timetable import, independent of `source`; `lineup_checked_
 `image_checked_at` gate the on-demand lineup/image backfills in `getFestival`;
 `country_code`/`country_name` are populated at import time — see
 `src/utils/location-normalizer.ts` — and by `scripts/backfill-festival-countries.ts` for
-pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock timetable search),
+pre-existing rows; `pf_link_checked_at` throttles the daily cron's Partyflock timetable search;
+`start_time`/`end_time` are the announced clock times (RA), and `end_date` follows "a night belongs to the day it started" —
+see `src/lib/event-schedule.ts`; `times_checked_at` paces the RA re-read in `festival-ra-schedule-core.ts`),
 `artists` (photos: `image_source` is `ra`|`spotify`|`manual`, `image_locked` = an admin fixed it; RA's curated
 profile photo is preferred over Spotify's name match and neither replaces a locked one — see
 `artist-photo-core.ts` and `artist-image-guard.ts`; `ra_photo_checked_at` / `spotify_verified_at` pace the daily jobs),

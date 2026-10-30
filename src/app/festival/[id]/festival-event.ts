@@ -47,10 +47,12 @@ export function countFestivalDays(date?: string | null, endDate?: string | null)
 /**
  * The announced hours for the Time row: "16:00 – 04:00 (next day)" for a night
  * that runs past midnight, "12:00 first day – 23:00 last day" across several
- * days (or "… – 10:00 morning after" when it runs into the next morning). Null when the source gave no times.
+ * days (or "… – 10:00 morning after" when it runs into the next morning). Null
+ * when the source gave no times.
  */
 export function formatEventTimes(startTime?: string | null, endTime?: string | null, dayCount = 1): string | null {
-  if (!startTime) return null
+  // RA stores 00:00 – 00:00 for events whose hours were never announced.
+  if (!startTime || (startTime === '00:00' && (!endTime || endTime === '00:00'))) return null
   if (!endTime) return `From ${startTime}`
   if (dayCount > 1) return endTime <= '12:00' ? `${startTime} first day – ${endTime} morning after` : `${startTime} first day – ${endTime} last day`
   return endTime < startTime ? `${startTime} – ${endTime} (next day)` : `${startTime} – ${endTime}`

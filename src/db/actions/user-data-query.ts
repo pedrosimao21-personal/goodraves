@@ -42,6 +42,8 @@ export async function fetchUserDataForId(userId: string) {
           name: festivals.name,
           date: festivals.date,
           endDate: festivals.endDate,
+          startTime: festivals.startTime,
+          endTime: festivals.endTime,
           venue: festivals.venue,
           location: festivals.location,
           latitude: festivals.latitude,

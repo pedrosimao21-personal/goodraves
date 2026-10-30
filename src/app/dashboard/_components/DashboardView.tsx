@@ -75,6 +75,8 @@ export default function DashboardView({ trendingFestivals, userCity }: Props) {
         name: meta?.name ?? id,
         date: meta?.date ?? '',
         endDate: meta?.endDate,
+        startTime: meta?.startTime,
+        endTime: meta?.endTime,
         venueName: venue?.name ?? (typeof meta?.venue === 'string' ? meta.venue : null),
         location: venue?.city ?? meta?.location ?? null,
       }

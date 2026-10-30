@@ -1,4 +1,5 @@
 import { parseLocalDate } from '@/lib/dates'
+import { hasAnnouncedTimes } from '@/lib/event-schedule'
 
 const MS_PER_DAY = 86_400_000
 const MONOGRAM_WORDS = 2
@@ -51,8 +52,7 @@ export function countFestivalDays(date?: string | null, endDate?: string | null)
  * when the source gave no times.
  */
 export function formatEventTimes(startTime?: string | null, endTime?: string | null, dayCount = 1): string | null {
-  // RA stores 00:00 – 00:00 for events whose hours were never announced.
-  if (!startTime || (startTime === '00:00' && (!endTime || endTime === '00:00'))) return null
+  if (!startTime || !hasAnnouncedTimes(startTime, endTime)) return null
   if (!endTime) return `From ${startTime}`
   if (dayCount > 1) return endTime <= '12:00' ? `${startTime} first day – ${endTime} morning after` : `${startTime} first day – ${endTime} last day`
   return endTime < startTime ? `${startTime} – ${endTime} (next day)` : `${startTime} – ${endTime}`

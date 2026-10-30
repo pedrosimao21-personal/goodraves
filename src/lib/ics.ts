@@ -1,4 +1,5 @@
 import { addDays } from './dates'
+import { deriveEventSpan } from './event-schedule'
 import { SITE_URL } from './site'
 
 const ICS_LINE_ENDING = '\r\n'
@@ -10,6 +11,9 @@ export type IcsFestival = {
   name: string
   date: string
   endDate?: string | null
+  /** Announced "HH:MM" hours; with both, the entry is timed instead of all-day. */
+  startTime?: string | null
+  endTime?: string | null
   venueName?: string | null
   location?: string | null
 }
@@ -66,10 +70,32 @@ function buildSetEvent(set: IcsSet): string {
   return lines.join(ICS_LINE_ENDING)
 }
 
+/** "YYYYMMDDTHHMMSS" from a day and an "HH:MM" wall-clock time (floating, like the set times). */
+function toIcsLocalDateTime(isoDate: string, time: string): string {
+  return `${toIcsDate(isoDate)}T${time.replace(':', '')}00`
+}
+
+/**
+ * The DTSTART/DTEND lines. With announced hours the entry runs from the first
+ * start to the real end (a Saturday 16:00 party ending 04:00 ends Sunday);
+ * without them it is all-day, where DTEND is exclusive per RFC 5545 — the day
+ * *after* the last day, even for a single-day festival.
+ */
+function buildTimeLines(festival: IcsFestival): string[] {
+  const span = deriveEventSpan(festival.date, festival.endDate, festival.startTime, festival.endTime)
+  if (span) {
+    return [
+      `DTSTART:${toIcsLocalDateTime(span.startDay, span.startTime)}`,
+      `DTEND:${toIcsLocalDateTime(span.endDay, span.endTime)}`,
+    ]
+  }
+  return [
+    `DTSTART;VALUE=DATE:${toIcsDate(festival.date)}`,
+    `DTEND;VALUE=DATE:${toIcsDate(addDays(festival.endDate || festival.date, 1))}`,
+  ]
+}
+
 function buildEvent(festival: IcsFestival): string {
-  // All-day DTEND is exclusive per RFC 5545 — the day *after* the last day
-  // of the event, even for a single-day festival (endDate falls back to date).
-  const dtEnd = toIcsDate(addDays(festival.endDate || festival.date, 1))
   const location = [festival.venueName, festival.location].filter(Boolean).join(', ')
   const url = `${SITE_URL}/festival/${festival.id}`
 
@@ -77,8 +103,7 @@ function buildEvent(festival: IcsFestival): string {
     'BEGIN:VEVENT',
     `UID:${festival.id}@goodraves`,
     `SUMMARY:${escapeIcsText(festival.name)}`,
-    `DTSTART;VALUE=DATE:${toIcsDate(festival.date)}`,
-    `DTEND;VALUE=DATE:${dtEnd}`,
+    ...buildTimeLines(festival),
     ...(location ? [`LOCATION:${escapeIcsText(location)}`] : []),
     `URL:${url}`,
     'END:VEVENT',

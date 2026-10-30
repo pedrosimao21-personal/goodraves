@@ -46,3 +46,30 @@ export function deriveEventSchedule(startTimestamp: string | null | undefined, e
     endTime: end?.time ?? null,
   };
 }
+
+/** RA stores 00:00 – 00:00 for events whose hours were never announced. */
+export function hasAnnouncedTimes(startTime?: string | null, endTime?: string | null): boolean {
+  return Boolean(startTime) && !(startTime === "00:00" && (!endTime || endTime === "00:00"));
+}
+
+/** An event's real start and end moments, as local wall-clock days and times. */
+export type EventSpan = { startDay: string; startTime: string; endDay: string; endTime: string };
+
+/**
+ * Undoes the "a night belongs to the day it started" rule to get when the event
+ * really ends, for a calendar entry. Null unless both times were announced.
+ * `endDate` is the last day by that rule, so an end at or before noon is the
+ * morning after it; a one-day event ends the next day when its end time is not
+ * after its start time (16:00 – 04:00, or 23:00 – 00:00).
+ */
+export function deriveEventSpan(
+  date: string,
+  endDate: string | null | undefined,
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+): EventSpan | null {
+  if (!startTime || !endTime || !hasAnnouncedTimes(startTime, endTime)) return null;
+  const lastDay = endDate && endDate > date ? endDate : date;
+  const runsIntoNextMorning = lastDay > date ? endTime <= DAY_ENDS_AT : endTime <= startTime;
+  return { startDay: date, startTime, endDay: runsIntoNextMorning ? addDays(lastDay, 1) : lastDay, endTime };
+}

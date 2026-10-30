@@ -5,6 +5,8 @@ export interface FestivalMeta {
   name: string
   date: string
   endDate?: string
+  startTime?: string
+  endTime?: string
   venue?: string | { name: string; city?: string }
   location?: string
   latitude?: number
@@ -200,6 +202,8 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
       name: f.name,
       date: f.date,
       endDate: f.endDate ?? undefined,
+      startTime: f.startTime ?? undefined,
+      endTime: f.endTime ?? undefined,
       venue: f.venue ? { name: f.venue, city: f.location ?? undefined } : undefined,
       location: f.location ?? undefined,
       latitude: f.latitude ?? undefined,

@@ -119,7 +119,7 @@ export default function FestivalHeader({
             <AddToCalendarButton
               className={styles.actionButton}
               labelClassName={styles.hideOnMobile}
-              festival={{ id, name: event.name, date: event.date, endDate: event.endDate, venueName: event.venue?.name, location: event.venue?.city }}
+              festival={{ id, name: event.name, date: event.date, endDate: event.endDate, startTime: event.startTime, endTime: event.endTime, venueName: event.venue?.name, location: event.venue?.city }}
             />
           )}
           <ShareFestivalButton className={styles.iconAction} name={event.name} date={dates} venue={event.venue?.name} />

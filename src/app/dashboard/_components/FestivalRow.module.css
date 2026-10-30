@@ -1,7 +1,10 @@
 /* Board: docs/redesign/boards/MyFestivals.dc.html (year-grouped rows) and
-   MyFestivalsMobile.dc.html (date badge rows for upcoming). */
+   MyFestivalsMobile.dc.html (date badge rows for upcoming).
+   The whole row opens the festival: the name's link is stretched over it (the
+   ::after on .name), and the action buttons sit above that. */
 
 .row {
+  position: relative;
   display: grid;
   grid-template-columns: 76px 56px minmax(0, 1fr) 90px 80px auto;
   gap: 16px;
@@ -11,7 +14,7 @@
 }
 
 .upcoming {
-  grid-template-columns: 56px minmax(0, 1fr) auto;
+  grid-template-columns: 56px 56px minmax(0, 1fr) auto;
   padding: 10px 0;
 }
 
@@ -71,7 +74,13 @@
   text-transform: uppercase;
 }
 
-.name:hover {
+.name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.row:hover .name {
   text-decoration: underline;
 }
 
@@ -93,6 +102,7 @@
 }
 
 .actions {
+  position: relative; /* above the stretched row link */
   display: flex;
   justify-content: flex-end;
 }
@@ -125,8 +135,22 @@
   }
 
   .upcoming {
+    grid-template-columns: 52px 44px minmax(0, 1fr) auto;
     grid-template-areas: none;
-    gap: 14px;
+    gap: 10px;
+  }
+
+  .upcoming .thumb {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Less room beside the thumb: let a long name use two lines. */
+  .upcoming .name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
   }
 
   .row:not(.upcoming) .date {

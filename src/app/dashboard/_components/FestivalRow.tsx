@@ -54,13 +54,11 @@ const FestivalRow = React.memo(({ eventId, onRemove, isUpcomingTab, onEdit }: {
         ? (meta?.date ? <DateBadge isoDate={meta.date} /> : <span />)
         : <span className={`mono ${styles.date}`}>{meta?.date ? formatShortDate(meta.date) : ''}</span>}
 
-      {!isUpcomingTab && (
-        <Link href={href} className={styles.thumb} tabIndex={-1} aria-hidden="true">
-          {image
-            ? <Image src={image} alt="" width={THUMB_SIZE} height={THUMB_SIZE} sizes="56px" />
-            : <span className={`display ${styles.monogram}`}>{name.split(/\s+/).slice(0, MONOGRAM_WORDS).map((w: string) => w[0]).join('')}</span>}
-        </Link>
-      )}
+      <Link href={href} className={styles.thumb} tabIndex={-1} aria-hidden="true">
+        {image
+          ? <Image src={image} alt="" width={THUMB_SIZE} height={THUMB_SIZE} sizes="56px" />
+          : <span className={`display ${styles.monogram}`}>{name.split(/\s+/).slice(0, MONOGRAM_WORDS).map((w: string) => w[0]).join('')}</span>}
+      </Link>
 
       <div className={styles.info}>
         <Link href={href} className={styles.name}>{name}</Link>

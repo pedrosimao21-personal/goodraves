@@ -33,6 +33,7 @@ npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-me
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows
 npx tsx --env-file=.env --env-file=.env.local scripts/refresh-spotify-matches.ts [--dry-run] [--limit <n>] # Re-verify stored Spotify artist matches (stamps spotify_verified_at; daily cron step too)
 npx tsx --env-file=.env.local scripts/backfill-artist-photos.ts [--dry-run] [--limit <n>] # Give artists a Resident Advisor profile photo, RA first then Spotify (daily cron step too)
+npx tsx --env-file=.env.local scripts/backfill-festival-schedules.ts [--dry-run] [--limit <n>] # Re-read RA festivals' days + clock times (overnight parties become one day; rescheduled dates fixed)
 ```
 
 There is **no test suite** in this repo — do not assume `npm test` exists.

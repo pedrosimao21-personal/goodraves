@@ -9,7 +9,7 @@ import AddToCalendarButton from '@/components/AddToCalendarButton'
 import { ArrowLeftIcon, DotsIcon, ExternalIcon } from '@/components/icons'
 import { formatDateRange } from '@/lib/format-date'
 import type { FestivalPhase } from '@/lib/festival-date'
-import { type FestivalEvent, countFestivalDays, getSourceLink, toMonogram } from './festival-event'
+import { type FestivalEvent, countFestivalDays, formatEventTimes, getSourceLink, toMonogram } from './festival-event'
 import styles from './FestivalHeader.module.css'
 
 const FLYER_WIDTH = 800
@@ -49,6 +49,7 @@ export default function FestivalHeader({
   const venue = [event.venue?.name, event.venue?.city, event.venue?.country].filter(Boolean).join(', ')
   const crowd = formatCrowd(event)
   const dayCount = countFestivalDays(event.date, event.endDate)
+  const times = formatEventTimes(event.startTime, event.endTime, dayCount)
   const artistCount = event.attractions?.length ?? 0
   const isPast = phase === 'past'
 
@@ -97,6 +98,7 @@ export default function FestivalHeader({
 
         <dl className={styles.facts}>
           <div className={styles.fact}><dt className="mono">Dates</dt><dd className={styles.date}>{dates}</dd></div>
+          {times && <div className={styles.fact}><dt className="mono">Time</dt><dd>{times}</dd></div>}
           {venue && <div className={styles.fact}><dt className="mono">Venue</dt><dd>{venue}</dd></div>}
           {crowd && <div className={styles.fact}><dt className="mono">Crowd</dt><dd className="mono">{crowd}</dd></div>}
         </dl>

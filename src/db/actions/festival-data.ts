@@ -19,6 +19,7 @@ import { fetchRAEventCore as fetchRAEvent, fetchRAEventImageUrlCore as fetchRAEv
 import { fetchFFEventCore as fetchFFEvent, fetchFFEventImageUrlCore as fetchFFEventImageUrl } from "./festival-import-ff-core";
 import { importPFEvent as fetchPFEvent, fetchPFEventImageUrlCore as fetchPFEventImageUrl } from "./festival-import-pf-core";
 import { resolvePFEventSlug } from "@/services/partyflock/client";
+import { ensureRaSchedule } from "./festival-ra-schedule-core";
 import { fetchUserDataForId } from "./user-data-query";
 import { fetchFestivalGenres } from "./festival-genres";
 import {
@@ -170,6 +171,11 @@ export async function getFestival(id: string) {
     const imageUrl = await backfillImageAndStamp(id, sourceRef);
     if (imageUrl) festival.imageUrl = imageUrl;
   }
+
+  // An RA festival saved without its clock times (added from a search card) gets
+  // them, and its days re-checked, once; later views skip this.
+  const withSchedule = await ensureRaSchedule(festival);
+  if (withSchedule) festival = withSchedule;
 
   return formatFestivalWithLineup(festival, currentLineup, currentGenres);
 }

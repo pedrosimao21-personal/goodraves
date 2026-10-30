@@ -109,6 +109,11 @@ export const SPOTIFY_VERIFY_REQUEST_DELAY_MS = 500;
 export const SPOTIFY_VERIFY_MAX_CONSECUTIVE_FAILURES = 5;
 /** Artists the daily maintenance cron looks up on RA per run. */
 export const RA_PHOTOS_PER_DAILY_RUN = 120;
+
+// Re-reading RA event dates/times (festival-ra-schedule-core.ts).
+export const RA_SCHEDULE_REQUEST_DELAY_MS = 300; // gap between successive RA requests in a batch
+export const RA_SCHEDULE_MAX_CONSECUTIVE_FAILURES = 5; // a batch stops after this many empty RA answers in a row
+export const RA_SCHEDULE_RECHECK_STALE_MS = 7 * 24 * 60 * 60 * 1000; // retry an event RA gave no answer for after a week
 /** Stored Spotify matches the daily maintenance cron re-verifies per run (2 Spotify calls at most each). */
 export const SPOTIFY_VERIFY_PER_DAILY_RUN = 60;
 

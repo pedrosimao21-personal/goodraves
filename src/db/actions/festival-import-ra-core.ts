@@ -5,6 +5,7 @@ import { checkExistingLineup, findExistingFestivalByNameDate, deleteB2bSets, bac
 import { resolveMergedFestivalId } from "./festival-merge-lookup";
 import { fetchRAEventRaw } from "@/services/ra/client";
 import { toIsoDate } from "@/lib/dates";
+import { deriveEventSchedule } from "@/lib/event-schedule";
 import { parseRALineup } from "@/services/ra/parser";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 import { geocodeLocation } from "@/utils/geocoding";
@@ -68,12 +69,8 @@ export async function fetchRAEventCore(
   const data = await fetchRAEventRaw(id);
   if (!data) return null;
 
-  const date = data.startTime
-    ? toIsoDate(new Date(data.startTime))
-    : toIsoDate(new Date());
-  const endDate = data.endTime
-    ? toIsoDate(new Date(data.endTime))
-    : null;
+  const schedule = deriveEventSchedule(data.startTime, data.endTime);
+  const date = schedule?.date ?? toIsoDate(new Date());
 
   const venueName = data.venue?.name ?? null;
   const rawAreaName = data.venue?.area?.name ?? null;
@@ -113,7 +110,10 @@ export async function fetchRAEventCore(
     id: festivalId,
     name: festivalName,
     date,
-    endDate,
+    endDate: schedule?.endDate ?? null,
+    startTime: schedule?.startTime ?? null,
+    endTime: schedule?.endTime ?? null,
+    timesCheckedAt: new Date(),
     venue: venueName,
     location,
     latitude: geocoded?.latitude ?? null,
@@ -135,6 +135,9 @@ export async function fetchRAEventCore(
           name: festivalValues.name,
           date: festivalValues.date,
           endDate: festivalValues.endDate,
+          startTime: festivalValues.startTime,
+          endTime: festivalValues.endTime,
+          timesCheckedAt: festivalValues.timesCheckedAt,
           venue: festivalValues.venue,
           location: festivalValues.location,
           latitude: festivalValues.latitude,
@@ -153,6 +156,9 @@ export async function fetchRAEventCore(
         target: festivals.id,
         set: {
           endDate: sql`COALESCE(${festivalValues.endDate}, ${festivals.endDate})`,
+          startTime: sql`COALESCE(${festivalValues.startTime}, ${festivals.startTime})`,
+          endTime: sql`COALESCE(${festivalValues.endTime}, ${festivals.endTime})`,
+          timesCheckedAt: festivalValues.timesCheckedAt,
           imageUrl: sql`COALESCE(${festivalValues.imageUrl}, ${festivals.imageUrl})`,
           latitude: sql`COALESCE(${festivalValues.latitude}, ${festivals.latitude})`,
           longitude: sql`COALESCE(${festivalValues.longitude}, ${festivals.longitude})`,

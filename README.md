@@ -51,6 +51,7 @@ npx tsx --env-file=.env.local scripts/refresh-timetables.ts [--dry-run]  # Re-sy
 npx tsx --env-file=.env.local scripts/dedupe-festivals.ts [--dry-run] [--max-merges N] [--abort-above N] # Detect + hard-merge duplicate festivals (daily cron step)
 npx tsx --env-file=.env.local scripts/dedupe-lineup-artists.ts [--dry-run] # One-off: merge lineup entries that differ only by accents/punctuation ("Adrián"/"Adrian Mills")
 npx tsx --env-file=.env.local scripts/backfill-artist-photos.ts [--dry-run] [--limit N] # Give artists a Resident Advisor profile photo (RA first, then Spotify); the daily cron does the same in batches
+npx tsx --env-file=.env.local scripts/backfill-festival-schedules.ts [--dry-run] [--limit N] # Re-read RA festivals' days and clock times; overnight parties count as one day
 node scripts/generate-brand-icons.mjs  # Regenerate public/icon.svg, favicon.ico and the app/touch icons from the master mark in the script
 npx tsx --env-file=.env scripts/repair-pf-merges.ts [--dry-run] # One-off: un-merge separate Partyflock parties, drop stale merge records, add subtitles to names
 npx tsx --env-file=.env.local scripts/backfill-festival-countries.ts [--dry-run]   # Backfill country_code/country_name on pre-existing rows

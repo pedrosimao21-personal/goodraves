@@ -36,6 +36,11 @@ export const festivals = pgTable("festivals", {
   name: text("name").notNull(),
   date: text("date").notNull(), // ISO date string
   endDate: text("end_date"),
+  // Announced local clock times, "HH:MM" (RA provides them). `endDate` follows
+  // the "a night belongs to the day it started" rule — see lib/event-schedule.ts —
+  // so a party ending at 04:00 the next morning has an `endTime` but no `endDate`.
+  startTime: text("start_time"),
+  endTime: text("end_time"),
   location: text("location"),
   venue: text("venue"),
   latitude: real("latitude"),
@@ -62,6 +67,9 @@ export const festivals = pgTable("festivals", {
   // Last time the daily cron searched Partyflock for this festival's
   // timetable without linking one — see festival-timetable-autolink.ts.
   pfLinkCheckedAt: timestamp("pf_link_checked_at", { withTimezone: true }),
+  // Last attempt to read this RA event's dates and times from RA, successful or
+  // not — see festival-ra-schedule-core.ts.
+  timesCheckedAt: timestamp("times_checked_at", { withTimezone: true }),
   interestedCount: integer("interested_count").default(0),
   visitorsCount: integer("visitors_count").default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

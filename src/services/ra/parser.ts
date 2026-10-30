@@ -4,7 +4,7 @@
  */
 
 import { type RAEventRaw } from "./client";
-import { toIsoDate } from "@/lib/dates";
+import { deriveEventSchedule } from "@/lib/event-schedule";
 import { normalizeCountryName } from "@/utils/location-normalizer";
 import {
   type LineupEntry,
@@ -211,6 +211,8 @@ export type RASearchResult = {
   name: string;
   date: string | null;
   endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   venue: string | null;
   location: string | null;
   /** Already normalized to English; RA itself reports it in English anyway. */
@@ -223,12 +225,7 @@ export type RASearchResult = {
 export function mapRAEventToSearchResult(e: RAEventRaw): RASearchResult | null {
   if (!e?.id) return null;
 
-  const date = e.startTime
-    ? toIsoDate(new Date(e.startTime))
-    : null;
-  const endDate = e.endTime
-    ? toIsoDate(new Date(e.endTime))
-    : null;
+  const schedule = deriveEventSchedule(e.startTime, e.endTime);
 
   const venueName = e.venue?.name ?? null;
   const areaName = e.venue?.area?.name ?? null;
@@ -245,8 +242,10 @@ export function mapRAEventToSearchResult(e: RAEventRaw): RASearchResult | null {
   return {
     raId: String(e.id),
     name: e.title ?? "Untitled Event",
-    date,
-    endDate,
+    date: schedule?.date ?? null,
+    endDate: schedule?.endDate ?? null,
+    startTime: schedule?.startTime ?? null,
+    endTime: schedule?.endTime ?? null,
     venue: venueName,
     location,
     country: countryName,

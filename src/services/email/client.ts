@@ -10,6 +10,7 @@
  */
 
 import { fetchWithTimeout } from "@/lib/fetch-timeout";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 const RESEND_URL = "https://api.resend.com/emails";
 
@@ -29,7 +30,7 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   const res = await fetchWithTimeout(RESEND_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [message.to], subject: message.subject, text: message.text, html: message.html }),
+    body: JSON.stringify({ from, to: [message.to], reply_to: CONTACT_EMAIL, subject: message.subject, text: message.text, html: message.html }),
   });
   if (!res.ok) throw new Error(`Resend error ${res.status}: ${await res.text()}`);
   return "sent";

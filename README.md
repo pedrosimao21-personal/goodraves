@@ -19,6 +19,7 @@ Copy `.env.example` to `.env` and fill in the values:
 | `DATABASE_URL` | Neon Postgres connection string |
 | `LASTFM_KEY` | Last.fm API key (from https://www.last.fm/api/account/create) |
 | `RESEND_API_KEY` / `EMAIL_FROM` | Resend API key and the sender (`Goodraves <noreply@goodraves.com>`, on a domain verified in Resend) for confirm-email and password-reset mails. Unset in local dev, the mail and its link are printed to the server console |
+| `R2_ENDPOINT` / `R2_BUCKET` / `R2_PUBLIC_URL` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Cloudflare R2 bucket for profile photos: the account's S3 URL (no bucket name, `.eu.` for an EU bucket), the bucket, the public domain it is served from (`https://img.goodraves.com`) and a token limited to that bucket. Unset, photo upload answers "not available". R2 bills past its free tier (10 GB, 1M writes, 10M reads a month): the upload route caps writes (see `AVATAR_*` in `src/lib/constants.ts`) and photos are tiny |
 | `SPOTIFY_CLIENT_ID` | Spotify app client ID (from https://developer.spotify.com/dashboard) |
 | `SPOTIFY_CLIENT_SECRET` | Spotify app client secret |
 
@@ -92,7 +93,7 @@ npm run db:migrate:down  # Roll back the most recent migration
 
 | Table | Purpose |
 |---|---|
-| `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag, and an `email` that only counts once `email_verified_at` is set (login by email and password reset use verified addresses only) |
+| `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, an optional `avatar_url` (profile photo in the R2 bucket), `is_admin` flag, and an `email` that only counts once `email_verified_at` is set (login by email and password reset use verified addresses only) |
 | `auth_tokens` | Single-use emailed links (`verify_email`, `reset_password`): SHA-256 `token_hash`, the `email` it was sent to, `expires_at`/`used_at`; spent rows are pruned by the daily-maintenance cron |
 | `user_notification_settings` | One row per user who touched Notifications on the profile: `next_rave_reminder` and `monthly_recap` switches, both off by default. Mail only goes to a confirmed address |
 | `notification_sends` | Ledger of notification emails, keyed by user, kind and `ref` (festival id, or `YYYY-MM` for a recap). A message is claimed here before it is sent, so the daily cron never repeats one, and today's rows count against the daily send limit; rows older than 90 days are pruned |

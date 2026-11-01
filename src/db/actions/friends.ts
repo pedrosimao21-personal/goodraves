@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { eq, and, or, inArray, desc, sql } from "drizzle-orm";
 import { friendships, users, userFestivalArtistRatings, artists } from "@/db/schema";
 import { requireAuth, enforceRateLimit } from "./festival-helpers";
-import { fetchUsernamesByIds } from "./friend-ids";
+import { fetchAvatarUrlsByIds, fetchUsernamesByIds } from "./friend-ids";
 import { RATE_LIMIT_SEARCH_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/constants";
 
 const MAX_USERNAME_LENGTH = 30;
@@ -151,7 +151,7 @@ export async function searchUsers(query: string): Promise<UserSearchResult[]> {
 }
 
 // ── Reads ────────────────────────────────────────────────
-export type FriendEntry = { id: string; username: string };
+export type FriendEntry = { id: string; username: string; avatarUrl: string | null };
 
 export async function getFriendsData(): Promise<{
   friends: FriendEntry[];
@@ -169,7 +169,7 @@ export async function getFriendsData(): Promise<{
     .where(or(eq(friendships.requesterId, userId), eq(friendships.addresseeId, userId)));
 
   const otherIds = rows.map((r) => (r.requesterId === userId ? r.addresseeId : r.requesterId));
-  const usernames = await fetchUsernamesByIds(otherIds);
+  const [usernames, avatarUrls] = await Promise.all([fetchUsernamesByIds(otherIds), fetchAvatarUrlsByIds(otherIds)]);
 
   const friends: FriendEntry[] = [];
   const incoming: FriendEntry[] = [];
@@ -178,7 +178,7 @@ export async function getFriendsData(): Promise<{
   for (const r of rows) {
     const isMeRequester = r.requesterId === userId;
     const otherId = isMeRequester ? r.addresseeId : r.requesterId;
-    const entry = { id: otherId, username: usernames.get(otherId) ?? "Unknown" };
+    const entry = { id: otherId, username: usernames.get(otherId) ?? "Unknown", avatarUrl: avatarUrls.get(otherId) ?? null };
     if (r.status === "accepted") friends.push(entry);
     else if (isMeRequester) outgoing.push(entry);
     else incoming.push(entry);

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useEffect, useRef, useState } from 'react'
+import UserAvatar from '@/components/UserAvatar'
 import { useTheme } from '@/context/ThemeContext'
 import { THEME_PREFERENCES, type ThemePreference } from '@/lib/theme-constants'
 import styles from './AccountMenu.module.css'
@@ -17,11 +18,12 @@ const THEME_LABELS: Record<ThemePreference, string> = {
 
 interface AccountMenuProps {
   username: string
+  avatarUrl: string | null
   isAdmin: boolean
 }
 
 /** Avatar button that opens the account menu: profile, theme, admin, sign out. */
-export default function AccountMenu({ username, isAdmin }: AccountMenuProps) {
+export default function AccountMenu({ username, avatarUrl, isAdmin }: AccountMenuProps) {
   const { preference, setPreference } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -43,7 +45,6 @@ export default function AccountMenu({ username, isAdmin }: AccountMenuProps) {
   }, [isOpen])
 
   const close = () => setIsOpen(false)
-  const initial = username[0]?.toUpperCase() || 'U'
 
   return (
     <div className={styles.wrap} ref={wrapRef}>
@@ -55,7 +56,7 @@ export default function AccountMenu({ username, isAdmin }: AccountMenuProps) {
         aria-controls={ACCOUNT_PANEL_ID}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span className={styles.avatar}>{initial}</span>
+        <UserAvatar className={styles.avatar} name={username} avatarUrl={avatarUrl} size={32} />
       </button>
 
       {isOpen && (

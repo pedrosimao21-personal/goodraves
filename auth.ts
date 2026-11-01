@@ -48,6 +48,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             username: users.username,
             passwordHash: users.passwordHash,
             isAdmin: users.isAdmin,
+            avatarUrl: users.avatarUrl,
           })
           .from(users)
           .where(email ? and(sql`lower(${users.email}) = ${email}`, isNotNull(users.emailVerifiedAt)) : eq(users.username, identifier))
@@ -58,7 +59,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, name: user.username, isAdmin: user.isAdmin } as any;
+        return { id: user.id, name: user.username, image: user.avatarUrl, isAdmin: user.isAdmin } as any;
       },
     }),
   ],
@@ -70,10 +71,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     maxAge: SESSION_MAX_AGE_SECONDS,
   },
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         (token as any).isAdmin = (user as any).isAdmin ?? false;
+      }
+      // The profile page asks for a session refresh after the photo changes. The value is
+      // read from the database, never taken from the client's request. (This file also runs
+      // in the edge middleware, so it queries directly instead of importing the R2 code.)
+      if (trigger === "update" && token.id) {
+        const [row] = await db.select({ avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, token.id as string)).limit(1);
+        token.picture = row?.avatarUrl ?? null;
       }
       return token;
     },

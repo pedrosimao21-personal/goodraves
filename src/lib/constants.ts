@@ -63,6 +63,31 @@ export const MONTHLY_RECAP_MAX_FESTIVALS = 8;
 /** Send records only matter for a few days; older ones are cleared. */
 export const NOTIFICATION_SENDS_RETENTION_DAYS = 90;
 
+/**
+ * Profile photos live in Cloudflare R2, whose free tier is 10 GB, 1M writes and 10M reads a
+ * month, and which bills past it. The browser shrinks the photo first (AVATAR_OUTPUT_SIZE
+ * px square, a few KB); the server then refuses anything larger than a few times that, so
+ * storage stays tiny whatever someone sends. The caps below keep writes far under the free
+ * tier: 1,000 a day is 30,000 a month, 3% of it.
+ */
+export const AVATAR_OUTPUT_SIZE = 256;
+export const AVATAR_OUTPUT_QUALITY = 0.85;
+export const AVATAR_MAX_BYTES = 100 * 1024;
+export const AVATAR_MIN_DIMENSION = 16;
+export const AVATAR_MAX_DIMENSION = 512;
+/** What the browser may pick before it shrinks the photo. */
+export const AVATAR_MAX_SOURCE_BYTES = 15 * 1024 * 1024;
+export const AVATAR_UPLOADS_PER_USER_PER_DAY = 5;
+export const AVATAR_UPLOADS_PER_IP_PER_DAY = 20;
+export const AVATAR_UPLOADS_SITE_PER_DAY = 1000;
+export const AVATAR_RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+/**
+ * A photo never changes once uploaded (a new one gets a new name), but a removed one must stop being
+ * served soon, and Cloudflare keeps serving a cached copy until this runs out. A day keeps reads from
+ * the bucket in the hundreds of thousands a month at most, a small fraction of the free 10M.
+ */
+export const AVATAR_CACHE_CONTROL = "public, max-age=86400";
+
 /** Max lengths for free-text profile fields. */
 export const MAX_CITY_LENGTH = 200;
 export const MAX_GENRES_LENGTH = 500;

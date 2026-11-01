@@ -53,7 +53,7 @@ export default function Navbar() {
               <RefreshIcon />
             </button>
             {status === 'authenticated' && session?.user ? (
-              <AccountMenu username={session.user.name ?? ''} isAdmin={isAdmin} />
+              <AccountMenu username={session.user.name ?? ''} avatarUrl={session.user.image ?? null} isAdmin={isAdmin} />
             ) : status === 'unauthenticated' ? (
               <>
                 <Link href="/login" className="btn btn-sm btn-ghost" aria-current={pathname === '/login' ? 'page' : undefined}>Log in</Link>

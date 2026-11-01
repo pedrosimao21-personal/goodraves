@@ -12,6 +12,7 @@ export type FestivalFeedItem = {
   kind: "festival";
   userId: string;
   username: string;
+  avatarUrl: string | null;
   festivalId: string;
   festivalName: string;
   festivalDate: string;
@@ -27,6 +28,7 @@ export type FollowFeedItem = {
   kind: "follow";
   userId: string;
   username: string;
+  avatarUrl: string | null;
   artistId: string;
   artistName: string;
   artistImage: string | null;
@@ -43,6 +45,7 @@ async function fetchFestivalActivity(friendIds: string[], before: Date | null): 
     .select({
       userId: userFestivals.userId,
       username: users.username,
+      avatarUrl: users.avatarUrl,
       festivalId: userFestivals.festivalId,
       festivalName: festivals.name,
       festivalDate: festivals.date,
@@ -79,6 +82,7 @@ async function fetchFollowActivity(friendIds: string[], before: Date | null): Pr
     .select({
       userId: userArtistFollows.userId,
       username: users.username,
+      avatarUrl: users.avatarUrl,
       artistId: userArtistFollows.artistId,
       artistName: artists.name,
       artistImage: artists.imageUrl,

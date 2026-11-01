@@ -25,6 +25,16 @@ export async function fetchAcceptedFriendIds(userId: string): Promise<string[]> 
   return rows.map((r) => (r.requesterId === userId ? r.addresseeId : r.requesterId));
 }
 
+/** userId -> profile photo URL (null when they have none) for the given ids. */
+export async function fetchAvatarUrlsByIds(ids: string[]): Promise<Map<string, string | null>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .select({ id: users.id, avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(inArray(users.id, ids));
+  return new Map(rows.map((r) => [r.id, r.avatarUrl]));
+}
+
 /** userId -> username for the given ids. */
 export async function fetchUsernamesByIds(ids: string[]): Promise<Map<string, string>> {
   if (ids.length === 0) return new Map();

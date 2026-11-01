@@ -5,9 +5,11 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import UserAvatar from '@/components/UserAvatar'
 import { formatDateRange } from '@/lib/format-date'
 import { CityField, GenresField, PrivacyField, ThemeField } from './ProfileFields'
 import { AccountField, PasswordField } from './AccountFields'
+import { AvatarField } from './AvatarField'
 import { EmailField } from './EmailField'
 import { NotificationsField } from './NotificationsField'
 import type { TailoredFestival } from '@/db/actions/tailored-festivals-core'
@@ -70,7 +72,7 @@ export default function ProfilePage() {
     <div className="page">
       <div className="container">
         <div className={styles.identity}>
-          <span className={`display ${styles.avatar}`} aria-hidden="true">{name[0] || 'U'}</span>
+          <UserAvatar className={`display ${styles.avatar}`} name={name} avatarUrl={session.user?.image} size={88} />
           <div>
             <h1 className={`display ${styles.name}`}>{name}</h1>
             {session.user?.email && <p className={`mono ${styles.muted}`}>{session.user.email}</p>}
@@ -79,6 +81,7 @@ export default function ProfilePage() {
 
         <div className={styles.layout}>
           <section className={styles.fields}>
+            <AvatarField />
             <CityField key={city} value={city} onSave={saveCity} />
             <GenresField value={genres} onSave={saveGenres} />
             <ThemeField />

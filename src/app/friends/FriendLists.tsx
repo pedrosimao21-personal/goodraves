@@ -2,10 +2,11 @@
 
 import type { FriendEntry } from '@/db/actions/friends'
 import { CloseIcon } from '@/components/icons'
+import UserAvatar from '@/components/UserAvatar'
 import styles from './Friends.module.css'
 
-function Avatar({ name }: { name: string }) {
-  return <span className={`display ${styles.avatar}`} aria-hidden="true">{name[0]}</span>
+function Avatar({ name, avatarUrl }: { name: string; avatarUrl: string | null }) {
+  return <UserAvatar className={`display ${styles.avatar}`} name={name} avatarUrl={avatarUrl} size={40} />
 }
 
 function ListHeader({ title, count }: { title: string; count: number }) {
@@ -29,7 +30,7 @@ export function RequestList({ incoming, outgoing, onRespond }: {
       <ListHeader title="Requests" count={incoming.length + outgoing.length} />
       {incoming.map(req => (
         <div key={req.id} className={styles.person}>
-          <Avatar name={req.username} />
+          <Avatar name={req.username} avatarUrl={req.avatarUrl} />
           <span className={styles.personName}>{req.username}</span>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => onRespond(req.id, true)}>Accept</button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => onRespond(req.id, false)}>Decline</button>
@@ -37,7 +38,7 @@ export function RequestList({ incoming, outgoing, onRespond }: {
       ))}
       {outgoing.map(req => (
         <div key={req.id} className={styles.person}>
-          <Avatar name={req.username} />
+          <Avatar name={req.username} avatarUrl={req.avatarUrl} />
           <span className={styles.personName}>{req.username}</span>
           <span className={`mono ${styles.muted}`}>Sent · pending</span>
         </div>
@@ -53,7 +54,7 @@ export function FriendList({ friends, onRemove }: { friends: FriendEntry[]; onRe
       {friends.length === 0 && <p className={styles.empty}>No friends yet. Add one by username above.</p>}
       {friends.map(friend => (
         <div key={friend.id} className={styles.person}>
-          <Avatar name={friend.username} />
+          <Avatar name={friend.username} avatarUrl={friend.avatarUrl} />
           <span className={styles.personName}>{friend.username}</span>
           <button type="button" className={styles.removeButton} onClick={() => onRemove(friend.id)} aria-label={`Remove ${friend.username}`} title="Remove friend">
             <CloseIcon size={16} />

@@ -411,6 +411,14 @@ textarea.form-input {
   }
 }
 
+/* A profile photo fills the avatar box it sits in (see components/UserAvatar). */
+.avatar-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* =============================================
    MOBILE
    ============================================= */

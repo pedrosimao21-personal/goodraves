@@ -11,4 +11,4 @@ export const TEAM = [
 export const CONTACT_EMAIL = TEAM[0].email
 
 /** Date the privacy policy and terms were last changed. Update when either page changes. */
-export const LEGAL_LAST_UPDATED = '1 November 2026'
+export const LEGAL_LAST_UPDATED = '2 November 2026'

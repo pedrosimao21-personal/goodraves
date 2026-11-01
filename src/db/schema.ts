@@ -27,6 +27,8 @@ export const users = pgTable(
     // `emailVerifiedAt` is set (they clicked the emailed link).
     email: text("email"),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    // Public URL of the profile photo in the R2 bucket; null = show an initial.
+    avatarUrl: text("avatar_url"),
   },
   (t) => [
     // Case-insensitive uniqueness: prevents "Maarten" and "maarten" coexisting.

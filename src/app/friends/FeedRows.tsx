@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { getFriendArtistRatingsForFestival, type FriendArtistRating } from '@/db/actions/friends'
 import type { FeedItem, FestivalFeedItem, FollowFeedItem } from '@/db/actions/friends-feed'
 import RatingSquares from '@/components/rating/RatingSquares'
+import UserAvatar from '@/components/UserAvatar'
 import { ChevronDownIcon } from '@/components/icons'
 import { formatDate, formatRelativeTime } from '@/lib/format-date'
 import { getFestivalPhase } from '@/lib/festival-date'
@@ -75,7 +76,7 @@ function FestivalFeedRow({ item }: { item: FestivalFeedItem }) {
   const href = `/festival/${item.festivalId}`
   return (
     <article className={styles.row}>
-      <span className={`display ${styles.avatar}`} aria-hidden="true">{item.username[0]}</span>
+      <UserAvatar className={`display ${styles.avatar}`} name={item.username} avatarUrl={item.avatarUrl} size={48} />
       <div className={styles.body}>
         <Headline item={item} verb={getVerb(item)} target={item.festivalName} href={href} />
         <div className={styles.festival}>
@@ -98,7 +99,7 @@ function FollowFeedRow({ item }: { item: FollowFeedItem }) {
   const href = `/artist/${item.artistId}/${encodeURIComponent(item.artistName)}`
   return (
     <article className={styles.row}>
-      <span className={`display ${styles.avatar}`} aria-hidden="true">{item.username[0]}</span>
+      <UserAvatar className={`display ${styles.avatar}`} name={item.username} avatarUrl={item.avatarUrl} size={48} />
       <div className={styles.body}>
         <Headline item={item} verb="started following" target={item.artistName} href={href} />
         {item.artistImage && (

@@ -162,6 +162,18 @@
   margin-top: 8px;
 }
 
+.photoPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  background: var(--gr-s2);
+  border: 1px solid var(--gr-line2);
+  font-size: 30px;
+}
+
 .toggleRow {
   display: flex;
   align-items: flex-start;

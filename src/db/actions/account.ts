@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { requireCurrentPassword } from "./account-core";
+import { deleteStoredPhoto, getAvatarUrl } from "@/db/avatar-core";
 import { getPasswordError, hashPassword } from "@/lib/password";
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
@@ -21,5 +22,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
  */
 export async function deleteAccount(currentPassword: string): Promise<void> {
   const userId = await requireCurrentPassword(currentPassword);
+  const avatarUrl = await getAvatarUrl(userId);
   await db.delete(users).where(eq(users.id, userId));
+  await deleteStoredPhoto(avatarUrl); // the photo file is not in the database, so it is removed separately
 }

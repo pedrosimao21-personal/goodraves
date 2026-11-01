@@ -25,12 +25,12 @@ interface B2bSetCardProps {
 }
 
 const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canRate }: B2bSetCardProps) {
-  const { getPerformanceRating, didSeeArtist, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
-  const firstMember = b2bSet.members[0]
-  const currentRating = firstMember ? getPerformanceRating(eventId, firstMember.artistId) : 0
+  const { getB2bSetRating, didSeeArtist, rateB2bSet, unsplitB2bSet, isAdmin } = useUserDataActions()
+  // Each set keeps its own rating, so a set that shares a member with another is not rated by it.
+  const currentRating = getB2bSetRating(b2bSet.id)
   const [showUnsplitConfirm, setShowUnsplitConfirm] = useState(false)
   const [showMembersModal, setShowMembersModal] = useState(false)
-  const isSeenUnrated = currentRating === 0 && Boolean(firstMember) && didSeeArtist(eventId, firstMember.artistId)
+  const isSeenUnrated = currentRating === 0 && b2bSet.members.length > 0 && b2bSet.members.every((m) => didSeeArtist(eventId, m.artistId))
   const avatarMembers = b2bSet.members.slice(0, MAX_AVATARS)
   const ariaDisplayName = b2bSet.members.map((m) => m.artistName).join(' b2b ')
 
@@ -87,7 +87,7 @@ const B2bSetCard = memo(function B2bSetCard({ b2bSet, eventId, spotifyData, canR
           ))}
         </h3>
 
-        {/* One tap rates every member and marks them as seen (rateB2bSet). */}
+        {/* Rates this set and marks its members as seen (rateB2bSet). */}
         {canRate && (
           <div className={styles.controls}>
             <RatingFader

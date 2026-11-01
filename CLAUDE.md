@@ -154,7 +154,7 @@ profile photo is preferred over Spotify's name match and neither replaces a lock
 `user_festival_artist_ratings` and `user_artist_global` (ratings in half points, 0.5-5, `real`), `user_artist_follows` (followed artists →
 `/following`, which reads their upcoming festivals from `festival_artists` only; follows are
 visible to friends, never public), `festival_b2b_sets`/`_members`
-(splitting back-to-back DJ sets into individuals), `festival_timetable_slots` (per-stage
+(splitting back-to-back DJ sets into individuals; `user_b2b_set_ratings` holds a user's rating of each set on its own, so two sets sharing a member stay independent, and a member's festival rating is the average of their rated sets), `festival_timetable_slots` (per-stage
 slots; `slot_date` distinguishes days once a multi-day festival's rows are merged),
 `festival_duplicate_candidates` (review queue for the daily dedupe — pairs that weren't certain
 enough to auto-merge; resolved on `/admin/duplicates`; dismissed pairs stay so they're never

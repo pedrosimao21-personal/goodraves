@@ -10,7 +10,6 @@ import {
   userFestivalArtistRatings,
 } from "@/db/schema";
 import { requireAuth, requireAdmin } from "./festival-helpers";
-import { validateArtistRating } from "@/lib/rating";
 import { revalidatePath } from "next/cache";
 
 const MIN_MEMBER_COUNT = 2;
@@ -202,63 +201,6 @@ export async function unsplitB2bSet(b2bSetId: string): Promise<void> {
   await db.delete(festivalB2bSets).where(eq(festivalB2bSets.id, b2bSetId));
 
   revalidatePath(`/festival/${b2bSet.festivalId}`);
-}
-
-// ── Rate a B2B set (propagates to all members) ───────────
-
-export async function rateB2bSet(b2bSetId: string, rating: number) {
-  const userId = await requireAuth();
-
-  // Look up the B2B set's festival and member artist IDs
-  const [b2bSet] = await db
-    .select({ festivalId: festivalB2bSets.festivalId })
-    .from(festivalB2bSets)
-    .where(eq(festivalB2bSets.id, b2bSetId))
-    .limit(1);
-
-  if (!b2bSet) {
-    throw new Error("B2B set not found");
-  }
-
-  const members = await db
-    .select({ artistId: festivalB2bSetMembers.artistId })
-    .from(festivalB2bSetMembers)
-    .where(eq(festivalB2bSetMembers.b2bSetId, b2bSetId));
-
-  const memberArtistIds = members.map((m) => m.artistId);
-
-  if (rating === 0) {
-    await db
-      .delete(userFestivalArtistRatings)
-      .where(
-        and(
-          eq(userFestivalArtistRatings.userId, userId),
-          eq(userFestivalArtistRatings.festivalId, b2bSet.festivalId),
-          inArray(userFestivalArtistRatings.artistId, memberArtistIds)
-        )
-      );
-    return;
-  }
-
-  const validRating = validateArtistRating(rating);
-  const ratingInserts = memberArtistIds.map((artistId) => ({
-    userId,
-    festivalId: b2bSet.festivalId,
-    artistId,
-    rating: validRating,
-  }));
-
-  await db
-    .insert(userFestivalArtistRatings)
-    .values(ratingInserts)
-    .onConflictDoUpdate({
-      target: [
-        userFestivalArtistRatings.userId,
-        userFestivalArtistRatings.festivalId,
-        userFestivalArtistRatings.artistId,
-      ],
-      set: { rating: sql`excluded.rating` },
-    });
 }
 
 // ── Get B2B sets for a festival ───────────────────────────

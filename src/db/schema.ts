@@ -445,6 +445,19 @@ export const festivalB2bSets = pgTable("festival_b2b_sets", {
   index("festival_b2b_sets_festival_id_idx").on(t.festivalId),
 ]);
 
+// A user's rating of one B2B set. Each set keeps its own, so two sets sharing a member (Armin b2b
+// Deep Dish, Armin b2b Funk Tribu) don't share a rating; a member's per-festival rating in
+// user_festival_artist_ratings is worked out from these (src/db/actions/rate-b2b-set.ts).
+export const userB2bSetRatings = pgTable(
+  "user_b2b_set_ratings",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    b2bSetId: uuid("b2b_set_id").notNull().references(() => festivalB2bSets.id, { onDelete: "cascade" }),
+    rating: real("rating").notNull(), // half points, 0.5..5
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.b2bSetId] }), index("user_b2b_set_ratings_set_idx").on(t.b2bSetId)]
+);
+
 export const festivalB2bSetMembers = pgTable(
   "festival_b2b_set_members",
   {

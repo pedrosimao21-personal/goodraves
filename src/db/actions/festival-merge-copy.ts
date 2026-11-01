@@ -6,6 +6,7 @@ import {
   festivalGenres,
   festivalB2bSets,
   festivalB2bSetMembers,
+  userB2bSetRatings,
   userFestivals,
   userFestivalArtistRatings,
 } from "@/db/schema";
@@ -78,6 +79,20 @@ export async function copyGenres(loserId: string, winnerId: string): Promise<voi
  * no unique constraint, so a blind copy would duplicate any set that already
  * exists on the winner (e.g. both rows independently split the same B2B act).
  */
+/** Carries users' ratings of copied B2B sets over to the copies, which have new ids. */
+async function copyB2bSetRatings(copies: { fromId: string; toId: string }[]): Promise<void> {
+  const rows = await db
+    .select()
+    .from(userB2bSetRatings)
+    .where(inArray(userB2bSetRatings.b2bSetId, copies.map((c) => c.fromId)));
+  const toIdByFromId = new Map(copies.map((c) => [c.fromId, c.toId]));
+  const inserts = rows.flatMap((row) => {
+    const b2bSetId = toIdByFromId.get(row.b2bSetId);
+    return b2bSetId ? [{ userId: row.userId, b2bSetId, rating: row.rating }] : [];
+  });
+  if (inserts.length > 0) await db.insert(userB2bSetRatings).values(inserts).onConflictDoNothing();
+}
+
 export async function copyB2bSets(loserId: string, winnerId: string): Promise<void> {
   const [loserSets, winnerSets] = await Promise.all([
     db.select().from(festivalB2bSets).where(eq(festivalB2bSets.festivalId, loserId)),
@@ -107,6 +122,7 @@ export async function copyB2bSets(loserId: string, winnerId: string): Promise<vo
     .insert(festivalB2bSets)
     .values(setsToCopy.map((s) => ({ festivalId: winnerId, originalArtistName: s.originalArtistName })))
     .returning({ id: festivalB2bSets.id });
+  await copyB2bSetRatings(setsToCopy.map((s, i) => ({ fromId: s.id, toId: newSetRows[i].id })));
 
   const memberInserts = setsToCopy.flatMap((s, i) =>
     (membersBySetId.get(s.id) ?? []).map((m) => ({

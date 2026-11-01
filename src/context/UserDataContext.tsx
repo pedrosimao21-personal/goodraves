@@ -26,6 +26,7 @@ import {
 } from '@/db/actions/festivals'
 import { renameArtist as renameArtistAction } from '@/db/actions/artist-rename'
 
+import { applyB2bSetRating } from './b2b-rating-state'
 import { isFestivalPast } from '@/lib/festival-date'
 import type { InitialUserData } from '@/db/actions/user-data-query'
 import type { FestivalMeta, UserDataState, UserDataContextType } from './user-data-state'
@@ -264,34 +265,8 @@ export function UserDataProvider({ children, initialData }: UserDataProviderProp
 
   const rateB2bSetFn = useCallback(async (b2bSetId: string, rating: number) => {
     if (!userId) { promptAuth(); return }
-    // Optimistically update performance ratings for all members of this B2B set
-    setState(prev => {
-      const allSets = Object.values(prev.b2bSets).flat()
-      const b2bSet = allSets.find(s => s.id === b2bSetId)
-      if (!b2bSet) return prev
-
-      const updatedPerformanceRatings = { ...prev.performanceRatings }
-      const updatedSeen = { ...prev.seenArtists }
-      const currentSeen = updatedSeen[b2bSet.festivalId] ?? []
-      let newSeen = [...currentSeen]
-
-      for (const member of b2bSet.members) {
-        const key = `${b2bSet.festivalId}::${member.artistId}`
-        updatedPerformanceRatings[key] = rating
-
-        if (rating > 0 && !newSeen.includes(member.artistId)) {
-          newSeen.push(member.artistId)
-        } else if (rating === 0) {
-          newSeen = newSeen.filter(id => id !== member.artistId)
-        }
-      }
-
-      return {
-        ...prev,
-        performanceRatings: updatedPerformanceRatings,
-        seenArtists: { ...updatedSeen, [b2bSet.festivalId]: newSeen },
-      }
-    })
+    // The set keeps its own rating; its members' ratings follow from the sets they are in.
+    setState(prev => applyB2bSetRating(prev, b2bSetId, rating))
     await rateB2bSetAction(b2bSetId, rating)
   }, [userId, promptAuth])
 

@@ -18,6 +18,7 @@ import {
   userFestivalArtistRatings,
   userArtistGlobal,
   userArtistWantToSee,
+  userB2bSetRatings,
   genres,
   artistGenres as artistGenresTable,
 } from "@/db/schema";
@@ -31,7 +32,7 @@ export type InitialUserData = Awaited<ReturnType<typeof fetchUserDataForId>> | n
 
 /** Shared query logic for fetching all user data given a userId. */
 export async function fetchUserDataForId(userId: string) {
-  const [userFestivalsData, artistRatingsData, globalArtistData, wantToSeeData] =
+  const [userFestivalsData, artistRatingsData, globalArtistData, wantToSeeData, b2bSetRatingsData] =
     await Promise.all([
       db
         .select({
@@ -79,6 +80,10 @@ export async function fetchUserDataForId(userId: string) {
         })
         .from(userArtistWantToSee)
         .where(eq(userArtistWantToSee.userId, userId)),
+      db
+        .select({ b2bSetId: userB2bSetRatings.b2bSetId, rating: userB2bSetRatings.rating })
+        .from(userB2bSetRatings)
+        .where(eq(userB2bSetRatings.userId, userId)),
     ]);
 
   const seenArtistIds = [...new Set(artistRatingsData.map((ar) => ar.artistId))];
@@ -98,6 +103,7 @@ export async function fetchUserDataForId(userId: string) {
     globalArtistData,
     artistGenres: artistGenreData,
     wantToSee: wantToSeeData,
+    b2bSetRatings: b2bSetRatingsData,
   };
 }
 

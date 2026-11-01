@@ -63,6 +63,8 @@ function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set
 
   const getB2bSets = (festivalId: string): B2bSetData[] => state.b2bSets[festivalId] ?? []
 
+  const getB2bSetRating = (b2bSetId: string): number => state.b2bSetRatings[b2bSetId] ?? 0
+
   const exportData = () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -77,7 +79,7 @@ function buildReaders(state: UserDataState, attended: Set<string>, upcoming: Set
     isAttended, isUpcoming, didSeeArtist, didWantToSee, getSeenCount,
     getRating, getPerformanceRating, getFestivalRating, getAverageArtistRating,
     getNotes, getFestivalNotes, getFestivalPublicComment, getFestivalMeta, getArtistMeta, getArtistSeenCounts, exportData,
-    getB2bSets, getArtistHistory,
+    getB2bSets, getB2bSetRating, getArtistHistory,
   }
 }
 

@@ -49,6 +49,8 @@ export interface UserDataState {
   festivalPublicComments: Record<string, string>
   raEvents: Record<string, any>
   b2bSets: Record<string, B2bSetData[]>
+  /** The user's rating of each B2B set, by set id: a set is rated on its own, apart from its members. */
+  b2bSetRatings: Record<string, number>
 }
 
 export interface UserDataContextType {
@@ -100,6 +102,7 @@ export interface UserDataContextType {
   getSeenCount: (eventId: string) => number
   getRating: (artistId: string) => number
   getPerformanceRating: (eventId: string, artistId: string) => number
+  getB2bSetRating: (b2bSetId: string) => number
   getFestivalRating: (eventId: string) => number
   getNotes: (artistId: string) => string
   getFestivalNotes: (eventId: string) => string
@@ -178,6 +181,7 @@ export const DEFAULT_STATE: UserDataState = {
   festivalPublicComments: {},
   raEvents: {},
   b2bSets: {},
+  b2bSetRatings: {},
 }
 
 /** Transform raw DB data into local state shape */
@@ -260,5 +264,6 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
     festivalPublicComments,
     raEvents: {},
     b2bSets: {},
+    b2bSetRatings: Object.fromEntries((data.b2bSetRatings ?? []).map((r) => [r.b2bSetId, r.rating])),
   }
 }

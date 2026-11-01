@@ -650,11 +650,10 @@ export async function enrichArtistNamesBatch(
         spotifySearchArtist(name).catch(() => null),
         lastfmGetArtistInfo(name).catch(() => null),
       ]);
+      // Photos come from Spotify only: Last.fm has none for artists anymore, and a stored photo (RA, manual) wins.
       if (sp) image = sp.image;
-      if (info) {
-        genres = info.tags || [];
-        if (!image) image = info.image;
-      }
+      if (info) genres = info.tags || [];
+      image = cachedByLower.get(name.toLowerCase())?.imageUrl ?? image;
 
       results[name.toLowerCase()] = { name, image, genres };
     })

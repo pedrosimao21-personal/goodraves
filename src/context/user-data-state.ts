@@ -240,6 +240,7 @@ export function transformDbData(data: NonNullable<InitialUserData>): UserDataSta
   for (const a of (data.artistGenres ?? [])) {
     artistMeta[a.id] = {
       name: a.name,
+      image: a.image ?? null,
       genres: a.genres ?? [],
     }
   }

@@ -13,6 +13,7 @@ const ALLOWED_PATTERNS: Array<{ wildcard: boolean; host: string }> = [
   { wildcard: false, host: 'i.imgur.com' },
   { wildcard: false, host: 'assets.awakenings.com' },
   { wildcard: false, host: 'lastfm.freetls.fastly.net' },
+  { wildcard: false, host: 'lastfm-img.freetls.fastly.net' },
   { wildcard: false, host: 'festivalfans.nl' },
   { wildcard: false, host: 'partyflock.nl' },
   { wildcard: false, host: 'photo.partyflock.nl' },

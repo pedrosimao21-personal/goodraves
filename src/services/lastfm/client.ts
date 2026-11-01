@@ -17,6 +17,17 @@ const MAX_GENRE_TAGS = 5;
 const MAX_SIMILAR_ARTISTS = 5;
 const DEFAULT_TOP_TRACKS_LIMIT = 8;
 const RETRY_OPTIONS = { retries: 2, baseDelayMs: 300 };
+// Last.fm stopped serving artist photos: every artist without one gets this grey star.
+const PLACEHOLDER_IMAGE_HASH = "2a96cbd8b46e442fc41c2b86b821562f";
+
+/** The first real image among the given sizes, in order of preference; null for empty or the placeholder star. */
+function pickImage(images: any[] | undefined, sizes: string[]): string | null {
+  for (const size of sizes) {
+    const url = images?.find((i: any) => i.size === size)?.["#text"];
+    if (typeof url === "string" && url !== "" && !url.includes(PLACEHOLDER_IMAGE_HASH)) return url;
+  }
+  return null;
+}
 
 async function call(params: Record<string, any>) {
   if (!API_KEY || API_KEY === PLACEHOLDER_KEY) {
@@ -58,12 +69,6 @@ export async function lastfmGetArtistInfo(name: string) {
   });
   const artist = data.artist;
 
-  const images = artist.image ?? [];
-  const imageUrl =
-    images.find((i: any) => i.size === "extralarge")?.["#text"] ??
-    images.find((i: any) => i.size === "large")?.["#text"] ??
-    null;
-
   const bio = artist.bio?.content ?? artist.bio?.summary ?? "";
   let cleanBio = bio
     .replace(/<a href="[^"]*">Read more on Last\.fm<\/a>/gi, "")
@@ -102,7 +107,7 @@ export async function lastfmGetArtistInfo(name: string) {
     name: artist.name,
     mbid: artist.mbid ?? null,
     url: artist.url ?? null,
-    image: imageUrl && imageUrl !== "" ? imageUrl : null,
+    image: pickImage(artist.image, ["extralarge", "large"]),
     listeners: artist.stats?.listeners ?? null,
     playcount: artist.stats?.playcount ?? null,
     tags: extractTagNames(
@@ -112,8 +117,7 @@ export async function lastfmGetArtistInfo(name: string) {
     similar: (artist.similar?.artist ?? []).slice(0, MAX_SIMILAR_ARTISTS).map((a: any) => ({
       name: a.name,
       url: a.url,
-      image:
-        a.image?.find((i: any) => i.size === "medium")?.["#text"] ?? null,
+      image: pickImage(a.image, ["medium"]),
     })),
   };
 }
@@ -204,10 +208,7 @@ export async function lastfmGetTagTopAlbums(
       name: a.name,
       artist: a.artist?.name ?? "",
       url: a.url ?? null,
-      image:
-        a.image?.find((i: any) => i.size === "large")?.["#text"] ||
-        a.image?.find((i: any) => i.size === "medium")?.["#text"] ||
-        null,
+      image: pickImage(a.image, ["large", "medium"]),
     }));
   } catch {
     return [];
@@ -301,10 +302,7 @@ export async function lastfmGetTagTopArtists(
     return (data.topartists?.artist ?? []).map((a: any) => ({
       name: a.name,
       url: a.url ?? null,
-      image:
-        a.image?.find((i: any) => i.size === "large")?.["#text"] ||
-        a.image?.find((i: any) => i.size === "medium")?.["#text"] ||
-        null,
+      image: pickImage(a.image, ["large", "medium"]),
     }));
   } catch {
     return [];
@@ -330,10 +328,7 @@ export async function lastfmGetTagTopTracks(
       name: t.name,
       artist: t.artist?.name ?? "",
       url: t.url ?? null,
-      image:
-        t.image?.find((i: any) => i.size === "medium")?.["#text"] ||
-        t.image?.find((i: any) => i.size === "small")?.["#text"] ||
-        null,
+      image: pickImage(t.image, ["medium", "small"]),
     }));
   } catch {
     return [];

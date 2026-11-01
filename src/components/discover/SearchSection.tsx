@@ -159,9 +159,10 @@ export default function SearchSection() {
 
         {pastEvents.length > 0 && (
           <>
-            {hasBothGroups && (
-              <h2 className={`mono ${styles.pastHeading}`}>Past festivals <span>{pastEvents.length}</span></h2>
-            )}
+            <h2 className={`mono ${styles.pastHeading} ${upcomingEvents.length === 0 ? styles.pastHeadingFirst : ''}`}>
+              {upcomingEvents.length === 0 && <>No upcoming festivals · </>}
+              Past festivals <span>{pastEvents.length}</span>
+            </h2>
             <div className={styles.grid}>
               {pastEvents.map((event) => (
                 <FestivalCard

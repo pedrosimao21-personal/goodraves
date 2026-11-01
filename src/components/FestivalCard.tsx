@@ -146,7 +146,11 @@ export default memo(function FestivalCard({ event, skipImageFetch = false, frien
       </Link>
 
       <div className={styles.body}>
-        <span className="mono">{formatDateRange(event.date, event.endDate)}</span>
+        <span className="mono">
+          {formatDateRange(event.date, event.endDate)}
+          {/* The photo badge is hidden on phones, so the date line says it. */}
+          {!isFuture && <span className={styles.pastLabel}>Past</span>}
+        </span>
         <h3 className={`display ${styles.title}`}>
           <Link href={festivalHref}>{event.name}</Link>
         </h3>

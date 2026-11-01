@@ -83,6 +83,11 @@
   filter: invert(1);
 }
 
+/* Phones only: the "Past" badge on the photo is hidden there. */
+.pastLabel {
+  display: none;
+}
+
 .body {
   flex: 1;
   display: flex;
@@ -156,6 +161,18 @@
 
   .badges {
     display: none;
+  }
+
+  .pastLabel {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border: 1px solid var(--gr-line2);
+    color: var(--gr-tx2);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    vertical-align: 1px;
   }
 
   .body {

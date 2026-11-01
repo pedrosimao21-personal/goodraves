@@ -107,7 +107,7 @@ async function fetchArtistGenreData(artistIds: string[]) {
 
   const [rows, genreRows] = await Promise.all([
     db
-      .select({ id: artists.id, name: artists.name })
+      .select({ id: artists.id, name: artists.name, imageUrl: artists.imageUrl })
       .from(artists)
       .where(inArray(artists.id, artistIds)),
     db
@@ -127,6 +127,7 @@ async function fetchArtistGenreData(artistIds: string[]) {
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
+    image: r.imageUrl ?? null,
     genres: genresByArtist.get(r.id) ?? [],
   }));
 }

@@ -59,7 +59,7 @@ export default function TopDJs() {
       if (hasNewGenres || !hasExistingGenres) {
         metaUpdates[artist.id] = {
           name: enriched.name || artist.name,
-          image: enriched.image || artist.image,
+          image: artist.image || enriched.image,
           genres: hasNewGenres ? enriched.genres : (artistMeta[artist.id]?.genres || []),
         }
       }

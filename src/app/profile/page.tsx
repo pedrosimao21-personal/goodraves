@@ -9,6 +9,7 @@ import { formatDateRange } from '@/lib/format-date'
 import { CityField, GenresField, PrivacyField, ThemeField } from './ProfileFields'
 import { AccountField, PasswordField } from './AccountFields'
 import { EmailField } from './EmailField'
+import { NotificationsField } from './NotificationsField'
 import type { TailoredFestival } from '@/db/actions/tailored-festivals-core'
 import { parseGenres, useProfile } from './use-profile'
 import styles from './Profile.module.css'
@@ -83,6 +84,7 @@ export default function ProfilePage() {
             <ThemeField />
             <PrivacyField />
             <EmailField />
+            <NotificationsField />
             <PasswordField />
             <AccountField />
           </section>

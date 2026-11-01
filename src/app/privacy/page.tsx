@@ -35,6 +35,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account:</strong> your username, your password (only as a one-way bcrypt hash, never readable) and when you signed up. Your <strong>email address</strong> is required when you create an account and you can change or remove it on your profile. It is used to log in, to reset a forgotten password and to send the confirmation link, and nothing else without your say-so. We don&apos;t ask for your real name or phone number.</li>
           <li><strong>Profile, if you fill it in:</strong> your home city and favourite genres.</li>
+          <li><strong>Email notifications, if you switch them on:</strong> which ones you chose (all are off until you turn them on) and a short record of what we sent you, so nothing is sent twice. Records are cleared after 90 days.</li>
           <li><strong>What you do on the site:</strong> festivals you&apos;re going to or went to, your festival and set ratings, notes, comments, artists you follow or want to see, friends and friend requests, and festivals you add yourself.</li>
           <li><strong>Technical data:</strong> your IP address, used to stop password guessing and abuse. We keep it for at most a day. Our hosting provider also keeps short-lived request logs that include IP addresses.</li>
         </ul>
@@ -45,6 +46,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Your account, profile and activity are needed to run the service you signed up for (performance of a contract, GDPR art. 6(1)(b)).</li>
           <li>IP addresses and logs keep the site secure and working (legitimate interest, GDPR art. 6(1)(f)).</li>
+          <li>Notification emails (festival reminders, the monthly recap) are sent only if you switch them on, so they rest on your consent (GDPR art. 6(1)(a)). Switch one off on your profile, or with the unsubscribe link in the email, and it stops.</li>
         </ul>
         <p>We don&apos;t use your data for advertising, profiling by third parties or automated decisions about you.</p>
       </section>
@@ -64,7 +66,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Vercel</strong> hosts the site, running in Frankfurt (EU).</li>
           <li><strong>Neon</strong> hosts the database, in Frankfurt (EU).</li>
-          <li><strong>Resend</strong> delivers our emails (confirmation and password-reset links). It receives your email address and the message text when one is sent.</li>
+          <li><strong>Resend</strong> delivers our emails (confirmation and password-reset links, and the notifications you switch on). It receives your email address and the message text when one is sent.</li>
         </ul>
         <p>
           All three are US companies acting as our processors. Where data could reach the US, it&apos;s covered by the EU&ndash;US

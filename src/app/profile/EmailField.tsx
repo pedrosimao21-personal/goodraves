@@ -63,7 +63,7 @@ export function EmailField() {
     }
   }
 
-  const hint = 'Log in with it, reset a forgotten password, and later get the notifications you choose.'
+  const hint = 'Log in with it, reset a forgotten password, and get the notifications you choose.'
 
   return (
     <Field title="Email" hint={hint}>

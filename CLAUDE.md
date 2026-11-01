@@ -76,10 +76,10 @@ re-listing columns) so there's less to keep in sync.
 **Data mutation = Server Actions, not API routes.** The app deliberately avoids REST
 endpoints for app data. Mutations and reads live as `"use server"` functions in
 `src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers,
-registration, the logged-out email flows (`email/verify`, `password-reset/*`), and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
+registration, the logged-out email flows (`email/verify`, `password-reset/*`, `unsubscribe`, which is authorised by a signed token), and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
 `CRON_SECRET` bearer token — see `vercel.json`: `import-pf-agenda` at 04:00, then
 `daily-maintenance` at 06:00 — prune old `rate_limit_counters` rows (they hold IPs), dedupe, timetable re-sync for the next 2 weeks, timetable
-auto-link, RA artist photos, Spotify match re-verification; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
+auto-link, RA artist photos, opt-in reminder/recap emails, Spotify match re-verification; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
 1. Call `requireAuth()` (or `requireAdmin()`) from `festival-helpers.ts` to verify the session.
 2. Use the Drizzle query builder against `db` from `src/db/index.ts`.
 3. Return plain serializable objects.
@@ -148,7 +148,7 @@ see `src/lib/event-schedule.ts`; `times_checked_at` paces the RA re-read in `fes
 `artists` (photos: `image_source` is `ra`|`spotify`|`manual`, `image_locked` = an admin fixed it; RA's curated
 profile photo is preferred over Spotify's name match and neither replaces a locked one — see
 `artist-photo-core.ts` and `artist-image-guard.ts`; `ra_photo_checked_at` / `spotify_verified_at` pace the daily jobs),
-`users` (an `email` is only usable for login/password reset once `email_verified_at` is set; emailed confirm/reset links are single-use hashed rows in `auth_tokens`, see `src/db/auth-tokens.ts`), `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
+`users` (an `email` is only usable for login/password reset once `email_verified_at` is set; emailed confirm/reset links are single-use hashed rows in `auth_tokens`, see `src/db/auth-tokens.ts`), `user_notification_settings` (opt-in reminder/recap switches, off by default) and `notification_sends` (ledger the daily cron claims a message in before sending, so it never repeats one, and counts against the daily send limit — see `notification-send-core.ts`), `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings` and `user_artist_global` (ratings in half points, 0.5-5, `real`), `user_artist_follows` (followed artists →

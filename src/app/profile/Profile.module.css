@@ -162,6 +162,32 @@
   margin-top: 8px;
 }
 
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.toggleRow input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--gr-acc);
+}
+
+.toggleTitle,
+.toggleHint {
+  display: block;
+}
+
+.toggleHint {
+  font-size: 14px;
+  color: var(--gr-tx2);
+}
+
 .deleteText {
   margin-bottom: 16px;
   color: var(--gr-tx2);

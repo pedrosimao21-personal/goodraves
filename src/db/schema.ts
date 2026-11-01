@@ -54,6 +54,30 @@ export const authTokens = pgTable(
   (t) => [index("auth_tokens_user_kind_idx").on(t.userId, t.kind)]
 );
 
+// ── Email notifications ────────────────────────────────
+// Opt-in, all off by default; mail only goes to a confirmed address. See
+// src/db/notification-settings.ts and src/db/actions/notification-send-core.ts.
+export const userNotificationSettings = pgTable("user_notification_settings", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  nextRaveReminder: boolean("next_rave_reminder").notNull().default(false),
+  monthlyRecap: boolean("monthly_recap").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// One row per message sent (or claimed, while it is being sent): `ref` is a festival
+// id for a reminder and "YYYY-MM" for a monthly recap. The primary key stops a
+// repeat; counting today's rows keeps the cron inside the email provider's daily limit.
+export const notificationSends = pgTable(
+  "notification_sends",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    ref: text("ref").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.kind, t.ref] }), index("notification_sends_sent_at_idx").on(t.sentAt)]
+);
+
 // ── Festivals ──────────────────────────────────────────
 export const festivals = pgTable("festivals", {
   id: text("id").primaryKey(), // e.g. "ra-2403879"

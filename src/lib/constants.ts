@@ -47,6 +47,22 @@ export const RATE_LIMIT_TOKEN_REDEEM_MAX = 20;
 /** Longest address RFC 5321 allows. */
 export const MAX_EMAIL_LENGTH = 254;
 
+/**
+ * Notification emails sent by the daily cron. Resend's free plan allows 100 emails a
+ * day and 2 requests a second; the limit leaves room for confirmation and reset
+ * links, which are sent as they are asked for.
+ */
+export const NOTIFICATION_DAILY_LIMIT = 60;
+export const NOTIFICATION_SEND_GAP_MS = 600;
+export const NOTIFICATION_STEP_BUDGET_MS = 40_000;
+/** A reminder goes out this many days before a festival on the user's list. */
+export const NEXT_RAVE_REMINDER_DAYS_AHEAD = 3;
+/** The monthly recap of last month is sent on the first days of the month, so a missed cron run still catches up. */
+export const MONTHLY_RECAP_SEND_DAYS = 3;
+export const MONTHLY_RECAP_MAX_FESTIVALS = 8;
+/** Send records only matter for a few days; older ones are cleared. */
+export const NOTIFICATION_SENDS_RETENTION_DAYS = 90;
+
 /** Max lengths for free-text profile fields. */
 export const MAX_CITY_LENGTH = 200;
 export const MAX_GENRES_LENGTH = 500;

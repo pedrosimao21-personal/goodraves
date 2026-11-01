@@ -14,7 +14,8 @@ import { CONTACT_EMAIL } from "@/lib/site";
 
 const RESEND_URL = "https://api.resend.com/emails";
 
-export type EmailMessage = { to: string; subject: string; text: string; html: string };
+/** `headers` are extra mail headers, e.g. List-Unsubscribe on notifications. */
+export type EmailMessage = { to: string; subject: string; text: string; html: string; headers?: Record<string, string> };
 export type SendResult = "sent" | "logged" | "not-configured";
 
 export async function sendEmail(message: EmailMessage): Promise<SendResult> {
@@ -30,7 +31,15 @@ export async function sendEmail(message: EmailMessage): Promise<SendResult> {
   const res = await fetchWithTimeout(RESEND_URL, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [message.to], reply_to: CONTACT_EMAIL, subject: message.subject, text: message.text, html: message.html }),
+    body: JSON.stringify({
+      from,
+      to: [message.to],
+      reply_to: CONTACT_EMAIL,
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
+      headers: message.headers,
+    }),
   });
   if (!res.ok) throw new Error(`Resend error ${res.status}: ${await res.text()}`);
   return "sent";

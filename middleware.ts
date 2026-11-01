@@ -24,5 +24,5 @@ export const config = {
   // (rather than checked and passed through inside the handler above) so
   // NextAuth's auth() wrapper skips its session decode entirely for routes that
   // never need it.
-  matcher: ["/dashboard/:path*", "/friends/:path*", "/following/:path*", "/api/((?!auth|register|email|password-reset).*)"],
+  matcher: ["/dashboard/:path*", "/friends/:path*", "/following/:path*", "/api/((?!auth|register|email|password-reset|unsubscribe).*)"],
 };

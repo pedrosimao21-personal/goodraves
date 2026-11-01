@@ -3,10 +3,11 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { isRateLimited } from "@/db/rate-limit";
 import { getClientIp } from "@/lib/client-ip";
+import { looksLikeEmail, normalizeEmail } from "@/lib/email-address";
 
 const LOGIN_RATE_LIMIT_MAX = 10;
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
@@ -18,14 +19,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        username: { label: "Username", type: "text" },
+        // Holds a username or an email address.
+        username: { label: "Username or email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const username = credentials?.username as string | undefined;
+        const identifier = (credentials?.username as string | undefined)?.trim();
         const password = credentials?.password as string | undefined;
 
-        if (!username || !password) return null;
+        if (!identifier || !password) return null;
 
         // Rate limit login attempts per (IP, username). Keying on the username
         // alone would let an attacker lock a victim out by burning their bucket
@@ -33,10 +35,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // the victim's own IP+username bucket clean. The IP-only limit in the
         // /api/auth POST route additionally caps per-IP brute force.
         const ip = getClientIp(await headers());
-        if (await isRateLimited(`${ip}:${username}`, "login", LOGIN_RATE_LIMIT_MAX, LOGIN_RATE_LIMIT_WINDOW_MS)) {
+        if (await isRateLimited(`${ip}:${identifier.toLowerCase()}`, "login", LOGIN_RATE_LIMIT_MAX, LOGIN_RATE_LIMIT_WINDOW_MS)) {
           throw new Error("Too many login attempts. Please try again later.");
         }
 
+        // An email only logs in once verified, so typing someone else's address at sign-up gets no access to their account.
+        const email = looksLikeEmail(identifier) ? normalizeEmail(identifier) : null;
+        if (looksLikeEmail(identifier) && !email) return null;
         const [user] = await db
           .select({
             id: users.id,
@@ -45,7 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             isAdmin: users.isAdmin,
           })
           .from(users)
-          .where(eq(users.username, username))
+          .where(email ? and(sql`lower(${users.email}) = ${email}`, isNotNull(users.emailVerifiedAt)) : eq(users.username, identifier))
           .limit(1);
 
         if (!user) return null;

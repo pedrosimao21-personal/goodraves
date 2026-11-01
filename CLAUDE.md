@@ -39,7 +39,7 @@ npx tsx --env-file=.env.local scripts/backfill-festival-schedules.ts [--dry-run]
 There is **no test suite** in this repo — do not assume `npm test` exists.
 
 Environment variables (`.env`, see `.env.example`): `AUTH_SECRET`, `DATABASE_URL`,
-`LASTFM_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`.
+`LASTFM_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM` (mail; in dev, unset prints it to the console).
 
 ## Git workflow
 
@@ -76,7 +76,7 @@ re-listing columns) so there's less to keep in sync.
 **Data mutation = Server Actions, not API routes.** The app deliberately avoids REST
 endpoints for app data. Mutations and reads live as `"use server"` functions in
 `src/db/actions/`. The only API routes (`src/app/api/`) are NextAuth handlers,
-registration, and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
+registration, the logged-out email flows (`email/verify`, `password-reset/*`), and the `cron/` routes (scheduled jobs triggered by Vercel Cron, gated by a
 `CRON_SECRET` bearer token — see `vercel.json`: `import-pf-agenda` at 04:00, then
 `daily-maintenance` at 06:00 — prune old `rate_limit_counters` rows (they hold IPs), dedupe, timetable re-sync for the next 2 weeks, timetable
 auto-link, RA artist photos, Spotify match re-verification; Hobby-plan crons may fire up to 59 min late, hence the gap). Every server action must:
@@ -148,7 +148,7 @@ see `src/lib/event-schedule.ts`; `times_checked_at` paces the RA re-read in `fes
 `artists` (photos: `image_source` is `ra`|`spotify`|`manual`, `image_locked` = an admin fixed it; RA's curated
 profile photo is preferred over Spotify's name match and neither replaces a locked one — see
 `artist-photo-core.ts` and `artist-image-guard.ts`; `ra_photo_checked_at` / `spotify_verified_at` pace the daily jobs),
-`festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
+`users` (an `email` is only usable for login/password reset once `email_verified_at` is set; emailed confirm/reset links are single-use hashed rows in `auth_tokens`, see `src/db/auth-tokens.ts`), `festival_artists` (lineup join), `genres`/`artist_genres` (artist↔genre join),
 `festival_genres` (festival↔genre join, from the Partyflock genre estimate),
 `user_festivals` (attendance + rating + notes),
 `user_festival_artist_ratings` and `user_artist_global` (ratings in half points, 0.5-5, `real`), `user_artist_follows` (followed artists →

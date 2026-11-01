@@ -18,6 +18,7 @@ Copy `.env.example` to `.env` and fill in the values:
 | `AUTH_SECRET` | NextAuth session signing secret (generate with `openssl rand -base64 32`) |
 | `DATABASE_URL` | Neon Postgres connection string |
 | `LASTFM_KEY` | Last.fm API key (from https://www.last.fm/api/account/create) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Resend API key and the sender (`Goodraves <noreply@goodraves.com>`, on a domain verified in Resend) for confirm-email and password-reset mails. Unset in local dev, the mail and its link are printed to the server console |
 | `SPOTIFY_CLIENT_ID` | Spotify app client ID (from https://developer.spotify.com/dashboard) |
 | `SPOTIFY_CLIENT_SECRET` | Spotify app client secret |
 
@@ -91,7 +92,8 @@ npm run db:migrate:down  # Roll back the most recent migration
 
 | Table | Purpose |
 |---|---|
-| `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag |
+| `users` | Accounts — username, bcrypt `password_hash`, optional `city`/`favorite_genres`, `is_admin` flag, and an `email` that only counts once `email_verified_at` is set (login by email and password reset use verified addresses only) |
+| `auth_tokens` | Single-use emailed links (`verify_email`, `reset_password`): SHA-256 `token_hash`, the `email` it was sent to, `expires_at`/`used_at`; spent rows are pruned by the daily-maintenance cron |
 | `festivals` | Festivals/events (PK is text like `ra-2403879`). `source` is `"ra"`, `"custom"`, `"external"`, `"festivalfans"`, or `"partyflock"`. Includes Partyflock `interested_count`/`visitors_count` and an optional `pf_party_id` linking to a Partyflock party for timetable import, independent of `source`. `lineup_checked_at`/`image_checked_at` record the last on-demand lineup/image backfill attempt so a festival with nothing to import isn't re-scraped on every view. `country_code`/`country_name` back the search country filter — populated at import time, backfilled for older rows by `scripts/backfill-festival-countries.ts`. `pf_link_checked_at` records the daily cron's last unsuccessful Partyflock timetable search, so unmatched festivals aren't re-searched every day. `start_time`/`end_time` hold the announced clock times (RA) and `end_date` follows "a night belongs to the day it started" (an event ending by noon the next morning is one day); `times_checked_at` records the last RA re-read of the dates/times |
 | `artists` | Artists with inline-cached enrichment: Spotify (stale after 60 days), Last.fm (7 days), Resident Advisor, plus country. JSON blobs stored as `text` alongside `*_fetched_at` timestamps. `image_url` is the artist's photo and `image_source` says where it came from (`ra` preferred, `spotify`, or `manual`); `image_locked` stops any automatic lookup replacing an admin's fix |
 | `genres` / `artist_genres` | Normalized genres (from Last.fm tags) and the artist↔genre join |

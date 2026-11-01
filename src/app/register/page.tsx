@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { keepKeyboardOpenOnTap } from "@/lib/touch-tap";
-import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/constants";
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, MAX_EMAIL_LENGTH } from "@/lib/constants";
 import AuthLayout from "@/components/auth/AuthLayout";
 import styles from "@/components/auth/Auth.module.css";
 
@@ -11,6 +11,7 @@ const MIN_USERNAME_LENGTH = 3;
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, email, password }),
       });
 
       const data = await res.json();
@@ -65,6 +66,20 @@ export default function RegisterPage() {
           />
         </div>
         <div>
+          <label className="form-label" htmlFor="register-email">Email</label>
+          <input
+            id="register-email"
+            className="form-input"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={MAX_EMAIL_LENGTH}
+            required
+            autoComplete="email"
+          />
+          <p className="form-hint">We send a confirmation link. Once confirmed you can log in with it and reset your password by email.</p>
+        </div>
+        <div>
           <label className="form-label" htmlFor="register-password">Password</label>
           <input
             id="register-password"
@@ -77,7 +92,7 @@ export default function RegisterPage() {
             required
             autoComplete="new-password"
           />
-          <p className="form-hint">At least {MIN_PASSWORD_LENGTH} characters. There&apos;s no email reset, so keep it somewhere safe.</p>
+          <p className="form-hint">At least {MIN_PASSWORD_LENGTH} characters.</p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>

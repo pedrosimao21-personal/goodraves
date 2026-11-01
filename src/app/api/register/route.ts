@@ -5,6 +5,9 @@ import { sql } from "drizzle-orm";
 import { isRateLimited } from "@/db/rate-limit";
 import { getClientIp } from "@/lib/client-ip";
 import { getPasswordError, hashPassword } from "@/lib/password";
+import { normalizeEmail } from "@/lib/email-address";
+import { isSameOrigin } from "@/lib/same-origin";
+import { isEmailVerifiedByOther, releaseUnverifiedEmail, trySendVerificationEmail } from "@/db/account-email";
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -13,22 +16,9 @@ const MAX_USERNAME_LENGTH = 30;
 
 export async function POST(req: NextRequest) {
   try {
-    // CSRF protection: require a same-origin request. Reject when the Origin
-    // header is missing entirely, and compare the host exactly (not substring)
-    // so a hostile origin merely *containing* our host can't pass.
-    const origin = req.headers.get("origin");
-    const host = req.headers.get("host");
-    let originHost: string | null = null;
-    try {
-      originHost = origin ? new URL(origin).host : null;
-    } catch {
-      originHost = null;
-    }
-    if (!originHost || !host || originHost !== host) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
+    // CSRF protection: same-origin requests only.
+    if (!isSameOrigin(req.headers)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const ip = getClientIp(req.headers);
@@ -39,7 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { username, password } = await req.json();
+    const { username, password, email: rawEmail } = await req.json();
 
     if (!username || typeof username !== "string" || username.length < MIN_USERNAME_LENGTH) {
       return NextResponse.json(
@@ -67,6 +57,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
+    const email = normalizeEmail(rawEmail);
+    if (!email) {
+      return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+    }
+
     // Check if username already exists (case-insensitive). Only existence is
     // needed, so select a single lightweight column.
     const [existing] = await db
@@ -75,22 +70,23 @@ export async function POST(req: NextRequest) {
       .where(sql`lower(${users.username}) = lower(${username})`)
       .limit(1);
 
-    if (existing) {
-      // Use a generic error to prevent username enumeration
+    // A generic error for a taken username or email, so neither can be probed.
+    if (existing || (await isEmailVerifiedByOther(email))) {
       return NextResponse.json(
-        { error: "Registration failed. Please try a different username." },
+        { error: "Registration failed. Please try a different username or email." },
         { status: 400 }
       );
     }
 
     const passwordHash = await hashPassword(password);
 
-    await db.insert(users).values({
-      username,
-      passwordHash,
-    });
+    await releaseUnverifiedEmail(email);
+    const [created] = await db.insert(users).values({ username, passwordHash, email }).returning({ id: users.id });
 
-    return NextResponse.json({ success: true }, { status: 201 });
+    // The account exists either way; if the mail can't go out, the profile can resend it.
+    const isEmailSent = await trySendVerificationEmail(created.id, email);
+
+    return NextResponse.json({ success: true, isEmailSent }, { status: 201 });
   } catch (err) {
     console.error("Registration error:", err);
     return NextResponse.json(

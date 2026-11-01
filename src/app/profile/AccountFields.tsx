@@ -45,7 +45,7 @@ export function PasswordField() {
   }
 
   return (
-    <Field title="Password" hint="There's no email reset, so keep it somewhere safe.">
+    <Field title="Password" hint="Forgot it? Confirm an email address above and you can reset it from the login page.">
       {!isOpen ? (
         <div>
           <button type="button" className="btn" onClick={() => { setIsOpen(true); setIsDone(false) }}>Change password</button>

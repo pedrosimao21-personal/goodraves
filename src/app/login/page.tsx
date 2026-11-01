@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError("");
 
     if (username.length < MIN_USERNAME_LENGTH) {
-      setError(`Username must be at least ${MIN_USERNAME_LENGTH} characters`);
+      setError(`Username or email must be at least ${MIN_USERNAME_LENGTH} characters`);
       return;
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
@@ -39,7 +39,7 @@ export default function LoginPage() {
       });
       // signIn with redirect won't return on success
     } catch {
-      setError("Invalid username or password");
+      setError("Invalid username, email or password");
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export default function LoginPage() {
     <AuthLayout title="Log in">
       <form onSubmit={handleSubmit} className={styles.form}>
         <div>
-          <label className="form-label" htmlFor="login-username">Username</label>
+          <label className="form-label" htmlFor="login-username">Username or email</label>
           <input
             id="login-username"
             className="form-input"
@@ -73,6 +73,7 @@ export default function LoginPage() {
             minLength={MIN_PASSWORD_LENGTH}
             autoComplete="current-password"
           />
+          <p className="form-hint"><Link href="/forgot-password">Forgot your password?</Link></p>
         </div>
         {error && <p className="form-error" role="alert">{error}</p>}
         <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={loading} onPointerDown={keepKeyboardOpenOnTap}>

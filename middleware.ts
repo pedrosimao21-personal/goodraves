@@ -20,8 +20,9 @@ export default auth((req) => {
 });
 
 export const config = {
-  // /api/auth and /api/register are excluded here (rather than checked and
-  // passed through inside the handler above) so NextAuth's auth() wrapper
-  // skips its session decode entirely for routes that never need it.
-  matcher: ["/dashboard/:path*", "/friends/:path*", "/following/:path*", "/api/((?!auth|register).*)"],
+  // /api/auth, /api/register and the logged-out email flows are excluded here
+  // (rather than checked and passed through inside the handler above) so
+  // NextAuth's auth() wrapper skips its session decode entirely for routes that
+  // never need it.
+  matcher: ["/dashboard/:path*", "/friends/:path*", "/following/:path*", "/api/((?!auth|register|email|password-reset).*)"],
 };

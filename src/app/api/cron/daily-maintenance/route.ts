@@ -6,6 +6,7 @@ import { autoLinkPFTimetables } from "@/db/actions/festival-timetable-autolink";
 import { timetableCacheTag } from "@/db/actions/festival-helpers";
 import { recordCronRun } from "@/db/actions/cron-runs-core";
 import { pruneRateLimitCounters } from "@/db/rate-limit";
+import { pruneAuthTokens } from "@/db/auth-tokens";
 import { runArtistPhotoBackfill } from "@/db/actions/artist-photo-core";
 import { verifySpotifyLinks } from "@/db/actions/spotify-verify-core";
 import { isValidCronBearer } from "@/lib/cron-auth";
@@ -72,10 +73,10 @@ export async function GET(request: Request) {
   return NextResponse.json(summary);
 }
 
-/** A failed prune is reported in the run summary but never blocks the steps after it. */
+/** A failed prune is reported in the run summary but never blocks the steps after it. Also clears spent emailed-link tokens. */
 async function runRateLimitPrune(): Promise<{ removed: number; errors: string[] }> {
   try {
-    return { removed: await pruneRateLimitCounters(), errors: [] };
+    return { removed: (await pruneRateLimitCounters()) + (await pruneAuthTokens()), errors: [] };
   } catch (err) {
     return { removed: 0, errors: [err instanceof Error ? err.message : String(err)] };
   }

@@ -34,6 +34,19 @@ export const IMAGE_ENRICH_CHUNK_SIZE = 6;
 export const MIN_PASSWORD_LENGTH = 8;
 export const MAX_PASSWORD_LENGTH = 128;
 
+/** Emailed links: how long a verify-email / reset-password link works. */
+export const EMAIL_VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+export const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+/** Per-caller limits for the unauthenticated email flows (per IP, and per address for reset requests). */
+export const RATE_LIMIT_EMAIL_FLOW_MAX = 5;
+export const RATE_LIMIT_EMAIL_FLOW_WINDOW_MS = 15 * 60 * 1000;
+export const RATE_LIMIT_RESET_PER_ADDRESS_MAX = 3;
+export const RATE_LIMIT_RESET_PER_ADDRESS_WINDOW_MS = 60 * 60 * 1000;
+/** Verifying and resetting guess a 256-bit token: a looser cap per IP is plenty. */
+export const RATE_LIMIT_TOKEN_REDEEM_MAX = 20;
+/** Longest address RFC 5321 allows. */
+export const MAX_EMAIL_LENGTH = 254;
+
 /** Max lengths for free-text profile fields. */
 export const MAX_CITY_LENGTH = 200;
 export const MAX_GENRES_LENGTH = 500;

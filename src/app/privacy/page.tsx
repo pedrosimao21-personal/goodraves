@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       <section>
         <h2>What we store</h2>
         <ul>
-          <li><strong>Account:</strong> your username, your password (only as a one-way bcrypt hash, never readable) and when you signed up. We don&apos;t ask for your email, real name or phone number.</li>
+          <li><strong>Account:</strong> your username, your password (only as a one-way bcrypt hash, never readable) and when you signed up. Your <strong>email address</strong> is required when you create an account and you can change or remove it on your profile. It is used to log in, to reset a forgotten password and to send the confirmation link, and nothing else without your say-so. We don&apos;t ask for your real name or phone number.</li>
           <li><strong>Profile, if you fill it in:</strong> your home city and favourite genres.</li>
           <li><strong>What you do on the site:</strong> festivals you&apos;re going to or went to, your festival and set ratings, notes, comments, artists you follow or want to see, friends and friend requests, and festivals you add yourself.</li>
           <li><strong>Technical data:</strong> your IP address, used to stop password guessing and abuse. We keep it for at most a day. Our hosting provider also keeps short-lived request logs that include IP addresses.</li>
@@ -64,9 +64,10 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Vercel</strong> hosts the site, running in Frankfurt (EU).</li>
           <li><strong>Neon</strong> hosts the database, in Frankfurt (EU).</li>
+          <li><strong>Resend</strong> delivers our emails (confirmation and password-reset links). It receives your email address and the message text when one is sent.</li>
         </ul>
         <p>
-          Both are US companies acting as our processors. Where data could reach the US, it&apos;s covered by the EU&ndash;US
+          All three are US companies acting as our processors. Where data could reach the US, it&apos;s covered by the EU&ndash;US
           Data Privacy Framework and the European Commission&apos;s standard contractual clauses.
         </p>
         <p>Some features load content straight from other sites, which then see your IP address:</p>

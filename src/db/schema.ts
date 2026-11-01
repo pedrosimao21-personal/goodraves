@@ -23,11 +23,35 @@ export const users = pgTable(
     city: text("city"),
     favoriteGenres: text("favorite_genres"), // comma-separated list, e.g. "Techno, House"
     isAdmin: boolean("is_admin").default(false).notNull(),
+    // The address the user entered. Only usable for login / password reset once
+    // `emailVerifiedAt` is set (they clicked the emailed link).
+    email: text("email"),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   },
   (t) => [
     // Case-insensitive uniqueness: prevents "Maarten" and "maarten" coexisting.
     uniqueIndex("users_username_lower_idx").on(sql`lower(${t.username})`),
+    uniqueIndex("users_email_lower_idx").on(sql`lower(${t.email})`).where(sql`${t.email} IS NOT NULL`),
   ]
+);
+
+// ── Auth tokens (emailed single-use links) ─────────────
+// Verify-email and reset-password links. Only the SHA-256 hash of a token is
+// stored; see src/db/auth-tokens.ts. `email` is the address the link was sent to,
+// so a link goes stale if the account's address changes before it's used.
+export const authTokens = pgTable(
+  "auth_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // "verify_email" | "reset_password"
+    tokenHash: text("token_hash").notNull().unique(),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("auth_tokens_user_kind_idx").on(t.userId, t.kind)]
 );
 
 // ── Festivals ──────────────────────────────────────────
